@@ -38,10 +38,13 @@ class OfferController extends Controller
 
     public function show(Offer $offer): View
     {
-        $offer->load(['carUnit.photos', 'customer.user']);
+        $offer->load(['carUnit.photos', 'customer.user', 'reviewer']);
 
+        $salesOrder = \App\Models\SalesOrder::where('type', \App\Enums\SalesOrderType::CarSales)
+            ->where('notes', 'like', "%offer #{$offer->id}%")
+            ->first();
 
-        return view('admin.offers.show', compact('offer'));
+        return view('admin.offers.show', compact('offer', 'salesOrder'));
     }
 
 

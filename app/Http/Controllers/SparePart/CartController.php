@@ -36,16 +36,17 @@ class CartController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'spare_part_id' => 'required|exists:spare_parts,id',
-            'qty' => 'integer|min:1',
+            'qty' => 'nullable|integer|min:1',
         ]);
 
 
-        $part = SparePart::findOrFail($request->spare_part_id);
+        $part = SparePart::findOrFail($validated['spare_part_id']);
 
 
-        if ($part->status->value !== 'active') {
+        $statusValue = $part->status instanceof \App\Enums\SparePartStatus ? $part->status->value : (string) $part->status;
+        if ($statusValue !== 'active') {
             return back()->with('error', 'Part tidak tersedia.');
         }
 
@@ -54,7 +55,8 @@ class CartController extends Controller
 
 
         try {
-            $this->cartService->addItem($cart, $part, $request->input('qty', 1));
+            $qty = (int) ($validated['qty'] ?? $request->input('qty', 1));
+            $this->cartService->addItem($cart, $part, $qty);
             return back()->with('success', 'Berhasil ditambahkan ke keranjang.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
@@ -64,13 +66,13 @@ class CartController extends Controller
 
     public function update(Request $request, CartItem $item): RedirectResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'qty' => 'required|integer|min:1',
         ]);
 
 
         try {
-            $this->cartService->updateItemQty($item, $request->qty);
+            $this->cartService->updateItemQty($item, (int) $validated['qty']);
             return back()->with('success', 'Qty berhasil diperbarui.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());

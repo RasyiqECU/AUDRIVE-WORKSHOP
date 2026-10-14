@@ -58,7 +58,13 @@ class PosController extends Controller
             ->latest()
             ->get();
 
-        $recentTransactions = SalesOrder::whereIn('type', [SalesOrderType::Pos, SalesOrderType::Service])
+        $pendingCarOrders = SalesOrder::where('type', SalesOrderType::CarSales)
+            ->where('status', SalesOrderStatus::Pending)
+            ->with(['customer.user', 'items'])
+            ->latest()
+            ->get();
+
+        $recentTransactions = SalesOrder::whereIn('type', [SalesOrderType::Pos, SalesOrderType::Service, SalesOrderType::CarSales])
             ->with('customer.user')
             ->latest()
             ->limit(10)
@@ -67,7 +73,10 @@ class PosController extends Controller
         $selectedWoId = $request->query('work_order_id');
         $selectedWorkOrder = $selectedWoId ? WorkOrder::with(['vehicle.customer.user', 'items.sparePart', 'mechanic'])->find($selectedWoId) : null;
 
-        return view('admin.pos.index', compact('parts', 'pendingWorkOrders', 'recentTransactions', 'selectedWorkOrder'));
+        $selectedCarOrderId = $request->query('car_sales_id');
+        $selectedCarOrder = $selectedCarOrderId ? SalesOrder::with(['customer.user', 'items'])->find($selectedCarOrderId) : null;
+
+        return view('admin.pos.index', compact('parts', 'pendingWorkOrders', 'pendingCarOrders', 'recentTransactions', 'selectedWorkOrder', 'selectedCarOrder'));
     }
 
 
@@ -144,6 +153,30 @@ class PosController extends Controller
             return redirect()
                 ->route('admin.pos.receipt', $salesOrder)
                 ->with('success', "Pembayaran Work Order #{$workOrder->code} berhasil diproses.");
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
+    }
+
+
+    public function payCarSales(Request $request, SalesOrder $salesOrder): RedirectResponse
+    {
+        $validated = $request->validate([
+            'discount_idr' => 'nullable|integer|min:0',
+            'payment_method' => 'required|in:cash,card,transfer,ewallet',
+        ]);
+
+        try {
+            $paidOrder = $this->posService->payCarSalesOrder(
+                $salesOrder,
+                (int) ($validated['discount_idr'] ?? 0),
+                (string) $validated['payment_method'],
+                auth()->id()
+            );
+
+            return redirect()
+                ->route('admin.pos.receipt', $paidOrder)
+                ->with('success', "Pembayaran Pembelian Mobil #{$paidOrder->code} berhasil diproses.");
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage())->withInput();
         }

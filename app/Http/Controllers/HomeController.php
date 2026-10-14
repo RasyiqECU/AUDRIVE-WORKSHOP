@@ -24,20 +24,34 @@ class HomeController extends Controller
             ->limit(6)
             ->get();
 
+        if ($featuredCars->isEmpty()) {
+            $featuredCars = CarUnit::query()
+                ->available()
+                ->with('primaryPhoto')
+                ->latest()
+                ->limit(6)
+                ->get();
+        }
+
+        $featuredParts = \App\Models\SparePart::query()
+            ->active()
+            ->inStock()
+            ->with('category')
+            ->latest()
+            ->limit(4)
+            ->get();
 
         $categories = SparePartCategory::query()
             ->ordered()
             ->limit(8)
             ->get();
 
-
         $promotions = Promotion::query()
             ->active()
             ->limit(3)
             ->get();
 
-
-        return view('pages.home', compact('featuredCars', 'categories', 'promotions'));
+        return view('pages.home', compact('featuredCars', 'featuredParts', 'categories', 'promotions'));
     }
 }
 

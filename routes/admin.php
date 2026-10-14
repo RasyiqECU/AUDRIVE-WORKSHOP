@@ -43,6 +43,7 @@ Route::post('offers/{offer}/reject', [\App\Http\Controllers\Admin\OfferControlle
 Route::get('pos', [\App\Http\Controllers\Admin\PosController::class, 'index'])->name('pos.index');
 Route::post('pos', [\App\Http\Controllers\Admin\PosController::class, 'store'])->name('pos.store');
 Route::post('pos/work-orders/{workOrder}/pay', [\App\Http\Controllers\Admin\PosController::class, 'payWorkOrder'])->name('pos.work-orders.pay');
+Route::post('pos/car-sales/{salesOrder}/pay', [\App\Http\Controllers\Admin\PosController::class, 'payCarSales'])->name('pos.car-sales.pay');
 Route::get('pos/search', [\App\Http\Controllers\Admin\PosController::class, 'search'])->name('pos.search');
 Route::get('pos/{salesOrder}/receipt', [\App\Http\Controllers\Admin\PosController::class, 'receipt'])->name('pos.receipt');
 Route::get('pos/{salesOrder}/print', [\App\Http\Controllers\Admin\PosController::class, 'printReceipt'])->name('pos.print');
@@ -78,8 +79,10 @@ Route::resource('spare-parts', SparePartController::class);
 Route::resource('purchase-orders', PurchaseOrderController::class);
 Route::patch('purchase-orders/{purchaseOrder}/status', [PurchaseOrderController::class, 'updateStatus'])
     ->name('purchase-orders.status');
-Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
-Route::get('inventory/movements', [InventoryController::class, 'movements'])->name('inventory.movements');
+Route::get('inventory/low-stock', [InventoryController::class, 'lowStock'])->name('inventory.low-stock');
+Route::get('inventory/{sparePart}/movements', [InventoryController::class, 'movements'])->name('inventory.movements');
+Route::post('inventory/{sparePart}/adjust-stock', [InventoryController::class, 'adjustStock'])->name('inventory.adjust-stock');
+Route::resource('inventory', InventoryController::class)->except(['destroy']);
 
 // ── CRM / Customers ──
 Route::resource('customers', CustomerController::class)->only(['index', 'show', 'edit', 'update']);

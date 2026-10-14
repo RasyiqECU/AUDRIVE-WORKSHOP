@@ -29,12 +29,13 @@ class RegisterController extends Controller
     public function store(RegisterRequest $request): RedirectResponse
     {
         $user = User::create([
-            'name'      => $request->name,
-            'email'     => $request->email,
-            'phone'     => $request->phone,
-            'password'  => Hash::make($request->password),
-            'role'      => 'customer',
-            'is_active' => true,
+            'name'              => $request->name,
+            'email'             => $request->email,
+            'phone'             => $request->phone,
+            'password'          => Hash::make($request->password),
+            'role'              => 'customer',
+            'is_active'         => true,
+            'email_verified_at' => now(),
         ]);
 
 
@@ -46,9 +47,6 @@ class RegisterController extends Controller
             'province'   => $request->province,
             'birth_date' => $request->birth_date,
         ]);
-
-
-        event(new Registered($user));
 
 
         Auth::login($user);

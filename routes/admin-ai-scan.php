@@ -12,7 +12,7 @@ use App\Http\Controllers\Admin\AiScanReviewController;
 */
 
 
-Route::prefix('ai-scans')->name('ai-scans.')->middleware(['auth', 'verified', 'role:technician,admin'])->group(function () {
+Route::prefix('ai-scans')->name('ai-scans.')->middleware(['auth', 'role:technician,admin'])->group(function () {
     Route::get('/', [AiScanReviewController::class, 'index'])->name('index');
     Route::get('/{aiScan}', [AiScanReviewController::class, 'show'])->name('show');
     Route::post('/{aiScan}/review', [AiScanReviewController::class, 'review'])->name('review');

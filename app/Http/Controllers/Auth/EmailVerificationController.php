@@ -16,9 +16,9 @@ use Illuminate\View\View;
 
 class EmailVerificationController extends Controller
 {
-    public function notice(Request $request): View
+    public function notice(Request $request): RedirectResponse
     {
-        return view('auth.verify-email');
+        return redirect()->route('dashboard');
     }
 
 

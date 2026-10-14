@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="space-y-6" x-data="{
-    activeTab: '{{ $selectedWorkOrder ? 'work-orders' : 'work-orders' }}',
+    activeTab: '{{ $selectedCarOrder ? 'cars' : ($selectedWorkOrder ? 'work-orders' : 'work-orders') }}',
     cart: [],
     selectedWo: {{ $selectedWorkOrder ? json_encode([
         'id' => $selectedWorkOrder->id,
@@ -23,9 +23,73 @@
             'subtotal' => $item->subtotal_idr
         ])
     ]) : 'null' }},
+    selectedCar: {{ $selectedCarOrder ? json_encode([
+        'id' => $selectedCarOrder->id,
+        'code' => $selectedCarOrder->code,
+        'customer_name' => $selectedCarOrder->customer?->user?->name ?? 'Customer',
+        'customer_phone' => $selectedCarOrder->customer?->phone ?? $selectedCarOrder->customer?->user?->phone ?? '-',
+        'car_title' => $selectedCarOrder->items->first()?->description ?? 'Unit Mobil',
+        'subtotal' => $selectedCarOrder->subtotal_idr,
+        'total' => $selectedCarOrder->total_idr,
+        'notes' => $selectedCarOrder->notes,
+    ]) : 'null' }},
     discountWo: 0,
+    discountCar: 0,
     paymentMethodWo: 'cash',
+    paymentMethodParts: 'cash',
+    paymentMethodCar: 'transfer',
+    cashReceivedWo: 0,
+    cashReceivedParts: 0,
+    cashReceivedCar: 0,
     partsSearch: '',
+
+    selectCar(car) {
+        this.selectedCar = car;
+        this.discountCar = 0;
+    },
+
+    get carTotal() {
+        if (!this.selectedCar) return 0;
+        return Math.max(0, this.selectedCar.subtotal - this.discountCar);
+    },
+
+    paymentInfo(method, total) {
+        const info = {
+            cash: null,
+            card: {
+                icon: '💳',
+                title: 'Kartu Debit / Kredit',
+                lines: [
+                    'Gunakan mesin EDC yang tersedia di kasir.',
+                    'Minta pelanggan tap / swipe / insert kartu.',
+                    'Pastikan jumlah sesuai sebelum konfirmasi di mesin EDC.',
+                ]
+            },
+            transfer: {
+                icon: '🏦',
+                title: 'Transfer Bank',
+                lines: [
+                    'Bank: BCA',
+                    'No. Rekening: 1234567890',
+                    'Atas Nama: AUDRIVE AUTO SERVICE',
+                    '---',
+                    'Bank: Mandiri',
+                    'No. Rekening: 0987654321',
+                    'Atas Nama: AUDRIVE AUTO SERVICE',
+                ]
+            },
+            ewallet: {
+                icon: '📱',
+                title: 'QRIS / E-Wallet',
+                lines: [
+                    'Arahkan kamera HP pelanggan ke QR Code kasir.',
+                    'Pastikan nominal yang tampil di layar HP pelanggan sudah sesuai.',
+                    'Minta tangkapan layar bukti pembayaran.',
+                ]
+            },
+        };
+        return info[method] ?? null;
+    },
 
     selectWorkOrder(wo) {
         this.selectedWo = wo;
@@ -107,6 +171,17 @@
                     :class="activeTab === 'parts' ? 'bg-giallo text-nero font-bold' : 'text-silver-dim hover:text-silver-bright'"
                     class="px-4 py-2 text-xs font-heading uppercase tracking-wider rounded transition-all flex items-center gap-2">
                 <span>⚙️ Penjualan Spare Part</span>
+            </button>
+            <button @click="activeTab = 'cars'"
+                    :class="activeTab === 'cars' ? 'bg-giallo text-nero font-bold' : 'text-silver-dim hover:text-silver-bright'"
+                    class="px-4 py-2 text-xs font-heading uppercase tracking-wider rounded transition-all flex items-center gap-2">
+                <span>🚗 Penjualan Mobil</span>
+                @if($pendingCarOrders->count() > 0)
+                    <span class="px-1.5 py-0.5 text-[10px] rounded-full"
+                          :class="activeTab === 'cars' ? 'bg-nero text-giallo' : 'bg-giallo/20 text-giallo'">
+                        {{ $pendingCarOrders->count() }}
+                    </span>
+                @endif
             </button>
         </div>
     </div>
@@ -236,6 +311,80 @@
                 </div>
             </div>
 
+            {{-- 3. TAB: CAR SALES ORDERS --}}
+            <div x-show="activeTab === 'cars'" class="space-y-4">
+                <div class="panel border border-gunmetal/80 bg-carbon overflow-hidden">
+                    <div class="bg-steel/30 px-5 py-3.5 border-b border-gunmetal flex items-center justify-between">
+                        <h3 class="font-heading text-xs uppercase tracking-wider text-silver-bright flex items-center gap-2">
+                            <span>Daftar Penjualan Mobil Menunggu Pembayaran</span>
+                            <span class="text-[10px] px-2 py-0.5 bg-giallo/10 text-giallo border border-giallo/30 rounded">
+                                {{ $pendingCarOrders->count() }} Siap Bayar
+                            </span>
+                        </h3>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="border-b border-gunmetal bg-steel/20 text-[10px] font-heading uppercase tracking-wider text-silver-dim">
+                                    <th class="py-3 px-4">No. Order</th>
+                                    <th class="py-3 px-4">Customer</th>
+                                    <th class="py-3 px-4">Unit Mobil</th>
+                                    <th class="py-3 px-4 text-right">Harga</th>
+                                    <th class="py-3 px-4 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gunmetal/30">
+                                @forelse($pendingCarOrders as $carOrder)
+                                    @php
+                                        $carData = [
+                                            'id'             => $carOrder->id,
+                                            'code'           => $carOrder->code,
+                                            'customer_name'  => $carOrder->customer?->user?->name ?? 'Customer',
+                                            'customer_phone' => $carOrder->customer?->phone ?? $carOrder->customer?->user?->phone ?? '-',
+                                            'car_title'      => $carOrder->items->first()?->description ?? 'Unit Mobil',
+                                            'subtotal'       => $carOrder->subtotal_idr,
+                                            'total'          => $carOrder->total_idr,
+                                            'notes'          => $carOrder->notes,
+                                        ];
+                                    @endphp
+                                    <tr class="hover:bg-steel/20 transition-all cursor-pointer"
+                                        :class="selectedCar && selectedCar.id === {{ $carOrder->id }} ? 'bg-giallo/10 border-l-2 border-giallo' : ''"
+                                        @click="selectCar({{ json_encode($carData) }})">
+                                        <td class="py-3 px-4 font-mono font-bold text-giallo">
+                                            {{ $carOrder->code }}
+                                            <span class="block text-[10px] text-silver-dim font-normal">{{ $carOrder->created_at->format('d/m H:i') }}</span>
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <p class="font-bold text-silver-bright">{{ $carOrder->customer?->user?->name ?? 'Customer' }}</p>
+                                            <p class="text-[11px] text-silver-dim">{{ $carOrder->customer?->phone ?? '-' }}</p>
+                                        </td>
+                                        <td class="py-3 px-4 text-silver-dim text-[11px]">
+                                            🚗 {{ $carOrder->items->first()?->description ?? '-' }}
+                                        </td>
+                                        <td class="py-3 px-4 text-right font-mono font-bold text-silver-bright">
+                                            Rp {{ number_format($carOrder->total_idr, 0, ',', '.') }}
+                                        </td>
+                                        <td class="py-3 px-4 text-right">
+                                            <button type="button"
+                                                    class="px-3 py-1.5 bg-giallo text-nero font-heading font-bold text-[10px] uppercase rounded hover:bg-arancio transition-premium">
+                                                Pilih Bayar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="py-12 text-center text-silver-dim font-heading uppercase text-xs tracking-wider">
+                                            ✓ Tidak ada penjualan mobil yang menunggu pembayaran.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         {{-- RIGHT COLUMN: Checkout Panel (Adapts to Active Tab) --}}
@@ -319,6 +468,36 @@
                             </select>
                         </div>
 
+                        {{-- Non-cash payment info panel --}}
+                        <template x-if="paymentMethodWo !== 'cash'">
+                            <div class="rounded border border-giallo/30 bg-giallo/5 p-3 space-y-2">
+                                <p class="font-heading text-[11px] uppercase tracking-wider text-giallo" x-text="paymentInfo(paymentMethodWo)?.icon + ' ' + paymentInfo(paymentMethodWo)?.title"></p>
+                                <ul class="space-y-1">
+                                    <template x-for="(line, i) in paymentInfo(paymentMethodWo)?.lines ?? []" :key="i">
+                                        <li class="font-mono text-[11px]" :class="line === '---' ? 'border-t border-gunmetal/40 mt-1 pt-1 hidden' : 'text-silver-bright'" x-text="line === '---' ? '' : line"></li>
+                                    </template>
+                                </ul>
+                                <p class="text-[10px] text-silver-dim italic">Konfirmasi pembayaran setelah pelanggan menyelesaikan transaksi.</p>
+                            </div>
+                        </template>
+
+                        {{-- Cash: kembalian --}}
+                        <template x-if="paymentMethodWo === 'cash'">
+                            <div class="rounded border border-gunmetal/40 bg-steel/10 p-3 space-y-2">
+                                <label class="block text-[11px] uppercase text-silver-dim font-heading">Uang Diterima (IDR)</label>
+                                <input type="number"
+                                       x-model.number="cashReceivedWo"
+                                       min="0"
+                                       placeholder="Masukkan nominal uang pelanggan"
+                                       class="w-full bg-steel/60 border border-gunmetal text-silver-bright text-xs rounded p-2.5 font-mono focus:border-giallo focus:outline-none">
+                                <div class="flex justify-between font-mono text-xs" x-show="cashReceivedWo > 0">
+                                    <span class="text-silver-dim">Kembalian:</span>
+                                    <span class="font-bold" :class="cashReceivedWo >= woTotal ? 'text-emerald-400' : 'text-red-400'"
+                                          x-text="'Rp ' + Math.max(0, cashReceivedWo - woTotal).toLocaleString('id-ID')"></span>
+                                </div>
+                            </div>
+                        </template>
+
                         {{-- Calculations --}}
                         <div class="pt-3 border-t border-gunmetal space-y-1.5 font-mono text-xs">
                             <div class="flex justify-between text-silver-dim">
@@ -394,13 +573,46 @@
                             {{-- Payment Method --}}
                             <div>
                                 <label class="block text-[11px] uppercase text-silver-dim mb-1 font-heading">Metode Pembayaran</label>
-                                <select name="payment_method" required class="w-full bg-steel/60 border border-gunmetal text-silver-bright text-xs rounded p-2.5 font-heading uppercase focus:border-giallo focus:outline-none">
+                                <select name="payment_method"
+                                        x-model="paymentMethodParts"
+                                        required
+                                        class="w-full bg-steel/60 border border-gunmetal text-silver-bright text-xs rounded p-2.5 font-heading uppercase focus:border-giallo focus:outline-none">
                                     <option value="cash">💵 Tunai (Cash)</option>
                                     <option value="card">💳 Kartu Debit / Kredit</option>
                                     <option value="transfer">🏦 Bank Transfer</option>
                                     <option value="ewallet">📱 QRIS / E-Wallet</option>
                                 </select>
                             </div>
+
+                            {{-- Non-cash payment info panel --}}
+                            <template x-if="paymentMethodParts !== 'cash'">
+                                <div class="rounded border border-giallo/30 bg-giallo/5 p-3 space-y-2">
+                                    <p class="font-heading text-[11px] uppercase tracking-wider text-giallo" x-text="paymentInfo(paymentMethodParts)?.icon + ' ' + paymentInfo(paymentMethodParts)?.title"></p>
+                                    <ul class="space-y-1">
+                                        <template x-for="(line, i) in paymentInfo(paymentMethodParts)?.lines ?? []" :key="i">
+                                            <li class="font-mono text-[11px]" :class="line === '---' ? 'border-t border-gunmetal/40 mt-1 pt-1 hidden' : 'text-silver-bright'" x-text="line === '---' ? '' : line"></li>
+                                        </template>
+                                    </ul>
+                                    <p class="text-[10px] text-silver-dim italic">Konfirmasi pembayaran setelah pelanggan menyelesaikan transaksi.</p>
+                                </div>
+                            </template>
+
+                            {{-- Cash: kembalian --}}
+                            <template x-if="paymentMethodParts === 'cash'">
+                                <div class="rounded border border-gunmetal/40 bg-steel/10 p-3 space-y-2">
+                                    <label class="block text-[11px] uppercase text-silver-dim font-heading">Uang Diterima (IDR)</label>
+                                    <input type="number"
+                                           x-model.number="cashReceivedParts"
+                                           min="0"
+                                           placeholder="Masukkan nominal uang pelanggan"
+                                           class="w-full bg-steel/60 border border-gunmetal text-silver-bright text-xs rounded p-2.5 font-mono focus:border-giallo focus:outline-none">
+                                    <div class="flex justify-between font-mono text-xs" x-show="cashReceivedParts > 0">
+                                        <span class="text-silver-dim">Kembalian:</span>
+                                        <span class="font-bold" :class="cashReceivedParts >= cartTotal ? 'text-emerald-400' : 'text-red-400'"
+                                              x-text="'Rp ' + Math.max(0, cashReceivedParts - cartTotal).toLocaleString('id-ID')"></span>
+                                    </div>
+                                </div>
+                            </template>
 
                             {{-- Summary --}}
                             <div class="pt-3 border-t border-gunmetal space-y-1.5 font-mono text-xs">
@@ -425,6 +637,131 @@
                         </div>
                     </template>
                 </form>
+            </div>
+
+            {{-- 3. CAR SALES CHECKOUT --}}
+            <div x-show="activeTab === 'cars'" class="panel border border-gunmetal bg-carbon p-5 space-y-4">
+                <div class="border-b border-gunmetal/40 pb-3 flex items-center justify-between">
+                    <h3 class="font-heading text-xs uppercase tracking-wider text-giallo">
+                        Kasir Penjualan Mobil
+                    </h3>
+                    <template x-if="selectedCar">
+                        <span class="font-mono text-xs font-bold text-silver-bright" x-text="'#' + selectedCar.code"></span>
+                    </template>
+                </div>
+
+                <template x-if="!selectedCar">
+                    <div class="text-center py-10 text-silver-dim text-xs space-y-2">
+                        <p class="text-2xl">🚗</p>
+                        <p>Pilih salah satu Sales Order mobil dari daftar sebelah kiri untuk memproses pembayaran.</p>
+                    </div>
+                </template>
+
+                <template x-if="selectedCar">
+                    <form :action="'{{ url('admin/pos/car-sales') }}/' + selectedCar.id + '/pay'" method="POST" class="space-y-4">
+                        @csrf
+
+                        {{-- Customer & Car Detail --}}
+                        <div class="bg-steel/20 border border-gunmetal/40 p-3 rounded space-y-1.5 text-xs">
+                            <div class="flex justify-between">
+                                <span class="text-silver-dim">Pelanggan:</span>
+                                <span class="font-bold text-silver-bright" x-text="selectedCar.customer_name"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-silver-dim">Telepon:</span>
+                                <span class="font-mono text-silver-bright" x-text="selectedCar.customer_phone"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-silver-dim">Unit Mobil:</span>
+                                <span class="font-semibold text-giallo" x-text="selectedCar.car_title"></span>
+                            </div>
+                            <template x-if="selectedCar.notes">
+                                <div class="flex justify-between">
+                                    <span class="text-silver-dim">Catatan:</span>
+                                    <span class="text-silver-bright italic" x-text="selectedCar.notes"></span>
+                                </div>
+                            </template>
+                        </div>
+
+                        {{-- Discount Input --}}
+                        <div>
+                            <label class="block text-[11px] uppercase text-silver-dim mb-1 font-heading">Diskon (IDR)</label>
+                            <input type="number"
+                                   name="discount_idr"
+                                   x-model.number="discountCar"
+                                   min="0"
+                                   :max="selectedCar.subtotal"
+                                   placeholder="0"
+                                   class="w-full bg-steel/60 border border-gunmetal text-silver-bright text-xs rounded p-2.5 font-mono focus:border-giallo focus:outline-none">
+                        </div>
+
+                        {{-- Payment Method --}}
+                        <div>
+                            <label class="block text-[11px] uppercase text-silver-dim mb-1 font-heading">Metode Pembayaran</label>
+                            <select name="payment_method"
+                                    x-model="paymentMethodCar"
+                                    required
+                                    class="w-full bg-steel/60 border border-gunmetal text-silver-bright text-xs rounded p-2.5 font-heading uppercase focus:border-giallo focus:outline-none">
+                                <option value="cash">💵 Tunai (Cash)</option>
+                                <option value="card">💳 Kartu Debit / Kredit</option>
+                                <option value="transfer">🏦 Bank Transfer</option>
+                                <option value="ewallet">📱 QRIS / E-Wallet</option>
+                            </select>
+                        </div>
+
+                        {{-- Non-cash payment info --}}
+                        <template x-if="paymentMethodCar !== 'cash'">
+                            <div class="rounded border border-giallo/30 bg-giallo/5 p-3 space-y-2">
+                                <p class="font-heading text-[11px] uppercase tracking-wider text-giallo" x-text="paymentInfo(paymentMethodCar)?.icon + ' ' + paymentInfo(paymentMethodCar)?.title"></p>
+                                <ul class="space-y-1">
+                                    <template x-for="(line, i) in paymentInfo(paymentMethodCar)?.lines ?? []" :key="i">
+                                        <li class="font-mono text-[11px]" :class="line === '---' ? 'border-t border-gunmetal/40 mt-1 pt-1 hidden' : 'text-silver-bright'" x-text="line === '---' ? '' : line"></li>
+                                    </template>
+                                </ul>
+                                <p class="text-[10px] text-silver-dim italic">Konfirmasi pembayaran setelah pelanggan menyelesaikan transaksi.</p>
+                            </div>
+                        </template>
+
+                        {{-- Cash: kembalian --}}
+                        <template x-if="paymentMethodCar === 'cash'">
+                            <div class="rounded border border-gunmetal/40 bg-steel/10 p-3 space-y-2">
+                                <label class="block text-[11px] uppercase text-silver-dim font-heading">Uang Diterima (IDR)</label>
+                                <input type="number"
+                                       x-model.number="cashReceivedCar"
+                                       min="0"
+                                       placeholder="Masukkan nominal uang pelanggan"
+                                       class="w-full bg-steel/60 border border-gunmetal text-silver-bright text-xs rounded p-2.5 font-mono focus:border-giallo focus:outline-none">
+                                <div class="flex justify-between font-mono text-xs" x-show="cashReceivedCar > 0">
+                                    <span class="text-silver-dim">Kembalian:</span>
+                                    <span class="font-bold" :class="cashReceivedCar >= carTotal ? 'text-emerald-400' : 'text-red-400'"
+                                          x-text="'Rp ' + Math.max(0, cashReceivedCar - carTotal).toLocaleString('id-ID')"></span>
+                                </div>
+                            </div>
+                        </template>
+
+                        {{-- Calculations --}}
+                        <div class="pt-3 border-t border-gunmetal space-y-1.5 font-mono text-xs">
+                            <div class="flex justify-between text-silver-dim">
+                                <span>Harga Penawaran:</span>
+                                <span x-text="'Rp ' + Number(selectedCar.subtotal).toLocaleString('id-ID')"></span>
+                            </div>
+                            <div class="flex justify-between text-verde" x-show="discountCar > 0">
+                                <span>Diskon:</span>
+                                <span x-text="'- Rp ' + Number(discountCar).toLocaleString('id-ID')"></span>
+                            </div>
+                            <div class="pt-2 border-t border-gunmetal flex justify-between font-bold text-sm text-giallo">
+                                <span>TOTAL BAYAR:</span>
+                                <span x-text="'Rp ' + Number(carTotal).toLocaleString('id-ID')"></span>
+                            </div>
+                        </div>
+
+                        {{-- Submit --}}
+                        <button type="submit"
+                                class="w-full py-3.5 bg-giallo hover:bg-arancio text-nero font-heading text-xs uppercase font-bold tracking-wider rounded shadow-lg shadow-giallo/20 transition-premium">
+                            ✓ Konfirmasi Pembayaran Mobil
+                        </button>
+                    </form>
+                </template>
             </div>
 
             {{-- Recent Transactions --}}

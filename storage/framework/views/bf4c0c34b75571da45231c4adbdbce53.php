@@ -36,13 +36,16 @@
                             <td class="p-3 text-giallo font-semibold">#OFR-<?php echo e(str_pad($offer->id, 5, '0', STR_PAD_LEFT)); ?></td>
                             <td class="p-3 font-sans text-silver-bright font-medium"><?php echo e($offer->carUnit?->title ?? $offer->carUnit?->brand . ' ' . $offer->carUnit?->model); ?></td>
                             <td class="p-3 font-sans text-silver-dim"><?php echo e($offer->customer?->user?->name ?? 'Guest User'); ?></td>
-                            <td class="p-3 text-right text-silver-bright font-bold">Rp <?php echo e(number_format($offer->offered_price_idr ?? 0, 0, ',', '.')); ?></td>
+                            <td class="p-3 text-right text-silver-bright font-bold">Rp <?php echo e(number_format($offer->amount_idr, 0, ',', '.')); ?></td>
                             <td class="p-3">
+                                <?php
+                                    $st = $offer->status instanceof \App\Enums\OfferStatus ? $offer->status->value : (string)$offer->status;
+                                ?>
                                 <span class="px-2 py-0.5 text-[10px] uppercase rounded font-bold
-                                    <?php if($offer->status === 'accepted'): ?> bg-emerald-950/60 text-emerald-400 border border-emerald-800
-                                    <?php elseif($offer->status === 'rejected'): ?> bg-red-950/60 text-red-400 border border-red-800
+                                    <?php if($st === 'accepted'): ?> bg-emerald-950/60 text-emerald-400 border border-emerald-800
+                                    <?php elseif($st === 'rejected'): ?> bg-red-950/60 text-red-400 border border-red-800
                                     <?php else: ?> bg-amber-950/60 text-amber-400 border border-amber-800 <?php endif; ?>">
-                                    <?php echo e($offer->status); ?>
+                                    <?php echo e($offer->status instanceof \App\Enums\OfferStatus ? $offer->status->label() : ucfirst($st)); ?>
 
                                 </span>
                             </td>

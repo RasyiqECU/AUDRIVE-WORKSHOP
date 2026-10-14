@@ -38,13 +38,16 @@
                             <td class="p-3 text-giallo font-semibold">#OFR-{{ str_pad($offer->id, 5, '0', STR_PAD_LEFT) }}</td>
                             <td class="p-3 font-sans text-silver-bright font-medium">{{ $offer->carUnit?->title ?? $offer->carUnit?->brand . ' ' . $offer->carUnit?->model }}</td>
                             <td class="p-3 font-sans text-silver-dim">{{ $offer->customer?->user?->name ?? 'Guest User' }}</td>
-                            <td class="p-3 text-right text-silver-bright font-bold">Rp {{ number_format($offer->offered_price_idr ?? 0, 0, ',', '.') }}</td>
+                            <td class="p-3 text-right text-silver-bright font-bold">Rp {{ number_format($offer->amount_idr, 0, ',', '.') }}</td>
                             <td class="p-3">
+                                @php
+                                    $st = $offer->status instanceof \App\Enums\OfferStatus ? $offer->status->value : (string)$offer->status;
+                                @endphp
                                 <span class="px-2 py-0.5 text-[10px] uppercase rounded font-bold
-                                    @if($offer->status === 'accepted') bg-emerald-950/60 text-emerald-400 border border-emerald-800
-                                    @elseif($offer->status === 'rejected') bg-red-950/60 text-red-400 border border-red-800
+                                    @if($st === 'accepted') bg-emerald-950/60 text-emerald-400 border border-emerald-800
+                                    @elseif($st === 'rejected') bg-red-950/60 text-red-400 border border-red-800
                                     @else bg-amber-950/60 text-amber-400 border border-amber-800 @endif">
-                                    {{ $offer->status }}
+                                    {{ $offer->status instanceof \App\Enums\OfferStatus ? $offer->status->label() : ucfirst($st) }}
                                 </span>
                             </td>
                             <td class="p-3 text-silver-dim text-[11px]">{{ $offer->created_at->format('d M Y') }}</td>

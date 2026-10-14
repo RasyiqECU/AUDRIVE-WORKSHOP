@@ -30,6 +30,7 @@ class AuthController extends ApiController
             'password' => Hash::make($request->password),
             'role' => 'customer',
             'is_active' => true,
+            'email_verified_at' => now(),
         ]);
 
 

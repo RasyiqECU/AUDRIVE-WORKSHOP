@@ -44,7 +44,7 @@ Route::get('/dashboard', function () {
         'super-admin', 'manager', 'sales', 'cashier', 'inventory', 'mechanic' => redirect()->route('admin.dashboard'),
         default => redirect()->route('customer.dashboard'),
     };
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth'])->name('dashboard');
 
 
 
@@ -60,14 +60,14 @@ Route::middleware('web')->group(function () {
 // Admin Panel Routes
 Route::prefix('admin')
     ->name('admin.')
-    ->middleware(['auth', 'verified', 'role:super-admin|manager|sales|cashier|inventory|mechanic'])
+    ->middleware(['auth', 'role:super-admin|manager|sales|cashier|inventory|mechanic'])
     ->group(base_path('routes/admin.php'));
 
 
 // Customer Portal Routes
 Route::prefix('customer')
     ->name('customer.')
-    ->middleware(['auth', 'verified', 'role:customer'])
+    ->middleware(['auth', 'role:customer'])
     ->group(base_path('routes/customer.php'));
 
 

@@ -36,7 +36,7 @@ class ProfileController extends Controller
 
 
         if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
+            $user->email_verified_at = now();
         }
 
 

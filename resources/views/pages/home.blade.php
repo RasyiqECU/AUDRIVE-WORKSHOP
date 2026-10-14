@@ -145,6 +145,39 @@
     </div>
 </section>
 
+{{-- Featured Spare Parts --}}
+@if(isset($featuredParts) && $featuredParts->count() > 0)
+<section class="container mx-auto px-4 pb-12">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h2 class="font-display text-2xl tracking-wider text-silver-bright">SPARE PART UNGGULAN</h2>
+            <p class="font-heading text-xs text-silver-dim uppercase tracking-wider mt-1">Suku cadang orisinal & performa tinggi</p>
+        </div>
+        <a href="{{ route('parts.index') }}" class="font-heading text-xs text-giallo hover:text-arancio uppercase tracking-wider transition-premium">
+            Lihat Semua Part →
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        @foreach($featuredParts as $part)
+            <div class="panel border border-gunmetal/60 bg-carbon hover:border-giallo/60 p-4 flex flex-col justify-between transition-all group">
+                <div>
+                    <span class="text-[10px] font-mono text-silver-dim block">{{ $part->sku }}</span>
+                    <h4 class="font-heading text-sm font-bold text-silver-bright mt-1 group-hover:text-giallo transition">{{ $part->name }}</h4>
+                    <p class="text-[11px] text-silver-dim mt-0.5">{{ $part->category?->name }} • {{ $part->brand }}</p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-gunmetal/40 flex items-center justify-between">
+                    <span class="font-mono text-sm text-giallo font-bold">{{ $part->formatted_price }}</span>
+                    <a href="{{ route('parts.show', $part->slug) }}" class="px-2.5 py-1 bg-steel hover:bg-giallo hover:text-nero text-silver-bright text-[10px] font-heading uppercase font-bold rounded transition">
+                        Detail
+                    </a>
+                </div>
+            </div>
+        @endforeach
+    </div>
+</section>
+@endif
+
 {{-- Promo --}}
 @if($promotions->count() > 0)
 <section class="container mx-auto px-4 pb-12">

@@ -7,11 +7,13 @@ declare(strict_types=1);
 namespace App\Services;
 
 
+use App\Enums\CarUnitStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\SalesOrderStatus;
 use App\Enums\SalesOrderType;
 use App\Enums\StockMovementType;
 use App\Enums\WorkOrderStatus;
+use App\Models\CarUnit;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Payment;
@@ -265,6 +267,79 @@ class PosService
 
             if ($workOrder->serviceBooking) {
                 $workOrder->serviceBooking->update(['status' => 'completed']);
+            }
+
+            return $salesOrder;
+        });
+    }
+
+    public function payCarSalesOrder(
+        SalesOrder $salesOrder,
+        int $discountIdr,
+        string $paymentMethod,
+        int $userId
+    ): SalesOrder {
+        return DB::transaction(function () use ($salesOrder, $discountIdr, $paymentMethod, $userId) {
+            $salesOrder->load(['items', 'customer']);
+
+            if ($salesOrder->status === SalesOrderStatus::Paid) {
+                return $salesOrder;
+            }
+
+            $subtotal = $salesOrder->subtotal_idr;
+            $discount = min($discountIdr, $subtotal);
+            $total = max(0, $subtotal - $discount);
+
+            $salesOrder->update([
+                'status' => SalesOrderStatus::Paid,
+                'discount_idr' => $discount,
+                'total_idr' => $total,
+                'paid_idr' => $total,
+                'payment_status' => PaymentStatus::Success,
+                'notes' => trim(($salesOrder->notes ?? '') . " | Lunas via " . strtoupper($paymentMethod)),
+            ]);
+
+            // Update status unit mobil ke Sold (Terjual)
+            foreach ($salesOrder->items as $item) {
+                if ($item->car_unit_id) {
+                    CarUnit::where('id', $item->car_unit_id)->update(['status' => CarUnitStatus::Sold]);
+                }
+            }
+
+            // Buat Payment record
+            Payment::create([
+                'paymentable_type' => SalesOrder::class,
+                'paymentable_id' => $salesOrder->id,
+                'method' => $paymentMethod,
+                'status' => PaymentStatus::Success,
+                'amount_idr' => $total,
+                'reference' => 'CAR-' . strtoupper(Str::random(10)),
+                'paid_at' => now(),
+            ]);
+
+            // Buat Invoice record
+            Invoice::create([
+                'invoiceable_type' => SalesOrder::class,
+                'invoiceable_id' => $salesOrder->id,
+                'number' => 'INV-CAR-' . date('Ymd') . '-' . strtoupper(Str::random(6)),
+                'status' => 'paid',
+                'due_at' => now(),
+                'total_idr' => $total,
+            ]);
+
+            // Tambah poin loyalitas untuk pembelian mobil jika ada customer
+            if ($salesOrder->customer) {
+                $points = (int) ($total / 50000);
+                if ($points > 0) {
+                    $salesOrder->customer->increment('loyalty_points', $points);
+                    $salesOrder->customer->loyaltyTransactions()->create([
+                        'type' => 'earning',
+                        'points' => $points,
+                        'reference_type' => SalesOrder::class,
+                        'reference_id' => $salesOrder->id,
+                        'description' => "Poin dari transaksi pembelian mobil #{$salesOrder->code}",
+                    ]);
+                }
             }
 
             return $salesOrder;

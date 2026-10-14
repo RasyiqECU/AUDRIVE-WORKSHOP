@@ -54,7 +54,8 @@ class CartController extends ApiController
         $part = SparePart::findOrFail($request->spare_part_id);
 
 
-        if ($part->status !== 'active') {
+        $statusValue = $part->status instanceof \App\Enums\SparePartStatus ? $part->status->value : (string) $part->status;
+        if ($statusValue !== 'active') {
             return $this->errorResponse('Part is not available');
         }
 
@@ -63,7 +64,7 @@ class CartController extends ApiController
 
 
         try {
-            $item = $this->cartService->addItem($cart, $part, $request->qty);
+            $item = $this->cartService->addItem($cart, $part, (int) $request->qty);
             $cart->load('items.sparePart');
 
 
@@ -86,7 +87,7 @@ class CartController extends ApiController
 
 
         try {
-            $this->cartService->updateItemQty($item, $request->qty);
+            $this->cartService->updateItemQty($item, (int) $request->qty);
             $item->cart->load('items.sparePart');
 
 
