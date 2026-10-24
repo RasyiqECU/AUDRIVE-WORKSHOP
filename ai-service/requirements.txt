@@ -1,0 +1,32 @@
+# ─── Core API ────────────────────────────────────────────────────────────────
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.9
+
+# ─── Audio Processing ─────────────────────────────────────────────────────────
+librosa==0.10.2
+numpy==1.26.4
+soundfile==0.12.1
+
+# ─── ML / Model Loading ──────────────────────────────────────────────────────
+scikit-learn==1.5.2       # untuk load .pkl (scaler/encoder)
+joblib==1.4.2
+
+# Uncomment sesuai framework model Anda:
+# torch==2.3.1             # PyTorch (.pth)
+# torchaudio==2.3.1
+# tensorflow==2.17.0       # TensorFlow/Keras (.keras / .h5)
+onnxruntime==1.19.2       # ONNX Runtime (.onnx) — rekomendasi untuk produksi
+
+# ─── Model Conversion (jalankan convert_model.py) ────────────────────────────
+# torch==2.3.1             # butuh untuk export .pth → .onnx
+# onnx==1.16.1
+# onnx-tf==1.10.0          # untuk .onnx → .tflite via TF
+# tensorflow==2.17.0
+
+# ─── Utilities ────────────────────────────────────────────────────────────────
+pydantic==2.8.2
+httpx==0.27.2
+python-dotenv==1.0.1
+Pillow==10.4.0             # untuk generate spectrogram image
+matplotlib==3.9.2          # untuk visualisasi spectrogram
