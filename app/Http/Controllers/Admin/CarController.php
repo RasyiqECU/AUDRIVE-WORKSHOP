@@ -11,10 +11,12 @@ use App\Enums\CarUnitStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreCarUnitRequest;
 use App\Http\Requests\Admin\UpdateCarUnitRequest;
+use App\Models\CarPhoto;
 use App\Models\CarUnit;
 use App\Services\CarUnitService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 
@@ -74,7 +76,7 @@ class CarController extends Controller
     public function edit(CarUnit $car): View
     {
         $this->authorize('update', $car);
-
+        $car->load('photos');
 
         return view('admin.cars.edit', compact('car'));
     }
@@ -155,6 +157,78 @@ class CarController extends Controller
         return redirect()
             ->route('admin.cars.show', $car)
             ->with('success', 'Unit dihapus dari featured.');
+    }
+
+    public function uploadPhotos(Request $request, CarUnit $car): RedirectResponse
+    {
+        $this->authorize('update', $car);
+
+        $request->validate([
+            'photos' => ['required', 'array', 'min:1'],
+            'photos.*' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:10240'],
+        ], [
+            'photos.required' => 'Pilih minimal satu file foto.',
+            'photos.*.image' => 'File harus berupa gambar.',
+            'photos.*.mimes' => 'Format foto harus JPEG, PNG, JPG, atau WEBP.',
+            'photos.*.max' => 'Ukuran foto maksimal 10 MB per file.',
+        ]);
+
+        $this->carUnitService->uploadPhotos($car, $request->file('photos'), false);
+
+        return back()->with('success', 'Foto baru berhasil diunggah.');
+    }
+
+    public function deletePhoto(CarUnit $car, CarPhoto $photo): RedirectResponse
+    {
+        $this->authorize('update', $car);
+
+        if ($photo->car_unit_id !== $car->id) {
+            abort(404, 'Foto tidak sesuai dengan unit mobil ini.');
+        }
+
+        $this->carUnitService->deletePhoto($photo);
+
+        return back()->with('success', 'Foto berhasil dihapus.');
+    }
+
+    public function setPrimaryPhoto(CarUnit $car, CarPhoto $photo): RedirectResponse
+    {
+        $this->authorize('update', $car);
+
+        if ($photo->car_unit_id !== $car->id) {
+            abort(404, 'Foto tidak sesuai dengan unit mobil ini.');
+        }
+
+        $this->carUnitService->setPrimaryPhoto($photo);
+
+        return back()->with('success', 'Foto utama berhasil diperbarui.');
+    }
+
+    public function replacePhoto(Request $request, CarUnit $car, CarPhoto $photo): RedirectResponse
+    {
+        $this->authorize('update', $car);
+
+        if ($photo->car_unit_id !== $car->id) {
+            abort(404, 'Foto tidak sesuai dengan unit mobil ini.');
+        }
+
+        $request->validate([
+            'photo' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:10240'],
+        ], [
+            'photo.required' => 'Pilih file foto pengganti.',
+            'photo.image' => 'File harus berupa gambar.',
+            'photo.mimes' => 'Format foto harus JPEG, PNG, JPG, atau WEBP.',
+            'photo.max' => 'Ukuran foto maksimal 10 MB.',
+        ]);
+
+        // Hapus file lama dari disk
+        Storage::disk('public')->delete($photo->path);
+
+        // Upload file baru
+        $newPath = $request->file('photo')->store('cars/' . $car->id, 'public');
+        $photo->update(['path' => $newPath]);
+
+        return back()->with('success', 'Foto berhasil diganti dengan yang baru.');
     }
 }
 

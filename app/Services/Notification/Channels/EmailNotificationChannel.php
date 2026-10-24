@@ -24,14 +24,12 @@ class EmailNotificationChannel implements NotificationChannelContract
             $emailClass = $this->getEmailClass($type);
 
 
-            if (!$emailClass) {
-                Log::warning("Email notification class not found for type: {$type}");
+            if (!$emailClass || !class_exists($emailClass)) {
+                Log::info("Email mailable class not found or not defined for type: {$type}");
                 return false;
             }
 
-
             Mail::to($user->email)->send(new $emailClass($user, $data));
-
 
             Log::info("Email notification sent", [
                 'user_id' => $user->id,
@@ -39,11 +37,9 @@ class EmailNotificationChannel implements NotificationChannelContract
                 'email' => $user->email,
             ]);
 
-
             return true;
 
-
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error("Email notification failed", [
                 'user_id' => $user->id,
                 'type' => $type,

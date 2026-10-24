@@ -5,11 +5,12 @@
             
             <div>
                 <div class="flex items-center gap-3 mb-4">
-                    <img src="<?php echo e(asset('images/AUDrive-logo.png')); ?>" alt="AUDrive Logo" class="w-10 h-10 object-contain drop-shadow-[0_0_8px_rgba(245,196,0,0.3)]" />
-                    <h4 class="font-display text-sm text-giallo tracking-wider font-bold">AUDRIVE</h4>
+                    <img src="<?php echo e(\App\Services\SettingService::getLogo()); ?>" alt="<?php echo e(\App\Services\SettingService::getName()); ?> Logo" class="w-10 h-10 object-contain drop-shadow-[0_0_8px_rgba(245,196,0,0.3)]" />
+                    <h4 class="font-display text-sm text-giallo tracking-wider font-bold"><?php echo e(\App\Services\SettingService::getName()); ?></h4>
                 </div>
                 <p class="font-body text-xs text-silver-dim leading-relaxed">
-                    Dealer mobil premium dengan layanan bengkel berstandar tinggi dan teknologi AI terdepan untuk diagnosis suara mesin.
+                    <?php echo e(\App\Services\SettingService::getDescription()); ?>
+
                 </p>
             </div>
 
@@ -66,7 +67,7 @@
         
         <div class="mt-10 pt-6 border-t border-gunmetal/50 flex flex-col md:flex-row items-center justify-between gap-4">
             <p class="font-mono text-[10px] text-silver-dim uppercase tracking-wider">
-                &copy; <?php echo e(date('Y')); ?> AUDrive. All rights reserved.
+                &copy; <?php echo e(date('Y')); ?> <?php echo e(\App\Services\SettingService::getName()); ?>. All rights reserved.
             </p>
             <div class="flex items-center gap-4">
                 <a href="#" class="font-mono text-[10px] text-silver-dim hover:text-giallo uppercase tracking-wider transition-premium">Privacy Policy</a>

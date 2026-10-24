@@ -16,7 +16,7 @@ class TicketController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
-        $customer = $user->customer ?? Customer::firstOrCreate(['user_id' => $user->id]);
+        $customer = $user->customer ?? $user->getOrCreateCustomerProfile();
         $tickets = $customer->supportTickets()->latest()->paginate(10);
 
         return view('customer.tickets.index', compact('tickets'));
@@ -36,7 +36,7 @@ class TicketController extends Controller
         ]);
 
         $user = $request->user();
-        $customer = $user->customer ?? Customer::firstOrCreate(['user_id' => $user->id]);
+        $customer = $user->customer ?? $user->getOrCreateCustomerProfile();
 
         $customer->supportTickets()->create([
             'subject' => $validated['subject'],
@@ -69,9 +69,19 @@ class TicketController extends Controller
             abort(403);
         }
 
-        $request->validate(['message' => 'required|string|max:1000']);
+        $request->validate(['message' => 'required|string|max:2000']);
 
-        // Append reply logic if needed or notify
+        $ticket->messages()->create([
+            'user_id' => $user->id,
+            'sender_type' => 'customer',
+            'message' => $request->message,
+        ]);
+
+        // Jika status resolved/closed, buka kembali jadi in_progress
+        if (in_array($ticket->status->value, ['resolved', 'closed'])) {
+            $ticket->update(['status' => 'in_progress']);
+        }
+
         return back()->with('success', 'Balasan berhasil dikirim.');
     }
 }

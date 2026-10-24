@@ -6,10 +6,10 @@
     {{-- Logo --}}
     <div class="p-6 border-b border-gunmetal">
         <div class="flex items-center gap-3">
-            <img src="{{ asset('images/AUDrive-logo.png') }}" alt="AUDrive Logo" class="w-10 h-10 object-contain drop-shadow-[0_0_8px_rgba(245,196,0,0.3)]" />
+            <img src="{{ \App\Services\SettingService::getLogo() }}" alt="{{ \App\Services\SettingService::getName() }} Logo" class="w-10 h-10 object-contain drop-shadow-[0_0_8px_rgba(245,196,0,0.3)]" />
             <div>
-                <h1 class="font-display text-giallo text-lg tracking-wider font-bold">AUDRIVE</h1>
-                <p class="font-mono text-[10px] text-silver-dim tracking-widest uppercase">Premium Dealer</p>
+                <h1 class="font-display text-giallo text-lg tracking-wider font-bold">{{ \App\Services\SettingService::getName() }}</h1>
+                <p class="font-mono text-[10px] text-silver-dim tracking-widest uppercase">{{ \App\Services\SettingService::getTagline() }}</p>
             </div>
         </div>
     </div>

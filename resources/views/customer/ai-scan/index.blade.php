@@ -71,7 +71,7 @@
                                 </td>
                                 <td class="px-4 py-3 text-center">
                                     @if($scan->confidence)
-                                        <span class="font-mono text-xs {{ scan->confidence>=0.8?'text-verde':(scan->confidence >= 0.6 ? 'text-giallo' : 'text-danger') }}">
+                                        <span class="font-mono text-xs {{ $scan->confidence >= 0.8 ? 'text-verde' : ($scan->confidence >= 0.6 ? 'text-giallo' : 'text-danger') }}">
                                             {{ round($scan->confidence * 100) }}%
                                         </span>
                                     @else

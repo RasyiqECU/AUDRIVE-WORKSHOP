@@ -24,10 +24,16 @@ class AiScanController extends Controller
      */
     public function create(Request $request): View
     {
-        $vehicles = CustomerVehicle::where('customer_id', $request->user()->customer->id)->get();
+        $user = $request->user();
+        $customer = $user->customer ?? $user->getOrCreateCustomerProfile();
+        $vehicles = CustomerVehicle::where('customer_id', $customer->id)->get();
+        $recentScans = AiScan::where('customer_id', $customer->id)
+            ->with('vehicle')
+            ->latest()
+            ->take(5)
+            ->get();
 
-
-        return view('customer.ai-scan.create', compact('vehicles'));
+        return view('customer.ai-scan.create', compact('vehicles', 'recentScans'));
     }
 
 
@@ -100,8 +106,7 @@ class AiScanController extends Controller
         }
 
 
-        $aiScan->load('vehicle');
-
+        $aiScan->load(['vehicle', 'reviewer']);
 
         return view('customer.ai-scan.show', compact('aiScan'));
     }

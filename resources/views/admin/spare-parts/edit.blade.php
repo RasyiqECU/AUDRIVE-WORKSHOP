@@ -27,7 +27,7 @@
     </div>
 
     {{-- Form --}}
-    <form action="{{ route('admin.spare-parts.update', $sparePart) }}" method="POST" class="panel border border-gunmetal/70 bg-carbon p-6 space-y-4">
+    <form action="{{ route('admin.spare-parts.update', $sparePart) }}" method="POST" enctype="multipart/form-data" class="panel border border-gunmetal/70 bg-carbon p-6 space-y-4">
         @csrf
         @method('PUT')
 
@@ -100,7 +100,81 @@
                 <textarea name="description" id="description" rows="3" class="w-full bg-steel/60 border border-gunmetal text-silver-bright text-xs rounded p-2.5 focus:border-giallo focus:outline-none">{{ old('description', $sparePart->description) }}</textarea>
                 @error('description') <p class="text-red-400 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
+
+            {{-- Image Management --}}
+            <div class="md:col-span-2">
+                <label class="block font-heading text-xs uppercase tracking-wider text-silver-bright mb-1">
+                    Foto / Gambar Suku Cadang
+                </label>
+                <div class="bg-steel/20 border border-gunmetal/60 rounded p-4 space-y-4">
+                    <div class="flex flex-col sm:flex-row gap-4 items-start">
+                        {{-- Current Image Preview / Placeholder --}}
+                        <div class="relative w-32 h-32 rounded border border-gunmetal bg-carbon flex items-center justify-center overflow-hidden flex-shrink-0">
+                            @if($sparePart->image)
+                                <img id="image-current" src="{{ asset('storage/' . $sparePart->image) }}" alt="{{ $sparePart->name }}" class="w-full h-full object-cover">
+                                <img id="image-new-preview" src="#" alt="New Preview" class="w-full h-full object-cover hidden">
+                            @else
+                                <span id="placeholder-icon" class="text-4xl text-gunmetal">⚙️</span>
+                                <img id="image-new-preview" src="#" alt="New Preview" class="w-full h-full object-cover hidden">
+                            @endif
+                        </div>
+
+                        {{-- Action & Upload --}}
+                        <div class="flex-1 space-y-3">
+                            <div>
+                                <label for="image" class="block text-xs font-semibold text-silver-bright mb-1">
+                                    {{ $sparePart->image ? 'Ganti dengan Gambar Baru' : 'Unggah Gambar Suku Cadang' }}
+                                </label>
+                                <input type="file" name="image" id="image" accept="image/jpeg,image/png,image/jpg,image/webp"
+                                    onchange="previewEditImage(this)"
+                                    class="block w-full text-xs text-silver-dim file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-xs file:font-heading file:uppercase file:tracking-wider file:bg-steel file:text-silver-bright hover:file:bg-giallo hover:file:text-carbon file:transition-premium cursor-pointer">
+                                <p class="text-[11px] text-silver-dim mt-1">
+                                    Format: JPEG, PNG, JPG, WEBP. Maks: 8 MB.
+                                </p>
+                                @error('image') <p class="text-red-400 text-xs mt-1">{{ $message }}</p> @enderror
+                            </div>
+
+                            @if($sparePart->image)
+                                <div class="pt-2 border-t border-gunmetal/40 flex flex-wrap items-center gap-3">
+                                    <button type="button" onclick="if(confirm('Hapus gambar ini sekarang?')) document.getElementById('delete-image-form').submit();"
+                                        class="px-3 py-1.5 bg-red-950/60 hover:bg-red-900 border border-red-700/60 text-red-300 font-heading text-[11px] uppercase tracking-wider rounded transition-premium flex items-center gap-1.5">
+                                        🗑️ Hapus Gambar Sekarang
+                                    </button>
+                                    <label class="inline-flex items-center gap-2 text-xs text-silver-dim cursor-pointer hover:text-silver-bright">
+                                        <input type="checkbox" name="remove_image" value="1" class="rounded border-gunmetal bg-steel text-giallo focus:ring-0">
+                                        <span>Centang untuk menghapus gambar saat formulir ini disimpan</span>
+                                    </label>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <script>
+            function previewEditImage(input) {
+                const newPreview = document.getElementById('image-new-preview');
+                const currentImg = document.getElementById('image-current');
+                const placeholder = document.getElementById('placeholder-icon');
+
+                if (input.files && input.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        newPreview.src = e.target.result;
+                        newPreview.classList.remove('hidden');
+                        if (currentImg) currentImg.classList.add('hidden');
+                        if (placeholder) placeholder.classList.add('hidden');
+                    }
+                    reader.readAsDataURL(input.files[0]);
+                } else {
+                    newPreview.src = '#';
+                    newPreview.classList.add('hidden');
+                    if (currentImg) currentImg.classList.remove('hidden');
+                    if (placeholder) placeholder.classList.remove('hidden');
+                }
+            }
+        </script>
 
         <div class="flex items-center justify-between pt-4 border-t border-gunmetal">
             <button type="button" onclick="if(confirm('Yakin ingin menghapus spare part ini?')) document.getElementById('delete-part-form').submit();" class="text-red-400 hover:text-red-300 text-xs font-heading uppercase">
@@ -121,5 +195,12 @@
         @csrf
         @method('DELETE')
     </form>
+
+    @if($sparePart->image)
+        <form id="delete-image-form" action="{{ route('admin.spare-parts.image.destroy', $sparePart) }}" method="POST" class="hidden">
+            @csrf
+            @method('DELETE')
+        </form>
+    @endif
 </div>
 @endsection

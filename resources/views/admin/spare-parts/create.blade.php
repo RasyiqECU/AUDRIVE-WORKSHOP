@@ -27,7 +27,7 @@
     </div>
 
     {{-- Form --}}
-    <form action="{{ route('admin.spare-parts.store') }}" method="POST" class="panel border border-gunmetal/70 bg-carbon p-6 space-y-4">
+    <form action="{{ route('admin.spare-parts.store') }}" method="POST" enctype="multipart/form-data" class="panel border border-gunmetal/70 bg-carbon p-6 space-y-4">
         @csrf
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -99,7 +99,48 @@
                 <textarea name="description" id="description" rows="3" placeholder="Informasi spesifikasi suku cadang, kompatibilitas, atau instruksi penyimpanan..." class="w-full bg-steel/60 border border-gunmetal text-silver-bright text-xs rounded p-2.5 focus:border-giallo focus:outline-none">{{ old('description') }}</textarea>
                 @error('description') <p class="text-red-400 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
+
+            <div class="md:col-span-2">
+                <label for="image" class="block font-heading text-xs uppercase tracking-wider text-silver-bright mb-1">
+                    Foto / Gambar Spare Part
+                </label>
+                <div class="flex flex-col sm:flex-row gap-4 items-start bg-steel/20 border border-gunmetal/60 rounded p-4">
+                    <div id="image-preview-container" class="w-28 h-28 rounded border border-gunmetal bg-carbon flex items-center justify-center overflow-hidden flex-shrink-0 text-gunmetal">
+                        <span id="preview-placeholder" class="text-3xl">⚙️</span>
+                        <img id="image-preview" src="#" alt="Preview" class="w-full h-full object-cover hidden">
+                    </div>
+                    <div class="flex-1 space-y-2">
+                        <input type="file" name="image" id="image" accept="image/jpeg,image/png,image/jpg,image/webp"
+                            onchange="previewSparePartImage(this)"
+                            class="block w-full text-xs text-silver-dim file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-xs file:font-heading file:uppercase file:tracking-wider file:bg-steel file:text-silver-bright hover:file:bg-giallo hover:file:text-carbon file:transition-premium cursor-pointer">
+                        <p class="text-[11px] text-silver-dim">
+                            Format yang didukung: JPEG, PNG, JPG, WEBP. Maksimal 8 MB. Foto akan tampil di etalase katalog suku cadang AUDrive.
+                        </p>
+                        @error('image') <p class="text-red-400 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <script>
+            function previewSparePartImage(input) {
+                const preview = document.getElementById('image-preview');
+                const placeholder = document.getElementById('preview-placeholder');
+                if (input.files && input.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        preview.src = e.target.result;
+                        preview.classList.remove('hidden');
+                        placeholder.classList.add('hidden');
+                    }
+                    reader.readAsDataURL(input.files[0]);
+                } else {
+                    preview.src = '#';
+                    preview.classList.add('hidden');
+                    placeholder.classList.remove('hidden');
+                }
+            }
+        </script>
 
         <div class="flex items-center justify-end gap-3 pt-4 border-t border-gunmetal">
             <a href="{{ route('admin.spare-parts.index') }}" class="px-4 py-2 border border-gunmetal text-silver-dim hover:text-silver-bright text-xs font-heading uppercase rounded">

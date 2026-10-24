@@ -66,8 +66,8 @@
                             <td class="py-3.5 px-4">
                                 <div class="flex items-center gap-3">
                                     <div class="w-12 h-10 bg-nero border border-gunmetal overflow-hidden rounded-sm flex items-center justify-center shrink-0">
-                                        @if($car->primaryPhoto)
-                                            <img src="{{ asset('storage/' . $car->primaryPhoto->photo_path) }}" alt="{{ $car->model }}" class="w-full h-full object-cover">
+                                        @if($car->primaryPhoto && $car->primaryPhoto->path)
+                                            <img src="{{ asset('storage/' . $car->primaryPhoto->path) }}" alt="{{ $car->model }}" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'text-lg\'>🏎</span>';">
                                         @else
                                             <span class="text-lg">🏎</span>
                                         @endif

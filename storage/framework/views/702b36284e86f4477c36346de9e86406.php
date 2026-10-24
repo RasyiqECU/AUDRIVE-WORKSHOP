@@ -5,7 +5,7 @@
 
 <section class="relative w-full h-screen min-h-[650px] overflow-hidden flex items-center justify-center">
     
-    <img src="<?php echo e(asset('images/marketplace.gif')); ?>"
+    <img src="<?php echo e(\App\Services\SettingService::getMarketplaceBackground()); ?>"
          alt="AUDrive Marketplace Supercar Showroom"
          class="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none z-0" />
 

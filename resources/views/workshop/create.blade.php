@@ -37,9 +37,12 @@
                 @else
                     <select name="customer_vehicle_id" id="customer_vehicle_id" required class="w-full bg-nero border border-white/15 rounded px-3 py-2.5 text-sm text-silver-bright focus:border-giallo focus:outline-none">
                         <option value="">-- Pilih Kendaraan --</option>
+                        @php
+                            $selectedVehicleId = old('customer_vehicle_id', request('customer_vehicle_id', request('vehicle_id')));
+                        @endphp
                         @foreach($vehicles as $vehicle)
-                            <option value="{{ $vehicle->id }}" {{ old('customer_vehicle_id') == $vehicle->id ? 'selected' : '' }}>
-                                {{ $vehicle->license_plate }} — {{ $vehicle->brand }} {{ $vehicle->model }} ({{ $vehicle->year }})
+                            <option value="{{ $vehicle->id }}" {{ (string)$selectedVehicleId === (string)$vehicle->id ? 'selected' : '' }}>
+                                {{ $vehicle->plate_number ?? $vehicle->license_plate ?? 'Tanpa Plat' }} — {{ $vehicle->brand }} {{ $vehicle->model }} ({{ $vehicle->year }})
                             </option>
                         @endforeach
                     </select>

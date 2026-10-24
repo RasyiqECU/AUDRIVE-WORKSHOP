@@ -42,6 +42,11 @@ class SparePart extends Model
         ];
     }
 
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image ? asset('storage/' . $this->image) : null;
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(SparePartCategory::class, 'category_id');

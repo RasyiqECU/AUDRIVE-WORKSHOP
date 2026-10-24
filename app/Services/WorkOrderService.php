@@ -13,15 +13,18 @@ use App\Models\SparePart;
 use App\Models\StockMovement;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderItem;
+use App\Services\Notification\NotificationService;
 use Illuminate\Support\Facades\DB;
 
 
 class WorkOrderService
 {
     public function __construct(
-        protected ?AuditService $auditService = null
+        protected ?AuditService $auditService = null,
+        protected ?NotificationService $notificationService = null
     ) {
         $this->auditService = $auditService ?? app(AuditService::class);
+        $this->notificationService = $notificationService ?? app(NotificationService::class);
     }
 
     public function updateStatus(WorkOrder $workOrder, WorkOrderStatus $status): WorkOrder
@@ -29,16 +32,13 @@ class WorkOrderService
         // Validasi transisi status
         $this->validateStatusTransition($workOrder->status, $status);
 
-
         $oldStatus = $workOrder->status;
         $workOrder->update(['status' => $status]);
-
 
         // Jika status berubah menjadi completed, update timestamp
         if ($status === WorkOrderStatus::Completed) {
             $workOrder->update(['completed_at' => now()]);
         }
-
 
         // Log perubahan status
         $this->auditService->log(
@@ -51,6 +51,74 @@ class WorkOrderService
             description: "Work Order #{$workOrder->code} status changed from {$oldStatus->value} to {$status->value}"
         );
 
+        // Notifikasi ke Customer & Role Terkait
+        $customerUser = $workOrder->vehicle?->customer?->user ?? $workOrder->serviceBooking?->customer?->user;
+        $vehicleName = $workOrder->vehicle ? ($workOrder->vehicle->brand . ' ' . $workOrder->vehicle->model . ' (' . $workOrder->vehicle->plate_number . ')') : 'Kendaraan Pelanggan';
+
+        if ($status === WorkOrderStatus::Completed) {
+            // Notifikasi ke Customer: Perbaikan Selesai
+            if ($customerUser) {
+                $this->notificationService->send($customerUser, 'repair_completed', [
+                    'title'           => "Perbaikan Mobil Selesai: {$vehicleName}",
+                    'message'         => "Perbaikan mobil {$vehicleName} (WO #{$workOrder->code}) telah SELESAI dan siap diambil di workshop AUDrive.",
+                    'vehicle'         => $vehicleName,
+                    'work_order_code' => $workOrder->code,
+                    'action_url'      => route('workshop.tracking.show', $workOrder->id),
+                ]);
+            }
+
+            // Notifikasi KHUSUS ke Kasir (Cashier): Tagihan Siap Diproses di POS
+            $this->notificationService->notifyRoles(['cashier'], 'repair_completed', [
+                'title'           => "Tagihan Siap Diproses (Kasir): WO #{$workOrder->code}",
+                'message'         => "Pengerjaan servis WO #{$workOrder->code} ({$vehicleName}) telah SELESAI dikerjakan teknisi. Total tagihan: Rp " . number_format($workOrder->total_idr, 0, ',', '.') . ". Silakan proses pembayaran di kasir.",
+                'vehicle'         => $vehicleName,
+                'work_order_code' => $workOrder->code,
+                'amount'          => $workOrder->total_idr,
+                'action_url'      => route('admin.pos.index', ['work_order_id' => $workOrder->id]),
+            ]);
+
+            // Notifikasi ke Super Admin & Manager
+            $this->notificationService->notifyRoles(['super-admin', 'manager'], 'repair_completed', [
+                'title'           => "Work Order Selesai: #{$workOrder->code}",
+                'message'         => "Pengerjaan repair WO #{$workOrder->code} ({$vehicleName}) telah selesai dikerjakan teknisi. Total billing: Rp " . number_format($workOrder->total_idr, 0, ',', '.'),
+                'vehicle'         => $vehicleName,
+                'work_order_code' => $workOrder->code,
+                'amount'          => $workOrder->total_idr,
+                'action_url'      => route('admin.work-orders.show', $workOrder->id),
+            ]);
+        } elseif ($status === WorkOrderStatus::Delivered) {
+            if ($customerUser) {
+                $this->notificationService->send($customerUser, 'work_order_delivered', [
+                    'title'           => "Kendaraan Telah Diserahkan: {$vehicleName}",
+                    'message'         => "Kendaraan {$vehicleName} (WO #{$workOrder->code}) telah resmi diserahkan. Terima kasih telah mempercayakan perawatan kendaraan Anda kepada AUDrive.",
+                    'vehicle'         => $vehicleName,
+                    'work_order_code' => $workOrder->code,
+                    'action_url'      => route('workshop.tracking.show', $workOrder->id),
+                ]);
+            }
+
+            // Notifikasi ke Mekanik yang bertugas
+            if ($workOrder->mechanic) {
+                $this->notificationService->send($workOrder->mechanic, 'work_order_delivered', [
+                    'title'           => "Unit WO #{$workOrder->code} Telah Lunas & Diserahkan",
+                    'message'         => "Kendaraan {$vehicleName} (WO #{$workOrder->code}) telah lunas dibayar di Kasir dan resmi diserahterimakan kepada pelanggan.",
+                    'vehicle'         => $vehicleName,
+                    'work_order_code' => $workOrder->code,
+                    'action_url'      => route('admin.work-orders.show', $workOrder->id),
+                ]);
+            }
+        } elseif ($status === WorkOrderStatus::InProgress) {
+            if ($customerUser) {
+                $this->notificationService->send($customerUser, 'work_order_status_changed', [
+                    'title'           => "Servis Sedang Dikerjakan: {$vehicleName}",
+                    'message'         => "Teknisi spesialis AUDrive telah mulai mengerjakan perbaikan pada kendaraan {$vehicleName} (WO #{$workOrder->code}).",
+                    'vehicle'         => $vehicleName,
+                    'work_order_code' => $workOrder->code,
+                    'status'          => 'Sedang Dikerjakan',
+                    'action_url'      => route('workshop.tracking.show', $workOrder->id),
+                ]);
+            }
+        }
 
         return $workOrder;
     }
@@ -221,7 +289,7 @@ class WorkOrderService
         $transitions = [
             WorkOrderStatus::Booking->value => ['queued', 'in_progress', 'cancelled'],
             WorkOrderStatus::Queued->value => ['in_progress', 'cancelled'],
-            WorkOrderStatus::InProgress->value => ['quality_control', 'cancelled'],
+            WorkOrderStatus::InProgress->value => ['quality_control', 'completed', 'cancelled'],
             WorkOrderStatus::QualityControl->value => ['completed', 'in_progress'],
             WorkOrderStatus::Completed->value => ['delivered'],
             WorkOrderStatus::Delivered->value => [],

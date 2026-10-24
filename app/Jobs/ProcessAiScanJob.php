@@ -1,11 +1,12 @@
 <?php
 
+declare(strict_types=1);
 
 namespace App\Jobs;
 
-
+use App\Enums\AiScanStatus;
 use App\Models\AiScan;
-use App\Services\Ai\AiScanServiceManager;
+use App\Services\AiScanService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -18,89 +19,48 @@ class ProcessAiScanJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-
-    /**
-     * The number of times the job may be attempted.
-     */
+    /** Jumlah percobaan ulang saat gagal. */
     public int $tries = 3;
 
+    /** Timeout per attempt (detik) — harus > AI service timeout. */
+    public int $timeout = 120;
+
+    /** Backoff (detik) antar retry: 10s, 30s, 60s */
+    public array $backoff = [10, 30, 60];
+
+    public function __construct(public readonly AiScan $scan) {}
 
     /**
-     * The number of seconds the job can run before timing out.
+     * Proses scan audio melalui Python AI service.
      */
-    public int $timeout = 30;
-
-
-    /**
-     * Create a new job instance.
-     */
-    public function __construct(
-        public AiScan $scan
-    ) {}
-
-
-    /**
-     * Execute the job.
-     */
-    public function handle(AiScanServiceManager $manager): void
+    public function handle(AiScanService $service): void
     {
-        Log::info('Processing AI scan', ['scan_id' => $this->scan->id]);
+        Log::info("ProcessAiScanJob: mulai", ['scan_id' => $this->scan->id]);
 
+        $service->process($this->scan);
 
-        try {
-            $service = $manager->driver();
-            $service->processScan($this->scan);
-
-
-            Log::info('AI scan processed successfully', [
-                'scan_id' => $this->scan->id,
-                'status' => $this->scan->status,
-            ]);
-
-
-        } catch (\Exception $e) {
-            Log::error('Failed to process AI scan', [
-                'scan_id' => $this->scan->id,
-                'error' => $e->getMessage(),
-            ]);
-
-
-            // Mark as failed for manual review
-            $this->scan->update([
-                'status' => 'failed',
-                'recommendations' => array_merge(
-                    $this->scan->recommendations ?? [],
-                    ['Processing failed: ' . $e->getMessage()]
-                ),
-            ]);
-
-
-            throw $e; // Re-throw to trigger retry
-        }
+        Log::info("ProcessAiScanJob: selesai", [
+            'scan_id' => $this->scan->id,
+            'status'  => $this->scan->fresh()?->status?->value,
+        ]);
     }
 
-
     /**
-     * Handle a job failure.
+     * Dipanggil setelah semua retry habis.
      */
-    public function failed(\Exception $exception): void
+    public function failed(\Throwable $e): void
     {
-        Log::error('AI scan job failed permanently', [
+        Log::error("ProcessAiScanJob: gagal permanen", [
             'scan_id' => $this->scan->id,
-            'error' => $exception->getMessage(),
+            'error'   => $e->getMessage(),
         ]);
 
-
-        // Mark as manual_review for human intervention
         $this->scan->update([
-            'status' => 'manual_review',
+            'status'          => AiScanStatus::ManualReview,
             'recommendations' => array_merge(
                 $this->scan->recommendations ?? [],
-                ['AI processing failed. Manual review required.']
+                ['AI processing gagal. Silakan hubungi teknisi untuk review manual.']
             ),
         ]);
     }
 }
-
-
-

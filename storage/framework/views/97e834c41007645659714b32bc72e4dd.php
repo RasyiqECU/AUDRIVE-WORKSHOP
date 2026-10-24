@@ -34,24 +34,29 @@
                 </thead>
                 <tbody class="divide-y divide-gunmetal/40 font-mono">
                     <?php $__empty_1 = true; $__currentLoopData = $tickets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $ticket): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                        <?php
+                            $statusVal = $ticket->status->value ?? (string) $ticket->status;
+                            $priorityVal = $ticket->priority->value ?? (string) $ticket->priority;
+                        ?>
                         <tr class="hover:bg-steel/20 transition-colors">
                             <td class="p-3 text-silver-bright font-semibold">#TK-<?php echo e(str_pad($ticket->id, 5, '0', STR_PAD_LEFT)); ?></td>
                             <td class="p-3 font-sans text-silver-bright font-medium"><?php echo e($ticket->subject); ?></td>
                             <td class="p-3">
                                 <span class="px-2 py-0.5 text-[10px] uppercase rounded font-bold
-                                    <?php if($ticket->priority === 'urgent' || $ticket->priority === 'high'): ?> bg-red-950/60 text-red-400 border border-red-800
-                                    <?php elseif($ticket->priority === 'medium'): ?> bg-amber-950/60 text-amber-400 border border-amber-800
+                                    <?php if($priorityVal === 'urgent' || $priorityVal === 'high'): ?> bg-red-950/60 text-red-400 border border-red-800
+                                    <?php elseif($priorityVal === 'medium'): ?> bg-amber-950/60 text-amber-400 border border-amber-800
                                     <?php else: ?> bg-blue-950/60 text-blue-400 border border-blue-800 <?php endif; ?>">
-                                    <?php echo e($ticket->priority); ?>
+                                    <?php echo e($priorityVal); ?>
 
                                 </span>
                             </td>
                             <td class="p-3">
                                 <span class="px-2 py-0.5 text-[10px] uppercase rounded font-bold
-                                    <?php if($ticket->status === 'open'): ?> bg-emerald-950/60 text-emerald-400 border border-emerald-800
-                                    <?php elseif($ticket->status === 'in_progress'): ?> bg-amber-950/60 text-amber-400 border border-amber-800
+                                    <?php if($statusVal === 'open'): ?> bg-emerald-950/60 text-emerald-400 border border-emerald-800
+                                    <?php elseif($statusVal === 'in_progress'): ?> bg-amber-950/60 text-amber-400 border border-amber-800
+                                    <?php elseif($statusVal === 'resolved'): ?> bg-emerald-950/60 text-emerald-400 border border-emerald-800
                                     <?php else: ?> bg-steel text-silver-dim border border-gunmetal <?php endif; ?>">
-                                    <?php echo e(str_replace('_', ' ', $ticket->status)); ?>
+                                    <?php echo e(str_replace('_', ' ', $statusVal)); ?>
 
                                 </span>
                             </td>

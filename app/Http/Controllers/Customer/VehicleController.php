@@ -19,7 +19,7 @@ class VehicleController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
-        $customer = $user->customer ?? \App\Models\Customer::firstOrCreate(['user_id' => $user->id]);
+        $customer = $user->customer ?? $user->getOrCreateCustomerProfile();
         $vehicles = $customer->vehicles()->latest()->get();
         return view('customer.vehicles.index', compact('vehicles'));
     }
@@ -44,7 +44,7 @@ class VehicleController extends Controller
         ]);
 
         $user = $request->user();
-        $customer = $user->customer ?? \App\Models\Customer::firstOrCreate(['user_id' => $user->id]);
+        $customer = $user->customer ?? $user->getOrCreateCustomerProfile();
         $customer->vehicles()->create($validated);
 
 

@@ -46,4 +46,16 @@ class CarPhoto extends Model
     {
         return $query->orderBy('sort_order');
     }
+
+    // ── Accessors ──
+
+    public function getUrlAttribute(): string
+    {
+        return asset('storage/' . $this->path);
+    }
+
+    public function getPhotoPathAttribute(): ?string
+    {
+        return $this->path;
+    }
 }

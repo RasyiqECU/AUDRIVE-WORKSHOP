@@ -4,10 +4,10 @@
         <div class="flex items-center justify-between h-16">
             
             <a href="<?php echo e(route('home')); ?>" class="flex items-center gap-3 group">
-                <img src="<?php echo e(asset('images/AUDrive-logo.png')); ?>" alt="AUDrive Logo" class="w-10 h-10 object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(245,196,0,0.3)]" />
+                <img src="<?php echo e(\App\Services\SettingService::getLogo()); ?>" alt="<?php echo e(\App\Services\SettingService::getName()); ?> Logo" class="w-10 h-10 object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(245,196,0,0.3)]" />
                 <div>
-                    <h1 class="font-display text-giallo text-sm tracking-wider font-bold">AUDRIVE</h1>
-                    <p class="font-mono text-[8px] text-silver-dim tracking-widest uppercase">Premium Dealer</p>
+                    <h1 class="font-display text-giallo text-sm tracking-wider font-bold"><?php echo e(\App\Services\SettingService::getName()); ?></h1>
+                    <p class="font-mono text-[8px] text-silver-dim tracking-widest uppercase"><?php echo e(\App\Services\SettingService::getTagline()); ?></p>
                 </div>
             </a>
 

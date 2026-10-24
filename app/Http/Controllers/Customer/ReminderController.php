@@ -15,7 +15,11 @@ class ReminderController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
-        $customer = $user->customer ?? Customer::firstOrCreate(['user_id' => $user->id]);
+        if (!$user) {
+            abort(401, 'Silakan login terlebih dahulu.');
+        }
+
+        $customer = $user->customer ?? $user->getOrCreateCustomerProfile();
         $vehicles = $customer->vehicles()->with('serviceBookings')->get();
 
         return view('customer.reminders.index', compact('customer', 'vehicles'));

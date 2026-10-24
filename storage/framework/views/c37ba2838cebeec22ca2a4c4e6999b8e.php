@@ -76,7 +76,7 @@
                                 </td>
                                 <td class="px-4 py-3 text-center">
                                     <?php if($scan->confidence): ?>
-                                        <span class="font-mono text-xs <?php echo e(scan->confidence>=0.8?'text-verde':(scan->confidence >= 0.6 ? 'text-giallo' : 'text-danger')); ?>">
+                                        <span class="font-mono text-xs <?php echo e($scan->confidence >= 0.8 ? 'text-verde' : ($scan->confidence >= 0.6 ? 'text-giallo' : 'text-danger')); ?>">
                                             <?php echo e(round($scan->confidence * 100)); ?>%
                                         </span>
                                     <?php else: ?>

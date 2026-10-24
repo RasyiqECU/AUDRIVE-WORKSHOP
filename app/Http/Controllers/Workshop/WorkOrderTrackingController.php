@@ -16,16 +16,35 @@ class WorkOrderTrackingController extends Controller
      */
     public function show(Request $request, WorkOrder $workOrder): View
     {
-        $customer = $request->user()->customer;
+        $user = $request->user();
 
-        // Pastikan work order terkait dengan kendaraan milik customer
-        if ($workOrder->vehicle?->customer_id !== $customer->id && $workOrder->serviceBooking?->customer_id !== $customer->id) {
-            abort(403, 'Akses tidak diizinkan.');
+        // Pastikan work order terkait dengan kendaraan milik customer jika diakses oleh role customer
+        if ($user->role === 'customer') {
+            $customer = $user->customer;
+            $vehicleCustomerId = $workOrder->vehicle?->customer_id;
+            $bookingCustomerId = $workOrder->serviceBooking?->customer_id;
+
+            if (! $customer || ($vehicleCustomerId !== $customer->id && $bookingCustomerId !== $customer->id)) {
+                abort(403, 'Akses tidak diizinkan.');
+            }
         }
 
-        $workOrder->load(['vehicle', 'serviceBooking', 'items', 'mechanic']);
+        $workOrder->load(['vehicle.customer', 'serviceBooking', 'items', 'mechanic']);
 
-        return view('workshop.tracking', compact('workOrder'));
+        // Riwayat waktu transisi status dari AuditLog
+        $statusLogs = \App\Models\AuditLog::where('model_id', $workOrder->id)
+            ->whereIn('action', ['work_order.status_updated', 'status_changed'])
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        $statusTimestamps = [];
+        foreach ($statusLogs as $log) {
+            if (preg_match('/to ([a-z_]+)$/i', trim($log->description ?? ''), $matches)) {
+                $statusTimestamps[strtolower($matches[1])] = $log->created_at;
+            }
+        }
+
+        return view('workshop.tracking', compact('workOrder', 'statusTimestamps'));
     }
 
     /**

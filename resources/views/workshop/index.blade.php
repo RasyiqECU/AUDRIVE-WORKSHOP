@@ -8,7 +8,7 @@
     {{-- Hero Section (Lamborghini Style Fullscreen GIF 100vh) --}}
     <section class="relative w-full h-screen min-h-[650px] overflow-hidden flex items-center justify-center">
         {{-- GIF Background (Fullscreen 100vh, continuous loop, smooth, object-fit: cover) --}}
-        <img src="{{ asset('images/bengkel.gif') }}"
+        <img src="{{ \App\Services\SettingService::getWorkshopBackground() }}"
              alt="AUDrive Performance Workshop & AI Diagnostic Lab"
              class="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none z-0" />
 
@@ -158,9 +158,15 @@
                         <div>
                             <div class="flex items-center gap-2">
                                 <span class="font-heading font-bold text-silver-bright text-sm uppercase">{{ $booking->service_type }}</span>
-                                <span class="px-2 py-0.5 text-[10px] font-semibold rounded uppercase tracking-wider bg-giallo/20 text-giallo border border-giallo/30">
-                                    {{ $booking->status->value ?? $booking->status }}
-                                </span>
+                                @if($booking->workOrder && ($booking->workOrder->status->value ?? $booking->workOrder->status) === 'delivered')
+                                    <span class="px-2 py-0.5 text-[10px] font-semibold rounded uppercase tracking-wider bg-green-500/20 text-green-400 border border-green-500/30">
+                                        Diserahkan
+                                    </span>
+                                @else
+                                    <span class="px-2 py-0.5 text-[10px] font-semibold rounded uppercase tracking-wider bg-giallo/20 text-giallo border border-giallo/30">
+                                        {{ $booking->status->value ?? $booking->status }}
+                                    </span>
+                                @endif
                             </div>
                             <p class="text-xs text-silver-dim mt-1">
                                 Kendaraan: <span class="text-silver-bright">{{ $booking->vehicle?->license_plate ?? 'N/A' }}</span> — {{ $booking->vehicle?->brand }} {{ $booking->vehicle?->model }}

@@ -33,6 +33,7 @@ Route::post('tickets/{ticket}/reply', [TicketController::class, 'reply'])->name(
 
 // Loyalty Program
 Route::get('loyalty', [LoyaltyController::class, 'index'])->name('loyalty.index');
+Route::get('loyalty-redirect', [LoyaltyController::class, 'index'])->name('loyalty');
 Route::get('loyalty/history', [LoyaltyController::class, 'history'])->name('loyalty.history');
 Route::post('loyalty/redeem', [LoyaltyController::class, 'redeem'])->name('loyalty.redeem');
 

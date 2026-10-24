@@ -14,6 +14,12 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\AppointmentController;
+use App\Http\Controllers\Admin\ContactMessageController;
+use App\Http\Controllers\Admin\TicketController;
+use App\Http\Controllers\Admin\VoucherController;
+use App\Http\Controllers\Admin\PromotionController;
+use App\Http\Controllers\Admin\LoyaltyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,20 +39,30 @@ Route::get('cars/{car}/inspection', [CarController::class, 'inspection'])->name(
 Route::post('cars/{car}/inspection', [CarController::class, 'storeInspection'])->name('cars.inspection.store');
 Route::post('cars/{car}/featured', [CarController::class, 'setFeatured'])->name('cars.featured');
 Route::delete('cars/{car}/featured', [CarController::class, 'removeFeatured'])->name('cars.featured.remove');
+Route::post('cars/{car}/photos', [CarController::class, 'uploadPhotos'])->name('cars.photos.store');
+Route::delete('cars/{car}/photos/{photo}', [CarController::class, 'deletePhoto'])->name('cars.photos.destroy');
+Route::post('cars/{car}/photos/{photo}/primary', [CarController::class, 'setPrimaryPhoto'])->name('cars.photos.primary');
+Route::post('cars/{car}/photos/{photo}/replace', [CarController::class, 'replacePhoto'])->name('cars.photos.replace');
 
 // ── Offers / Penawaran Harga Mobil ──
 Route::resource('offers', \App\Http\Controllers\Admin\OfferController::class)->only(['index', 'show']);
 Route::post('offers/{offer}/accept', [\App\Http\Controllers\Admin\OfferController::class, 'accept'])->name('offers.accept');
 Route::post('offers/{offer}/reject', [\App\Http\Controllers\Admin\OfferController::class, 'reject'])->name('offers.reject');
 
+// ── Test Drive / Uji Kendaraan ──
+Route::resource('appointments', AppointmentController::class)->only(['index', 'show']);
+Route::patch('appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('appointments.status');
+
 // ── Point of Sales (POS / Kasir) ──
-Route::get('pos', [\App\Http\Controllers\Admin\PosController::class, 'index'])->name('pos.index');
-Route::post('pos', [\App\Http\Controllers\Admin\PosController::class, 'store'])->name('pos.store');
-Route::post('pos/work-orders/{workOrder}/pay', [\App\Http\Controllers\Admin\PosController::class, 'payWorkOrder'])->name('pos.work-orders.pay');
-Route::post('pos/car-sales/{salesOrder}/pay', [\App\Http\Controllers\Admin\PosController::class, 'payCarSales'])->name('pos.car-sales.pay');
-Route::get('pos/search', [\App\Http\Controllers\Admin\PosController::class, 'search'])->name('pos.search');
-Route::get('pos/{salesOrder}/receipt', [\App\Http\Controllers\Admin\PosController::class, 'receipt'])->name('pos.receipt');
-Route::get('pos/{salesOrder}/print', [\App\Http\Controllers\Admin\PosController::class, 'printReceipt'])->name('pos.print');
+Route::middleware('role:super-admin|manager|cashier')->group(function () {
+    Route::get('pos', [\App\Http\Controllers\Admin\PosController::class, 'index'])->name('pos.index');
+    Route::post('pos', [\App\Http\Controllers\Admin\PosController::class, 'store'])->name('pos.store');
+    Route::post('pos/work-orders/{workOrder}/pay', [\App\Http\Controllers\Admin\PosController::class, 'payWorkOrder'])->name('pos.work-orders.pay');
+    Route::post('pos/car-sales/{salesOrder}/pay', [\App\Http\Controllers\Admin\PosController::class, 'payCarSales'])->name('pos.car-sales.pay');
+    Route::get('pos/search', [\App\Http\Controllers\Admin\PosController::class, 'search'])->name('pos.search');
+    Route::get('pos/{salesOrder}/receipt', [\App\Http\Controllers\Admin\PosController::class, 'receipt'])->name('pos.receipt');
+    Route::get('pos/{salesOrder}/print', [\App\Http\Controllers\Admin\PosController::class, 'printReceipt'])->name('pos.print');
+});
 
 // ── Workshop ──
 Route::resource('service-bookings', ServiceBookingController::class);
@@ -71,11 +87,12 @@ Route::post('work-orders/{workOrder}/deliver', [AdminWorkOrderController::class,
 
 // ── AI Scans ──
 Route::get('ai-scans', [AiScanReviewController::class, 'index'])->name('ai-scans.index');
-Route::get('ai-scans/{scan}', [AiScanReviewController::class, 'show'])->name('ai-scans.show');
-Route::patch('ai-scans/{scan}/review', [AiScanReviewController::class, 'review'])->name('ai-scans.review');
+Route::get('ai-scans/{aiScan}', [AiScanReviewController::class, 'show'])->name('ai-scans.show');
+Route::patch('ai-scans/{aiScan}/review', [AiScanReviewController::class, 'review'])->name('ai-scans.review');
 
 // ── Spare Parts & Inventory ──
 Route::resource('spare-parts', SparePartController::class);
+Route::delete('spare-parts/{sparePart}/image', [SparePartController::class, 'deleteImage'])->name('spare-parts.image.destroy');
 Route::resource('purchase-orders', PurchaseOrderController::class);
 Route::patch('purchase-orders/{purchaseOrder}/status', [PurchaseOrderController::class, 'updateStatus'])
     ->name('purchase-orders.status');
@@ -89,6 +106,26 @@ Route::resource('customers', CustomerController::class)->only(['index', 'show', 
 Route::get('customers/{customer}/vehicles', [CustomerController::class, 'vehicles'])->name('customers.vehicles');
 Route::get('customers/{customer}/history', [CustomerController::class, 'history'])->name('customers.history');
 
+// ── Contact Messages / Pesan Masuk Customer ──
+Route::resource('contact-messages', ContactMessageController::class)->only(['index', 'show', 'destroy']);
+Route::post('contact-messages/{contactMessage}/reply', [ContactMessageController::class, 'reply'])->name('contact-messages.reply');
+
+// ── Support Tickets / Layanan & Komplain ──
+Route::resource('tickets', TicketController::class)->only(['index', 'show']);
+Route::post('tickets/{ticket}/reply', [TicketController::class, 'reply'])->name('tickets.reply');
+Route::patch('tickets/{ticket}/status', [TicketController::class, 'updateStatus'])->name('tickets.status');
+
+// ── Vouchers & Promos ──
+Route::resource('vouchers', VoucherController::class);
+Route::patch('vouchers/{voucher}/toggle', [VoucherController::class, 'toggle'])->name('vouchers.toggle');
+Route::resource('promotions', PromotionController::class);
+Route::patch('promotions/{promotion}/toggle', [PromotionController::class, 'toggle'])->name('promotions.toggle');
+
+// ── Loyalty Program ──
+Route::get('loyalty', [LoyaltyController::class, 'index'])->name('loyalty.index');
+Route::get('loyalty/history', [LoyaltyController::class, 'history'])->name('loyalty.history');
+Route::post('loyalty/{customer}/adjust', [LoyaltyController::class, 'adjust'])->name('loyalty.adjust');
+
 // ── Reports ──
 Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
 Route::get('reports/sales', [ReportController::class, 'sales'])->name('reports.sales');
@@ -100,9 +137,12 @@ Route::get('reports/finance', [ReportController::class, 'finance'])->name('repor
 Route::resource('users', UserController::class);
 Route::patch('users/{user}/role', [UserController::class, 'updateRole'])->name('users.role');
 
-// ── Settings ──
-Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
-Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
+// ── Settings (Khusus Super Admin) ──
+Route::middleware('role:super-admin')->group(function () {
+    Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
+    Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
+    Route::post('settings/reset', [SettingController::class, 'reset'])->name('settings.reset');
+});
 
 // ── Audit Log ──
 Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');

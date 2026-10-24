@@ -10,6 +10,7 @@ use App\Support\HasCode;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SupportTicket extends Model
 {
@@ -46,6 +47,11 @@ class SupportTicket extends Model
     public function assignee(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    public function messages(): HasMany
+    {
+        return $this->hasMany(TicketMessage::class)->oldest();
     }
 
     public function scopeOpen($query)

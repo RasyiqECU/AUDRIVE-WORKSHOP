@@ -19,8 +19,14 @@
 <?php $__env->startSection('content'); ?>
 <div class="space-y-6">
     
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-carbon p-6 border border-gunmetal">
-        <div>
+    <div class="relative overflow-hidden border border-gunmetal bg-carbon p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        
+        <img src="<?php echo e(\App\Services\SettingService::getDashboardBackground()); ?>" 
+             alt="Dashboard Banner" 
+             class="absolute inset-0 w-full h-full object-cover object-center pointer-events-none opacity-20 select-none z-0" />
+        <div class="absolute inset-0 bg-gradient-to-r from-carbon via-carbon/95 to-carbon/75 z-0 pointer-events-none"></div>
+
+        <div class="relative z-10">
             <div class="flex items-center gap-3">
                 <h1 class="font-display text-2xl md:text-3xl font-bold text-silver-bright tracking-wide">
                     <?php echo e($headerInfo['title']); ?>
@@ -34,7 +40,7 @@
         </div>
 
         
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="relative z-10 flex flex-wrap items-center gap-2">
             <?php if(in_array($role, ['super-admin', 'manager', 'sales'], true)): ?>
                 <a href="<?php echo e(route('admin.cars.create')); ?>" class="px-4 py-2 bg-giallo hover:bg-arancio text-nero font-heading font-bold text-xs uppercase tracking-wider transition-premium clip-angular-button shadow-md shadow-giallo/10">
                     + Tambah Mobil

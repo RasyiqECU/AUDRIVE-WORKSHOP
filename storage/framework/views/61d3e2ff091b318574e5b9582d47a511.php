@@ -1,6 +1,16 @@
 <?php $__env->startSection('title', 'Work Order ' . $workOrder->code); ?>
 
 <?php $__env->startSection('content'); ?>
+<?php
+    $statusStr = $workOrder->status instanceof \App\Enums\WorkOrderStatus 
+        ? $workOrder->status->value 
+        : (string) $workOrder->status;
+    $role = auth()->user()->role;
+    $isMechanic = ($role === 'mechanic');
+    $isCashier = ($role === 'cashier');
+    $isAdminOrManager = in_array($role, ['super-admin', 'manager'], true);
+?>
+
 <div class="space-y-6">
     
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -19,14 +29,14 @@
         <div class="flex flex-wrap items-center gap-2">
             <?php if (isset($component)) { $__componentOriginald271113ca69d52f8dbc84ae4f8468e44 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginald271113ca69d52f8dbc84ae4f8468e44 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.status-pill','data' => ['status' => $workOrder->status->value ?? $workOrder->status]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.status-pill','data' => ['status' => $statusStr]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('ui.status-pill'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['status' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($workOrder->status->value ?? $workOrder->status)]); ?>
+<?php $component->withAttributes(['status' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($statusStr)]); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginald271113ca69d52f8dbc84ae4f8468e44)): ?>
@@ -38,29 +48,88 @@
 <?php unset($__componentOriginald271113ca69d52f8dbc84ae4f8468e44); ?>
 <?php endif; ?>
 
-            <?php $statusStr = $workOrder->status->value ?? $workOrder->status; ?>
-
-            <?php if($workOrder->total_idr > 0): ?>
-                <a href="<?php echo e(route('admin.pos.index', ['work_order_id' => $workOrder->id])); ?>"
-                   class="px-4 py-2 bg-giallo hover:bg-arancio text-nero font-heading font-bold text-xs uppercase tracking-wider rounded shadow-lg shadow-giallo/20 transition-premium flex items-center gap-1.5">
-                    💳 Bayar di Kasir (POS)
-                </a>
+            
+            <?php if($isMechanic): ?>
+                <?php if($statusStr === 'queued' || $statusStr === 'booking'): ?>
+                    <form action="<?php echo e(route('admin.work-orders.status', $workOrder)); ?>" method="POST">
+                        <?php echo csrf_field(); ?>
+                        <?php echo method_field('PATCH'); ?>
+                        <input type="hidden" name="status" value="in_progress">
+                        <button type="submit" class="px-4 py-2 bg-giallo hover:bg-arancio text-nero font-heading font-bold text-xs uppercase tracking-wider rounded transition-premium">
+                            ▶ Mulai Pengerjaan
+                        </button>
+                    </form>
+                <?php elseif($statusStr === 'in_progress'): ?>
+                    <form action="<?php echo e(route('admin.work-orders.status', $workOrder)); ?>" method="POST">
+                        <?php echo csrf_field(); ?>
+                        <?php echo method_field('PATCH'); ?>
+                        <input type="hidden" name="status" value="quality_control">
+                        <button type="submit" class="px-4 py-2 bg-arancio hover:bg-arancio/80 text-nero font-heading font-bold text-xs uppercase tracking-wider rounded transition-premium">
+                            🔍 Ajukan Quality Control
+                        </button>
+                    </form>
+                    <form action="<?php echo e(route('admin.work-orders.complete', $workOrder)); ?>" method="POST">
+                        <?php echo csrf_field(); ?>
+                        <button type="submit" class="px-4 py-2 bg-verde hover:bg-verde/80 text-nero font-heading font-bold text-xs uppercase tracking-wider rounded transition-premium">
+                            ✓ Selesaikan Pengerjaan
+                        </button>
+                    </form>
+                <?php elseif($statusStr === 'quality_control'): ?>
+                    <form action="<?php echo e(route('admin.work-orders.complete', $workOrder)); ?>" method="POST">
+                        <?php echo csrf_field(); ?>
+                        <button type="submit" class="px-4 py-2 bg-verde hover:bg-verde/80 text-nero font-heading font-bold text-xs uppercase tracking-wider rounded transition-premium">
+                            ✓ Lolos QC & Selesaikan Servis
+                        </button>
+                    </form>
+                <?php elseif($statusStr === 'completed'): ?>
+                    <div class="px-3.5 py-2 bg-giallo/10 border border-giallo/30 text-giallo font-heading text-xs uppercase tracking-wider rounded flex items-center gap-2">
+                        <span>⏳</span> Servis Selesai &bull; Notifikasi Dikirim ke Kasir untuk Pembayaran
+                    </div>
+                <?php elseif($statusStr === 'delivered'): ?>
+                    <div class="px-3.5 py-2 bg-verde/10 border border-verde/30 text-verde font-heading text-xs uppercase tracking-wider rounded flex items-center gap-2">
+                        <span>✓</span> Pembayaran Lunas & Unit Telah Diserahkan
+                    </div>
+                <?php endif; ?>
             <?php endif; ?>
 
-            <?php if($statusStr === 'in_progress'): ?>
-                <form action="<?php echo e(route('admin.work-orders.complete', $workOrder)); ?>" method="POST">
-                    <?php echo csrf_field(); ?>
-                    <button type="submit" class="px-4 py-2 bg-verde hover:bg-verde/80 text-nero font-heading font-bold text-xs uppercase tracking-wider rounded transition-premium">
-                        ✓ Selesaikan Pengerjaan
-                    </button>
-                </form>
-            <?php elseif($statusStr === 'completed'): ?>
-                <form action="<?php echo e(route('admin.work-orders.deliver', $workOrder)); ?>" method="POST">
-                    <?php echo csrf_field(); ?>
-                    <button type="submit" class="px-4 py-2 bg-steel hover:bg-steel/80 border border-gunmetal text-silver-bright font-heading font-bold text-xs uppercase tracking-wider rounded transition-premium">
-                        🏎 Serahkan ke Pelanggan
-                    </button>
-                </form>
+            
+            <?php if($isCashier): ?>
+                <?php if($statusStr !== 'delivered' && $workOrder->total_idr > 0): ?>
+                    <a href="<?php echo e(route('admin.pos.index', ['work_order_id' => $workOrder->id])); ?>"
+                       class="px-5 py-2.5 bg-giallo hover:bg-arancio text-nero font-heading font-bold text-xs uppercase tracking-wider rounded shadow-lg shadow-giallo/20 transition-premium flex items-center gap-2">
+                        💳 Proses Pembayaran Kasir (POS)
+                    </a>
+                <?php elseif($statusStr === 'delivered'): ?>
+                    <div class="px-3.5 py-2 bg-verde/10 border border-verde/30 text-verde font-heading text-xs uppercase tracking-wider rounded flex items-center gap-2">
+                        <span>✓</span> Lunas & Unit Diserahkan
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
+
+            
+            <?php if($isAdminOrManager): ?>
+                <?php if($statusStr !== 'delivered' && $workOrder->total_idr > 0): ?>
+                    <a href="<?php echo e(route('admin.pos.index', ['work_order_id' => $workOrder->id])); ?>"
+                       class="px-4 py-2 bg-giallo hover:bg-arancio text-nero font-heading font-bold text-xs uppercase tracking-wider rounded shadow-lg shadow-giallo/20 transition-premium flex items-center gap-1.5">
+                        💳 Bayar di Kasir (POS)
+                    </a>
+                <?php endif; ?>
+
+                <?php if($statusStr === 'in_progress'): ?>
+                    <form action="<?php echo e(route('admin.work-orders.complete', $workOrder)); ?>" method="POST">
+                        <?php echo csrf_field(); ?>
+                        <button type="submit" class="px-4 py-2 bg-verde hover:bg-verde/80 text-nero font-heading font-bold text-xs uppercase tracking-wider rounded transition-premium">
+                            ✓ Selesaikan Pengerjaan
+                        </button>
+                    </form>
+                <?php elseif($statusStr === 'completed'): ?>
+                    <form action="<?php echo e(route('admin.work-orders.deliver', $workOrder)); ?>" method="POST">
+                        <?php echo csrf_field(); ?>
+                        <button type="submit" class="px-4 py-2 bg-steel hover:bg-steel/80 border border-gunmetal text-silver-bright font-heading font-bold text-xs uppercase tracking-wider rounded transition-premium">
+                            🏎 Serahkan ke Pelanggan (Manual)
+                        </button>
+                    </form>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>
@@ -149,11 +218,15 @@
                                 <td class="py-2.5 px-3 text-right text-silver-dim">Rp <?php echo e(number_format($item->unit_price_idr, 0, ',', '.')); ?></td>
                                 <td class="py-2.5 px-3 text-right font-bold text-silver-bright">Rp <?php echo e(number_format($item->subtotal_idr, 0, ',', '.')); ?></td>
                                 <td class="py-2.5 px-3 text-right">
-                                    <form action="<?php echo e(route('admin.work-orders.items.destroy', $item)); ?>" method="POST" onsubmit="return confirm('Hapus item ini?')">
-                                        <?php echo csrf_field(); ?>
-                                        <?php echo method_field('DELETE'); ?>
-                                        <button type="submit" class="text-danger hover:underline text-[10px] font-sans uppercase">Hapus</button>
-                                    </form>
+                                    <?php if($statusStr !== 'delivered'): ?>
+                                        <form action="<?php echo e(route('admin.work-orders.items.destroy', $item)); ?>" method="POST" onsubmit="return confirm('Hapus item ini?')">
+                                            <?php echo csrf_field(); ?>
+                                            <?php echo method_field('DELETE'); ?>
+                                            <button type="submit" class="text-danger hover:underline text-[10px] font-sans uppercase">Hapus</button>
+                                        </form>
+                                    <?php else: ?>
+                                        <span class="text-silver-dim text-[10px] font-sans">-</span>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
@@ -168,45 +241,83 @@
             </div>
 
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gunmetal">
-                
-                <div class="p-4 bg-steel/20 border border-gunmetal rounded-sm space-y-3">
-                    <h4 class="font-heading text-xs uppercase tracking-wider text-giallo font-semibold">+ Tambah Jasa Servis / Tune-up</h4>
-                    <form action="<?php echo e(route('admin.work-orders.service-items.store', $workOrder)); ?>" method="POST" class="space-y-3">
-                        <?php echo csrf_field(); ?>
-                        <div>
-                            <input type="text" name="description" required placeholder="Deskripsi Jasa (cth: Engine Tuning & Oil Flush)" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <input type="number" name="qty" required min="1" value="1" placeholder="Qty" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
-                            <input type="number" name="unit_price_idr" required min="0" placeholder="Biaya IDR" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
-                        </div>
-                        <button type="submit" class="w-full py-2 bg-giallo text-nero font-heading font-bold text-xs uppercase tracking-wider hover:bg-arancio transition">
-                            Tambah Jasa
-                        </button>
-                    </form>
-                </div>
+            <?php if($statusStr !== 'delivered'): ?>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-gunmetal">
+                    
+                    <div class="p-4 bg-steel/20 border border-gunmetal rounded-sm space-y-3">
+                        <h4 class="font-heading text-xs uppercase tracking-wider text-giallo font-semibold">+ Tambah Jasa Servis</h4>
+                        <form action="<?php echo e(route('admin.work-orders.service-items.store', $workOrder)); ?>" method="POST" class="space-y-3">
+                            <?php echo csrf_field(); ?>
+                            <div>
+                                <input type="text" name="description" required placeholder="Deskripsi Jasa (cth: Tune-up)" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="number" name="qty" required min="1" value="1" placeholder="Qty" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
+                                <input type="number" name="unit_price_idr" required min="0" placeholder="Biaya IDR" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
+                            </div>
+                            <button type="submit" class="w-full py-2 bg-giallo text-nero font-heading font-bold text-xs uppercase tracking-wider hover:bg-arancio transition">
+                                Tambah Jasa
+                            </button>
+                        </form>
+                    </div>
 
-                
-                <div class="p-4 bg-steel/20 border border-gunmetal rounded-sm space-y-3">
-                    <h4 class="font-heading text-xs uppercase tracking-wider text-silver-bright font-semibold">⚙ Ubah Status Work Order</h4>
-                    <form action="<?php echo e(route('admin.work-orders.status', $workOrder)); ?>" method="POST" class="space-y-3">
-                        <?php echo csrf_field(); ?>
-                        <?php echo method_field('PATCH'); ?>
-                        <select name="status" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
-                            <?php $__currentLoopData = \App\Enums\WorkOrderStatus::cases(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sCase): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <option value="<?php echo e($sCase->value); ?>" <?php echo e(($workOrder->status->value ?? $workOrder->status) === $sCase->value ? 'selected' : ''); ?>>
-                                    <?php echo e(ucfirst(str_replace('_', ' ', $sCase->value))); ?>
+                    
+                    <div class="p-4 bg-steel/20 border border-gunmetal rounded-sm space-y-3">
+                        <h4 class="font-heading text-xs uppercase tracking-wider text-verde font-semibold">+ Tambah Suku Cadang</h4>
+                        <form action="<?php echo e(route('admin.work-orders.part-items.store', $workOrder)); ?>" method="POST" class="space-y-3">
+                            <?php echo csrf_field(); ?>
+                            <div>
+                                <select name="spare_part_id" required class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
+                                    <option value="">Pilih Spare Part...</option>
+                                    <?php if(isset($spareParts)): ?>
+                                        <?php $__currentLoopData = $spareParts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $part): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <option value="<?php echo e($part->id); ?>">
+                                                <?php echo e($part->name); ?> (Rp <?php echo e(number_format($part->price_idr, 0, ',', '.')); ?>) — Stok: <?php echo e($part->stock_qty); ?>
 
-                                </option>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                        </select>
-                        <button type="submit" class="w-full py-2 bg-steel hover:bg-steel/80 border border-gunmetal text-silver-bright font-heading font-semibold text-xs uppercase tracking-wider transition">
-                            Perbarui Status
-                        </button>
-                    </form>
+                                            </option>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
+                            <div>
+                                <input type="number" name="qty" required min="1" value="1" placeholder="Jumlah Qty" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
+                            </div>
+                            <button type="submit" class="w-full py-2 bg-verde text-nero font-heading font-bold text-xs uppercase tracking-wider hover:bg-verde/80 transition">
+                                Tambah Spare Part
+                            </button>
+                        </form>
+                    </div>
+
+                    
+                    <div class="p-4 bg-steel/20 border border-gunmetal rounded-sm space-y-3">
+                        <h4 class="font-heading text-xs uppercase tracking-wider text-silver-bright font-semibold">⚙ Ubah Status Work Order</h4>
+                        <form action="<?php echo e(route('admin.work-orders.status', $workOrder)); ?>" method="POST" class="space-y-3">
+                            <?php echo csrf_field(); ?>
+                            <?php echo method_field('PATCH'); ?>
+                            <select name="status" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
+                                <?php $__currentLoopData = \App\Enums\WorkOrderStatus::cases(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sCase): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php if($isMechanic && $sCase->value === 'delivered'): ?>
+                                        
+                                        <?php continue; ?>
+                                    <?php endif; ?>
+                                    <option value="<?php echo e($sCase->value); ?>" <?php echo e($statusStr === $sCase->value ? 'selected' : ''); ?>>
+                                        <?php echo e($sCase->label()); ?>
+
+                                    </option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </select>
+                            <button type="submit" class="w-full py-2 bg-steel hover:bg-steel/80 border border-gunmetal text-silver-bright font-heading font-semibold text-xs uppercase tracking-wider transition">
+                                Perbarui Status
+                            </button>
+                        </form>
+                        <?php if($isMechanic): ?>
+                            <p class="text-[10px] text-silver-dim italic">
+                                * Catatan: Status Diserahkan (Delivered) akan otomatis terbarui saat pembayaran diselesaikan oleh Kasir.
+                            </p>
+                        <?php endif; ?>
+                    </div>
                 </div>
-            </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>

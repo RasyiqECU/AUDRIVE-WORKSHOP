@@ -64,8 +64,8 @@
                             <td class="py-3.5 px-4">
                                 <div class="flex items-center gap-3">
                                     <div class="w-12 h-10 bg-nero border border-gunmetal overflow-hidden rounded-sm flex items-center justify-center shrink-0">
-                                        <?php if($car->primaryPhoto): ?>
-                                            <img src="<?php echo e(asset('storage/' . $car->primaryPhoto->photo_path)); ?>" alt="<?php echo e($car->model); ?>" class="w-full h-full object-cover">
+                                        <?php if($car->primaryPhoto && $car->primaryPhoto->path): ?>
+                                            <img src="<?php echo e(asset('storage/' . $car->primaryPhoto->path)); ?>" alt="<?php echo e($car->model); ?>" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'text-lg\'>🏎</span>';">
                                         <?php else: ?>
                                             <span class="text-lg">🏎</span>
                                         <?php endif; ?>

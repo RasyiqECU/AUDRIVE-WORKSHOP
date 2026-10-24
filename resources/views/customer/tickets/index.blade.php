@@ -36,23 +36,28 @@
                 </thead>
                 <tbody class="divide-y divide-gunmetal/40 font-mono">
                     @forelse($tickets as $ticket)
+                        @php
+                            $statusVal = $ticket->status->value ?? (string) $ticket->status;
+                            $priorityVal = $ticket->priority->value ?? (string) $ticket->priority;
+                        @endphp
                         <tr class="hover:bg-steel/20 transition-colors">
                             <td class="p-3 text-silver-bright font-semibold">#TK-{{ str_pad($ticket->id, 5, '0', STR_PAD_LEFT) }}</td>
                             <td class="p-3 font-sans text-silver-bright font-medium">{{ $ticket->subject }}</td>
                             <td class="p-3">
                                 <span class="px-2 py-0.5 text-[10px] uppercase rounded font-bold
-                                    @if($ticket->priority === 'urgent' || $ticket->priority === 'high') bg-red-950/60 text-red-400 border border-red-800
-                                    @elseif($ticket->priority === 'medium') bg-amber-950/60 text-amber-400 border border-amber-800
+                                    @if($priorityVal === 'urgent' || $priorityVal === 'high') bg-red-950/60 text-red-400 border border-red-800
+                                    @elseif($priorityVal === 'medium') bg-amber-950/60 text-amber-400 border border-amber-800
                                     @else bg-blue-950/60 text-blue-400 border border-blue-800 @endif">
-                                    {{ $ticket->priority }}
+                                    {{ $priorityVal }}
                                 </span>
                             </td>
                             <td class="p-3">
                                 <span class="px-2 py-0.5 text-[10px] uppercase rounded font-bold
-                                    @if($ticket->status === 'open') bg-emerald-950/60 text-emerald-400 border border-emerald-800
-                                    @elseif($ticket->status === 'in_progress') bg-amber-950/60 text-amber-400 border border-amber-800
+                                    @if($statusVal === 'open') bg-emerald-950/60 text-emerald-400 border border-emerald-800
+                                    @elseif($statusVal === 'in_progress') bg-amber-950/60 text-amber-400 border border-amber-800
+                                    @elseif($statusVal === 'resolved') bg-emerald-950/60 text-emerald-400 border border-emerald-800
                                     @else bg-steel text-silver-dim border border-gunmetal @endif">
-                                    {{ str_replace('_', ' ', $ticket->status) }}
+                                    {{ str_replace('_', ' ', $statusVal) }}
                                 </span>
                             </td>
                             <td class="p-3 text-silver-dim text-[11px]">{{ $ticket->created_at->format('d M Y') }}</td>

@@ -7,7 +7,7 @@
 {{-- Hero Section (Fullscreen Cinematic Image 100vh) --}}
 <section class="relative w-full h-screen min-h-[650px] overflow-hidden flex items-center justify-center">
     {{-- Background Image (Fullscreen, object-fit: cover) --}}
-    <img src="{{ asset('images/kontak.jpg') }}"
+    <img src="{{ \App\Services\SettingService::getContactBackground() }}"
          alt="AUDrive — Hubungi Kami"
          class="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none z-0" />
 

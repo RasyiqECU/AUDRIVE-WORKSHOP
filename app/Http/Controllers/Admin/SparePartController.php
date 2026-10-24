@@ -10,6 +10,7 @@ use App\Models\SparePartCategory;
 use App\Services\SparePartService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class SparePartController extends Controller
@@ -45,12 +46,16 @@ class SparePartController extends Controller
 
     public function create(): View
     {
+        $this->authorizeManage();
+
         $categories = SparePartCategory::orderBy('name')->get();
         return view('admin.spare-parts.create', compact('categories'));
     }
 
     public function store(Request $request): RedirectResponse
     {
+        $this->authorizeManage();
+
         $validated = $request->validate([
             'sku' => 'required|string|max:50|unique:spare_parts,sku',
             'name' => 'required|string|max:255',
@@ -60,7 +65,16 @@ class SparePartController extends Controller
             'stock' => 'required|integer|min:0',
             'low_stock_threshold' => 'required|integer|min:0',
             'description' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:8192',
+        ], [
+            'image.image' => 'File harus berupa gambar.',
+            'image.mimes' => 'Format gambar harus JPEG, PNG, JPG, atau WEBP.',
+            'image.max'   => 'Ukuran gambar maksimal 8 MB.',
         ]);
+
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store('spare-parts', 'public');
+        }
 
         $this->sparePartService->create($validated);
 
@@ -69,6 +83,8 @@ class SparePartController extends Controller
 
     public function edit(SparePart $sparePart): View
     {
+        $this->authorizeManage();
+
         $categories = SparePartCategory::orderBy('name')->get();
         $sparePart->load('compatibilities');
         return view('admin.spare-parts.edit', compact('sparePart', 'categories'));
@@ -76,6 +92,8 @@ class SparePartController extends Controller
 
     public function update(Request $request, SparePart $sparePart): RedirectResponse
     {
+        $this->authorizeManage();
+
         $validated = $request->validate([
             'sku' => 'required|string|max:50|unique:spare_parts,sku,' . $sparePart->id,
             'name' => 'required|string|max:255',
@@ -85,16 +103,66 @@ class SparePartController extends Controller
             'stock' => 'required|integer|min:0',
             'low_stock_threshold' => 'required|integer|min:0',
             'description' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:8192',
+            'remove_image' => 'nullable|boolean',
+        ], [
+            'image.image' => 'File harus berupa gambar.',
+            'image.mimes' => 'Format gambar harus JPEG, PNG, JPG, atau WEBP.',
+            'image.max'   => 'Ukuran gambar maksimal 8 MB.',
         ]);
+
+        // Hapus gambar jika opsi hapus dipilih
+        if ($request->boolean('remove_image')) {
+            if ($sparePart->image) {
+                Storage::disk('public')->delete($sparePart->image);
+            }
+            $validated['image'] = null;
+        }
+
+        // Upload gambar baru atau ganti gambar lama
+        if ($request->hasFile('image')) {
+            if ($sparePart->image) {
+                Storage::disk('public')->delete($sparePart->image);
+            }
+            $validated['image'] = $request->file('image')->store('spare-parts', 'public');
+        }
+
+        unset($validated['remove_image']);
 
         $this->sparePartService->update($sparePart, $validated);
 
         return redirect()->route('admin.spare-parts.index')->with('success', 'Spare part berhasil diperbarui.');
     }
 
+    public function deleteImage(SparePart $sparePart): RedirectResponse
+    {
+        $this->authorizeManage();
+
+        if ($sparePart->image) {
+            Storage::disk('public')->delete($sparePart->image);
+            $sparePart->update(['image' => null]);
+        }
+
+        return back()->with('success', 'Gambar spare part berhasil dihapus.');
+    }
+
     public function destroy(SparePart $sparePart): RedirectResponse
     {
+        $this->authorizeManage();
+
+        if ($sparePart->image) {
+            Storage::disk('public')->delete($sparePart->image);
+        }
+
         $sparePart->delete();
         return redirect()->route('admin.spare-parts.index')->with('success', 'Spare part berhasil dihapus.');
+    }
+
+    protected function authorizeManage(): void
+    {
+        $role = auth()->user()->role ?? '';
+        if (!in_array($role, ['super-admin', 'inventory'], true)) {
+            abort(403, 'Akses ditolak: Hanya role Inventory dan Super Admin yang berhak mengelola atau mengubah data suku cadang.');
+        }
     }
 }

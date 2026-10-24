@@ -19,9 +19,9 @@ use Illuminate\View\View;
 class OfferController extends Controller
 {
     public function __construct(
-        protected OfferService $offerService
+        protected OfferService $offerService,
+        protected \App\Services\Notification\NotificationService $notificationService
     ) {}
-
 
     public function index(Request $request): View
     {
@@ -31,10 +31,8 @@ class OfferController extends Controller
             ->latest()
             ->paginate(15);
 
-
         return view('admin.offers.index', compact('offers'));
     }
-
 
     public function show(Offer $offer): View
     {
@@ -47,15 +45,24 @@ class OfferController extends Controller
         return view('admin.offers.show', compact('offer', 'salesOrder'));
     }
 
-
     public function accept(Offer $offer): RedirectResponse
     {
         $this->authorize('update', $offer);
 
-
         try {
             $this->offerService->accept($offer, auth()->id());
 
+            // Notifikasi ke Customer bahwa penawaran disetujui
+            if ($offer->customer?->user) {
+                $carName = $offer->carUnit ? ($offer->carUnit->brand . ' ' . $offer->carUnit->model) : 'Unit Mobil';
+                $this->notificationService->send($offer->customer->user, 'offer_accepted', [
+                    'title'      => "Penawaran Disetujui: {$carName}",
+                    'message'    => "Selamat! Penawaran harga Anda sebesar Rp " . number_format($offer->amount_idr, 0, ',', '.') . " untuk {$carName} telah DITERIMA oleh Sales AUDrive. Unit telah di-reserve untuk Anda.",
+                    'car_name'   => $carName,
+                    'amount'     => $offer->amount_idr,
+                    'action_url' => route('customer.dashboard'),
+                ]);
+            }
 
             return redirect()
                 ->route('admin.offers.show', $offer)
@@ -67,20 +74,27 @@ class OfferController extends Controller
         }
     }
 
-
     public function reject(Request $request, Offer $offer): RedirectResponse
     {
         $this->authorize('update', $offer);
-
 
         $request->validate([
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
-
         try {
             $this->offerService->reject($offer, auth()->id(), $request->reason);
 
+            // Notifikasi ke Customer bahwa penawaran ditolak
+            if ($offer->customer?->user) {
+                $carName = $offer->carUnit ? ($offer->carUnit->brand . ' ' . $offer->carUnit->model) : 'Unit Mobil';
+                $this->notificationService->send($offer->customer->user, 'offer_rejected', [
+                    'title'      => "Penawaran Belum Disetujui: {$carName}",
+                    'message'    => "Penawaran harga Anda untuk {$carName} belum dapat disetujui oleh Sales." . ($request->reason ? " Alasan: {$request->reason}" : ''),
+                    'car_name'   => $carName,
+                    'action_url' => $offer->carUnit ? route('marketplace.show', $offer->carUnit->slug) : null,
+                ]);
+            }
 
             return redirect()
                 ->route('admin.offers.show', $offer)

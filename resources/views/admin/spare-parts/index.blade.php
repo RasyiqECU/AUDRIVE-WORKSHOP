@@ -20,12 +20,16 @@
             </p>
         </div>
         <div class="flex items-center gap-3">
-            <a href="{{ route('admin.inventory.index') }}" class="px-3 py-2 bg-steel/60 border border-gunmetal text-silver-bright hover:border-giallo font-heading text-xs uppercase tracking-wider rounded flex items-center gap-2 transition-premium">
-                📦 Cek Inventori
-            </a>
-            <a href="{{ route('admin.spare-parts.create') }}" class="px-4 py-2 bg-giallo hover:bg-giallo-bright text-carbon font-heading text-xs uppercase tracking-wider font-bold rounded clip-angular-button transition-premium">
-                + Tambah Spare Part
-            </a>
+            @if(in_array(auth()->user()->role ?? '', ['super-admin', 'manager', 'inventory'], true))
+                <a href="{{ route('admin.inventory.index') }}" class="px-3 py-2 bg-steel/60 border border-gunmetal text-silver-bright hover:border-giallo font-heading text-xs uppercase tracking-wider rounded flex items-center gap-2 transition-premium">
+                    📦 Cek Inventori
+                </a>
+            @endif
+            @if(in_array(auth()->user()->role ?? '', ['super-admin', 'inventory'], true))
+                <a href="{{ route('admin.spare-parts.create') }}" class="px-4 py-2 bg-giallo hover:bg-giallo-bright text-carbon font-heading text-xs uppercase tracking-wider font-bold rounded clip-angular-button transition-premium">
+                    + Tambah Spare Part
+                </a>
+            @endif
         </div>
     </div>
 
@@ -60,6 +64,7 @@
             <table class="w-full text-left text-xs text-silver-muted">
                 <thead class="bg-steel/50 text-silver-bright font-heading uppercase text-[10px] tracking-wider border-b border-gunmetal">
                     <tr>
+                        <th class="p-3 w-12 text-center">Foto</th>
                         <th class="p-3">SKU / Part Number</th>
                         <th class="p-3">Nama Spare Part</th>
                         <th class="p-3">Kategori</th>
@@ -73,6 +78,15 @@
                 <tbody class="divide-y divide-gunmetal/40 font-mono">
                     @forelse($spareParts as $part)
                         <tr class="hover:bg-steel/20 transition-colors">
+                            <td class="p-2 text-center">
+                                <div class="w-10 h-10 rounded border border-gunmetal/80 bg-steel/30 overflow-hidden mx-auto flex items-center justify-center">
+                                    @if($part->image)
+                                        <img src="{{ asset('storage/' . $part->image) }}" alt="{{ $part->name }}" class="w-full h-full object-cover">
+                                    @else
+                                        <span class="text-xs text-silver-dim/60">⚙️</span>
+                                    @endif
+                                </div>
+                            </td>
                             <td class="p-3 text-giallo font-semibold">{{ $part->sku }}</td>
                             <td class="p-3 font-sans text-silver-bright font-medium">{{ $part->name }}</td>
                             <td class="p-3 font-sans text-silver-dim">{{ $part->category?->name ?? '-' }}</td>
@@ -96,14 +110,16 @@
                                 <a href="{{ route('admin.spare-parts.show', $part) }}" class="text-xs text-silver-dim hover:text-silver-bright">
                                     Detail
                                 </a>
-                                <a href="{{ route('admin.spare-parts.edit', $part) }}" class="text-xs text-giallo hover:underline font-heading uppercase font-semibold">
-                                    Edit
-                                </a>
+                                @if(in_array(auth()->user()->role ?? '', ['super-admin', 'inventory'], true))
+                                    <a href="{{ route('admin.spare-parts.edit', $part) }}" class="text-xs text-giallo hover:underline font-heading uppercase font-semibold">
+                                        Edit
+                                    </a>
+                                @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="p-8 text-center text-silver-dim font-sans">
+                            <td colspan="9" class="p-8 text-center text-silver-dim font-sans">
                                 Belum ada data suku cadang dalam katalog.
                             </td>
                         </tr>

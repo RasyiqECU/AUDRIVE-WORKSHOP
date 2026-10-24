@@ -27,19 +27,14 @@ class DashboardController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
-        $customer = $user->customer;
-
-        // Buat profil customer jika belum ada (misal akun lama)
-        if (! $customer) {
-            $customer = Customer::create(['user_id' => $user->id]);
-        }
+        $customer = $user->getOrCreateCustomerProfile();
 
         $customer->loadCount('vehicles');
 
 
         $activeBookings = $customer->serviceBookings()
             ->whereIn('status', ['pending', 'confirmed', 'in_progress'])
-            ->with('vehicle')
+            ->with(['vehicle', 'workOrder'])
             ->latest()
             ->limit(3)
             ->get();

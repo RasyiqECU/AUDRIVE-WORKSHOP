@@ -88,13 +88,33 @@ class NotificationService implements NotificationServiceContract
     {
         $results = [];
 
-
         foreach ($users as $user) {
             $results[$user->id] = $this->send($user, $type, $data);
         }
 
-
         return $results;
+    }
+
+    /**
+     * Send notification to all active users with specific roles (e.g. ['sales', 'super-admin', 'manager'])
+     */
+    public function notifyRoles(array $roles, string $type, array $data = []): array
+    {
+        $users = User::whereIn('role', $roles)->where('is_active', true)->get();
+        return $this->sendToMany($users->all(), $type, $data);
+    }
+
+    /**
+     * Send notification to a customer (accepts Customer model or User model)
+     */
+    public function notifyCustomer(\App\Models\Customer|User $recipient, string $type, array $data = []): bool
+    {
+        $user = $recipient instanceof User ? $recipient : $recipient->user;
+        if (!$user) {
+            return false;
+        }
+
+        return $this->send($user, $type, $data);
     }
 
 

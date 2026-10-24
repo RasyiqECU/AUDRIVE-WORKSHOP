@@ -17,6 +17,7 @@ class Voucher extends Model
         'code',
         'type',
         'value',
+        'points_cost',
         'min_purchase_idr',
         'max_usage',
         'used_count',
@@ -30,6 +31,7 @@ class Voucher extends Model
         return [
             'type' => VoucherType::class,
             'value' => 'integer',
+            'points_cost' => 'integer',
             'min_purchase_idr' => 'integer',
             'max_usage' => 'integer',
             'used_count' => 'integer',

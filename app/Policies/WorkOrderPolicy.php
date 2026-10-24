@@ -74,6 +74,11 @@ class WorkOrderPolicy
 
         return false;
     }
+
+    public function deliver(User $user, WorkOrder $workOrder): bool
+    {
+        return in_array($user->role, ['super-admin', 'manager', 'cashier']);
+    }
 }
 
 

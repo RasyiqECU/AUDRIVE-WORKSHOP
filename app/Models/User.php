@@ -112,6 +112,26 @@ class User extends Authenticatable
         return $this->role === 'super-admin';
     }
 
+    public function isCustomer(): bool
+    {
+        return $this->role === 'customer';
+    }
+
+    /**
+     * Ambil profil customer yang sudah ada, atau buat baru HANYA jika user adalah customer.
+     * Jangan pernah auto-create customer profile untuk staff/admin.
+     *
+     * @throws \LogicException jika dipanggil pada user non-customer
+     */
+    public function getOrCreateCustomerProfile(): Customer
+    {
+        if (!$this->isCustomer()) {
+            throw new \LogicException("Cannot create customer profile for user with role: {$this->role}");
+        }
+
+        return $this->customer ?? Customer::create(['user_id' => $this->id]);
+    }
+
     public function assignRole(string $role): self
     {
         $this->forceFill(['role' => $role])->save();

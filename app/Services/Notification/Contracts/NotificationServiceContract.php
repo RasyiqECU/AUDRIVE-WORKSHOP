@@ -28,6 +28,16 @@ interface NotificationServiceContract
      * Send notification to multiple users
      */
     public function sendToMany(array $users, string $type, array $data = []): array;
+
+    /**
+     * Send notification to all active users with specific roles
+     */
+    public function notifyRoles(array $roles, string $type, array $data = []): array;
+
+    /**
+     * Send notification to a customer
+     */
+    public function notifyCustomer(\App\Models\Customer|User $recipient, string $type, array $data = []): bool;
 }
 
 

@@ -48,7 +48,7 @@
                         <span class="text-[11px] text-silver-dim font-mono">
                             Periode: {{ $promo->start_date?->format('d M') }} - {{ $promo->end_date?->format('d M Y') }}
                         </span>
-                        <a href="{{ route('workshop.booking') }}" class="px-3 py-1.5 bg-giallo hover:bg-giallo-bright text-carbon text-xs font-heading uppercase font-bold rounded clip-angular-button">
+                        <a href="{{ route('workshop.booking.create') }}" class="px-3 py-1.5 bg-giallo hover:bg-giallo-bright text-carbon text-xs font-heading uppercase font-bold rounded clip-angular-button">
                             Gunakan Promo
                         </a>
                     </div>

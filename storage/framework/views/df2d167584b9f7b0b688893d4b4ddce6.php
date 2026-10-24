@@ -6,7 +6,7 @@
     
     <section class="relative w-full h-screen min-h-[650px] overflow-hidden flex items-center justify-center">
         
-        <img src="<?php echo e(asset('images/bengkel.gif')); ?>"
+        <img src="<?php echo e(\App\Services\SettingService::getWorkshopBackground()); ?>"
              alt="AUDrive Performance Workshop & AI Diagnostic Lab"
              class="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none z-0" />
 
@@ -156,10 +156,16 @@
                         <div>
                             <div class="flex items-center gap-2">
                                 <span class="font-heading font-bold text-silver-bright text-sm uppercase"><?php echo e($booking->service_type); ?></span>
-                                <span class="px-2 py-0.5 text-[10px] font-semibold rounded uppercase tracking-wider bg-giallo/20 text-giallo border border-giallo/30">
-                                    <?php echo e($booking->status->value ?? $booking->status); ?>
+                                <?php if($booking->workOrder && ($booking->workOrder->status->value ?? $booking->workOrder->status) === 'delivered'): ?>
+                                    <span class="px-2 py-0.5 text-[10px] font-semibold rounded uppercase tracking-wider bg-green-500/20 text-green-400 border border-green-500/30">
+                                        Diserahkan
+                                    </span>
+                                <?php else: ?>
+                                    <span class="px-2 py-0.5 text-[10px] font-semibold rounded uppercase tracking-wider bg-giallo/20 text-giallo border border-giallo/30">
+                                        <?php echo e($booking->status->value ?? $booking->status); ?>
 
-                                </span>
+                                    </span>
+                                <?php endif; ?>
                             </div>
                             <p class="text-xs text-silver-dim mt-1">
                                 Kendaraan: <span class="text-silver-bright"><?php echo e($booking->vehicle?->license_plate ?? 'N/A'); ?></span> — <?php echo e($booking->vehicle?->brand); ?> <?php echo e($booking->vehicle?->model); ?>

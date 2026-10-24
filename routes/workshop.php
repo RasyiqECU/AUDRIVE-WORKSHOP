@@ -20,6 +20,8 @@ Route::middleware('auth')->group(function () {
     // Service Booking
     Route::get('/workshop/book', [ServiceBookingController::class, 'create'])
         ->name('workshop.booking.create');
+    Route::get('/workshop/booking', [ServiceBookingController::class, 'create'])
+        ->name('workshop.booking');
     Route::post('/workshop/book', [ServiceBookingController::class, 'store'])
         ->name('workshop.booking.store');
     Route::get('/workshop/my-bookings', [ServiceBookingController::class, 'myBookings'])

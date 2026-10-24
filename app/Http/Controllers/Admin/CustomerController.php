@@ -38,14 +38,29 @@ class CustomerController extends Controller
     public function update(Request $request, Customer $customer): RedirectResponse
     {
         $validated = $request->validate([
+            'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:255',
-            'loyalty_tier' => 'nullable|string|in:bronze,silver,gold,platinum',
+            'city' => 'nullable|string|max:100',
+            'province' => 'nullable|string|max:100',
+            'loyalty_points' => 'nullable|integer|min:0',
         ]);
 
-        $customer->update($validated);
+        if ($customer->user) {
+            $customer->user->update([
+                'name' => $validated['name'],
+                'phone' => $validated['phone'] ?? null,
+            ]);
+        }
 
-        return redirect()->route('admin.customers.index')->with('success', 'Customer berhasil diperbarui.');
+        $customer->update([
+            'address' => $validated['address'] ?? null,
+            'city' => $validated['city'] ?? null,
+            'province' => $validated['province'] ?? null,
+            'loyalty_points' => isset($validated['loyalty_points']) ? (int) $validated['loyalty_points'] : $customer->loyalty_points,
+        ]);
+
+        return redirect()->route('admin.customers.index')->with('success', 'Data klien berhasil diperbarui.');
     }
 
     public function vehicles(Customer $customer): View

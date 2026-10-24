@@ -51,7 +51,9 @@ class AdminWorkOrderController extends Controller
         ]);
 
 
-        return view('admin.work-orders.show', compact('workOrder'));
+        $spareParts = SparePart::where('status', 'active')->orderBy('name')->get();
+
+        return view('admin.work-orders.show', compact('workOrder', 'spareParts'));
     }
 
 
@@ -83,6 +85,9 @@ class AdminWorkOrderController extends Controller
             'status' => 'required|in:' . implode(',', array_column(WorkOrderStatus::cases(), 'value')),
         ]);
 
+        if ($request->status === WorkOrderStatus::Delivered->value && auth()->user()->role === 'mechanic') {
+            return back()->with('error', 'Mekanik tidak berwenang mengubah status menjadi diserahkan. Status diserahkan diproses oleh Kasir setelah pembayaran lunas.');
+        }
 
         try {
             $this->workOrderService->updateStatus(
@@ -199,7 +204,7 @@ class AdminWorkOrderController extends Controller
 
     public function deliver(WorkOrder $workOrder): RedirectResponse
     {
-        $this->authorize('update', $workOrder);
+        $this->authorize('deliver', $workOrder);
 
 
         try {

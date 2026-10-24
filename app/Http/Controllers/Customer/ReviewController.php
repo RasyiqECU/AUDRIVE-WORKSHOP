@@ -39,7 +39,7 @@ class ReviewController extends Controller
         ]);
 
         $user = $request->user();
-        $customer = $user->customer ?? Customer::firstOrCreate(['user_id' => $user->id]);
+        $customer = $user->customer ?? $user->getOrCreateCustomerProfile();
 
         Review::create([
             'reviewer_type' => Customer::class,

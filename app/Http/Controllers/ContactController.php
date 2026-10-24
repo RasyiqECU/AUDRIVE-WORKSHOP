@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\ContactMessage;
+use App\Services\Notification\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class ContactController extends Controller
 {
+    public function __construct(
+        protected NotificationService $notificationService
+    ) {}
+
     /**
      * Simpan pesan dari formulir kontak publik.
      */
@@ -28,7 +33,7 @@ class ContactController extends Controller
             'email.email'    => 'Format email tidak valid.',
         ]);
 
-        ContactMessage::create([
+        $contact = ContactMessage::create([
             'name'    => $validated['name'],
             'phone'   => $validated['phone'],
             'email'   => $validated['email'],
@@ -37,8 +42,24 @@ class ContactController extends Controller
             'status'  => 'unread',
         ]);
 
+        // Notifikasi ke Role Terkait (Mechanic untuk workshop, Sales untuk showroom/umum, + Super Admin)
+        if (($validated['topic'] ?? '') === 'workshop') {
+            $rolesToNotify = ['mechanic', 'super-admin'];
+        } else {
+            $rolesToNotify = ['sales', 'super-admin'];
+        }
+
+        $this->notificationService->notifyRoles($rolesToNotify, 'contact_message', [
+            'title'        => "Pertanyaan Customer Baru: {$contact->name}",
+            'name'         => $contact->name,
+            'topic'        => strtoupper($contact->topic),
+            'preview'      => $contact->message ?? 'Pertanyaan masuk tanpa catatan pesan.',
+            'message_text' => $contact->message,
+            'action_url'   => route('admin.contact-messages.show', $contact->id),
+        ]);
+
         return redirect()
             ->route('contact')
-            ->with('success', 'Terima kasih, ' . $validated['name'] . '! Pesan Anda telah kami terima. Tim kami akan menghubungi Anda segera.');
+            ->with('success', 'Terima kasih, ' . $validated['name'] . '! Pesan Anda telah kami terima. Tim Sales / Advisor AUDrive akan segera merespons Anda.');
     }
 }

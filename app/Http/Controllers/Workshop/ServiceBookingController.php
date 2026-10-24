@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Workshop\StoreServiceBookingRequest;
 use App\Models\CustomerVehicle;
 use App\Models\ServiceBooking;
+use App\Services\Notification\NotificationService;
 use App\Services\ServiceBookingService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -17,7 +18,8 @@ use Illuminate\View\View;
 class ServiceBookingController extends Controller
 {
     public function __construct(
-        protected ServiceBookingService $bookingService
+        protected ServiceBookingService $bookingService,
+        protected NotificationService $notificationService
     ) {}
 
     /**
@@ -102,6 +104,27 @@ class ServiceBookingController extends Controller
                 $request->notes
             );
 
+            $vehicleName = "{$vehicle->brand} {$vehicle->model} ({$vehicle->plate_number})";
+            $scheduleDate = Carbon::parse($request->preferred_date)->format('d M Y') . ' jam ' . $request->preferred_time;
+
+            // 1. Notifikasi ke Customer
+            $this->notificationService->send($request->user(), 'service_booking_created', [
+                'title'      => "Booking Servis Diajukan: {$vehicleName}",
+                'message'    => "Booking servis untuk {$vehicleName} pada tanggal {$scheduleDate} berhasil diajukan. Tim bengkel kami akan segera mengonfirmasi jadwal Anda.",
+                'vehicle'    => $vehicleName,
+                'date'       => $scheduleDate,
+                'action_url' => route('workshop.booking.show', $booking->id),
+            ]);
+
+            // 2. Notifikasi ke Tim Bengkel / Mechanic & Super Admin
+            $this->notificationService->notifyRoles(['mechanic', 'super-admin'], 'service_booking_created', [
+                'title'      => "Booking Servis Baru: {$vehicleName}",
+                'message'    => "Booking servis baru masuk dari {$request->user()->name} untuk {$vehicleName} pada tanggal {$scheduleDate}.",
+                'vehicle'    => $vehicleName,
+                'date'       => $scheduleDate,
+                'action_url' => route('admin.service-bookings.show', $booking->id),
+            ]);
+
             return redirect()
                 ->route('workshop.booking.show', $booking)
                 ->with('success', 'Booking servis berhasil dibuat.');
@@ -168,7 +191,7 @@ class ServiceBookingController extends Controller
 
         $bookings = ServiceBooking::where('customer_id', $customer->id)
             ->whereIn('status', ['completed', 'cancelled'])
-            ->with('vehicle')
+            ->with(['vehicle', 'workOrder'])
             ->latest()
             ->paginate(10);
 

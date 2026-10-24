@@ -16,13 +16,24 @@ class ContactMessage extends Model
         'message',
         'status',
         'read_at',
+        'reply',
+        'replied_by',
+        'replied_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'read_at' => 'datetime',
+            'read_at'    => 'datetime',
+            'replied_at' => 'datetime',
         ];
+    }
+
+    // ── Relationships ──
+
+    public function repliedBy()
+    {
+        return $this->belongsTo(User::class, 'replied_by');
     }
 
     // ── Scopes ──
@@ -32,18 +43,25 @@ class ContactMessage extends Model
         return $query->where('status', 'unread');
     }
 
+    public function scopeReplied($query)
+    {
+        return $query->where('status', 'replied');
+    }
+
     public function scopeRead($query)
     {
-        return $query->where('status', 'read');
+        return $query->where('status', '!=', 'unread');
     }
 
     // ── Helpers ──
 
     public function markAsRead(): void
     {
-        $this->update([
-            'status'  => 'read',
-            'read_at' => now(),
-        ]);
+        if ($this->status === 'unread') {
+            $this->update([
+                'status'  => 'read',
+                'read_at' => now(),
+            ]);
+        }
     }
 }

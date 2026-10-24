@@ -75,7 +75,7 @@
                         Nomor WO: <span class="text-silver-bright font-mono font-semibold">{{ $booking->workOrder->code }}</span>
                     </p>
                     <p class="text-xs text-silver-dim mt-1">
-                        Status Pengerjaan: <span class="text-giallo font-semibold">{{ $booking->workOrder->status->value ?? $booking->workOrder->status }}</span>
+                        Status Pengerjaan: <span class="font-semibold {{ ($booking->workOrder->status->value ?? $booking->workOrder->status) === 'delivered' ? 'text-green-400' : 'text-giallo' }}">{{ $booking->workOrder->status instanceof \App\Enums\WorkOrderStatus ? $booking->workOrder->status->label() : ucfirst(str_replace('_', ' ', $booking->workOrder->status)) }}</span>
                     </p>
                 </div>
             @endif

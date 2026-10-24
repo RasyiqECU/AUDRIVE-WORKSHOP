@@ -15,7 +15,7 @@
                 Pantau rekomendasi perawatan berkala dan riwayat kendaraan Anda agar selalu dalam performa optimal.
             </p>
         </div>
-        <a href="{{ route('workshop.booking') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-giallo hover:bg-giallo-bright text-carbon font-heading text-xs uppercase tracking-wider font-bold rounded clip-angular-button transition-premium shrink-0">
+        <a href="{{ route('workshop.booking.create') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-giallo hover:bg-giallo-bright text-carbon font-heading text-xs uppercase tracking-wider font-bold rounded clip-angular-button transition-premium shrink-0">
             🔧 Booking Servis Baru
         </a>
     </div>
@@ -27,7 +27,7 @@
                 <div class="flex items-start justify-between">
                     <div>
                         <span class="inline-block px-2 py-0.5 text-[10px] font-heading uppercase tracking-wider bg-giallo/10 border border-giallo/30 text-giallo rounded">
-                            {{ $vehicle->license_plate }}
+                            {{ $vehicle->plate_number ?? $vehicle->license_plate ?? 'Tanpa Plat' }}
                         </span>
                         <h3 class="font-display text-lg text-silver-bright font-bold mt-2">
                             {{ $vehicle->brand }} {{ $vehicle->model }}
@@ -40,7 +40,7 @@
                 <div class="border-t border-gunmetal/50 pt-3 space-y-2 text-xs">
                     <div class="flex justify-between text-silver-muted">
                         <span>Servis Terakhir:</span>
-                        <span class="text-silver-bright font-mono">{{ $vehicle->serviceBookings->where('status', 'completed')->last()?->scheduled_date?->format('d M Y') ?? 'Belum ada data' }}</span>
+                        <span class="text-silver-bright font-mono">{{ $vehicle->serviceBookings->where('status', 'completed')->last()?->preferred_date?->format('d M Y') ?? 'Belum ada data' }}</span>
                     </div>
                     <div class="flex justify-between text-silver-muted">
                         <span>Estimasi Servis Rutin:</span>
@@ -56,7 +56,7 @@
                             Abaikan Notifikasi
                         </button>
                     </form>
-                    <a href="{{ route('workshop.booking') }}?vehicle_id={{ $vehicle->id }}" class="px-3 py-1.5 bg-steel hover:bg-steel/80 border border-gunmetal text-silver-bright text-xs font-heading uppercase tracking-wider rounded">
+                    <a href="{{ route('workshop.booking.create', ['customer_vehicle_id' => $vehicle->id]) }}" class="px-3 py-1.5 bg-steel hover:bg-steel/80 border border-gunmetal text-silver-bright text-xs font-heading uppercase tracking-wider rounded">
                         Jadwalkan Servis
                     </a>
                 </div>

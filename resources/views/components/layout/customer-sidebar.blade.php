@@ -5,9 +5,9 @@
     {{-- Logo --}}
     <div class="p-5 border-b border-gunmetal">
         <a href="{{ route('customer.dashboard') }}" class="flex items-center gap-3 group">
-            <img src="{{ asset('images/AUDrive-logo.png') }}" alt="AUDrive Logo" class="w-9 h-9 object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(245,196,0,0.3)]" />
+            <img src="{{ \App\Services\SettingService::getLogo() }}" alt="{{ \App\Services\SettingService::getName() }} Logo" class="w-9 h-9 object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(245,196,0,0.3)]" />
             <div>
-                <h1 class="font-display text-giallo text-sm tracking-wider font-bold">AUDRIVE</h1>
+                <h1 class="font-display text-giallo text-sm tracking-wider font-bold">{{ \App\Services\SettingService::getName() }}</h1>
                 <p class="font-mono text-[9px] text-silver-dim tracking-widest uppercase">Customer Portal</p>
             </div>
         </a>

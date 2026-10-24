@@ -1,18 +1,41 @@
 @extends('layouts.admin')
 
-@section('title', 'Notifikasi Admin')
+@php
+    $notifUser = auth()->user();
+    $notifRole = $notifUser->role ?? 'admin';
+    $roleTitle = match($notifRole) {
+        'super-admin' => 'SUPER ADMIN',
+        'manager'     => 'OPERATIONS MANAGER',
+        'mechanic'    => 'BENGKEL & MEKANIK',
+        'sales'       => 'SALES & SHOWROOM',
+        'inventory'   => 'GUDANG & INVENTORY',
+        'cashier'     => 'KASIR & PEMBAYARAN',
+        default       => strtoupper(str_replace('-', ' ', $notifRole)),
+    };
+    $roleDesc = match($notifRole) {
+        'super-admin' => 'Pantau seluruh aktivitas operasional, pesanan, booking servis, dan pengajuan persetujuan sistem.',
+        'manager'     => 'Pantau pengajuan persetujuan (approval) masuk, evaluasi operasional, dan eskalasi divisi.',
+        'mechanic'    => 'Pantau booking servis baru dari pelanggan dan penugasan work order perbaikan kendaraan.',
+        'sales'       => 'Pantau permohonan test drive, penawaran harga supercar masuk, dan pertanyaan prospek pelanggan.',
+        'inventory'   => 'Pantau peringatan stok suku cadang menipis dan pesanan masuk yang perlu disiapkan dari gudang.',
+        'cashier'     => 'Pantau pesanan yang perlu diverifikasi pembayarannya dan pelunasan billing perbaikan servis.',
+        default       => 'Pantau notifikasi dan aktivitas yang ditujukan khusus untuk peran Anda di AUDrive.',
+    };
+@endphp
+
+@section('title', 'Notifikasi ' . ucfirst($notifRole))
 
 @section('content')
 <div class="space-y-6 max-w-5xl mx-auto">
     {{-- Header --}}
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-            <p class="font-heading text-xs uppercase tracking-[0.2em] text-giallo">Pusat Informasi Sistem</p>
+            <p class="font-heading text-xs uppercase tracking-[0.2em] text-giallo">Pusat Informasi Operasional</p>
             <h1 class="font-display text-2xl md:text-3xl text-silver-bright font-bold tracking-wide mt-1">
-                NOTIFIKASI MASUK (ADMIN)
+                NOTIFIKASI MASUK ({{ $roleTitle }})
             </h1>
             <p class="text-xs text-silver-dim mt-1">
-                Pantau pesanan baru, booking servis masuk, persetujuan (approval), dan aktivitas sistem AUDrive secara real-time.
+                {{ $roleDesc }}
             </p>
         </div>
         @if($unreadCount > 0)

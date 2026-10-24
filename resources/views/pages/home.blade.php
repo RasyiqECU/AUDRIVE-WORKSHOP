@@ -7,8 +7,8 @@
 {{-- Hero Section (Lamborghini Style Fullscreen GIF 100vh) --}}
 <section class="relative w-full h-screen min-h-[650px] overflow-hidden flex items-center justify-center">
     {{-- GIF Background (Fullscreen 100vh, continuous loop, smooth, object-fit: cover) --}}
-    <img src="{{ asset('images/lambo.gif') }}"
-         alt="Lamborghini Supercar Experience"
+    <img src="{{ \App\Services\SettingService::getHeroBackground() }}"
+         alt="{{ \App\Services\SettingService::getName() }} Supercar Experience"
          class="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none z-0" />
 
     {{-- Cinematic Dark Gradients & Overlays --}}

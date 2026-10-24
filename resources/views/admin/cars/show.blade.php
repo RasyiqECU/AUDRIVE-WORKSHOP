@@ -54,13 +54,50 @@
         {{-- Photos & Specs --}}
         <div class="lg:col-span-2 space-y-6">
             {{-- Photos Gallery --}}
-            <div class="panel border border-gunmetal bg-carbon p-4">
-                <h3 class="font-heading text-xs uppercase tracking-wider text-silver-bright mb-3">Galeri Foto</h3>
+            <div class="panel border border-gunmetal bg-carbon p-5 space-y-4">
+                <div class="flex items-center justify-between border-b border-gunmetal pb-3">
+                    <h3 class="font-heading text-xs uppercase tracking-wider text-giallo font-bold flex items-center gap-2">
+                        <span>📸</span> Galeri Foto Unit ({{ $car->photos ? $car->photos->count() : 0 }})
+                    </h3>
+                    <a href="{{ route('admin.cars.edit', $car) }}" class="text-[11px] text-silver-dim hover:text-giallo font-heading uppercase">
+                        Kelola di Form Edit &rarr;
+                    </a>
+                </div>
+
                 @if($car->photos && $car->photos->count() > 0)
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                         @foreach($car->photos as $photo)
-                            <div class="aspect-video bg-nero border border-gunmetal overflow-hidden rounded">
-                                <img src="{{ asset('storage/' . $photo->photo_path) }}" alt="{{ $car->model }}" class="w-full h-full object-cover">
+                            <div class="aspect-video bg-nero border {{ $photo->is_primary ? 'border-giallo' : 'border-gunmetal' }} overflow-hidden rounded relative group">
+                                <img src="{{ asset('storage/' . $photo->path) }}" 
+                                     alt="{{ $car->model }}" 
+                                     class="w-full h-full object-cover"
+                                     onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center text-silver-dim text-xs\'>Foto Rusak</div>';">
+                                
+                                @if($photo->is_primary)
+                                    <div class="absolute top-1.5 left-1.5 px-2 py-0.5 bg-giallo text-nero font-heading text-[8px] font-bold uppercase rounded shadow">
+                                        ⭐ Utama
+                                    </div>
+                                @endif
+
+                                {{-- Quick Actions Overlay --}}
+                                <div class="absolute inset-0 bg-nero/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 p-2">
+                                    @if(!$photo->is_primary)
+                                        <form action="{{ route('admin.cars.photos.primary', [$car, $photo]) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" class="p-1.5 bg-giallo text-nero text-[9px] font-heading font-bold uppercase rounded hover:bg-arancio transition" title="Jadikan Foto Utama">
+                                                Utama
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    <form action="{{ route('admin.cars.photos.destroy', [$car, $photo]) }}" method="POST" onsubmit="return confirm('Hapus foto ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="p-1.5 bg-red-600 text-white text-[9px] font-heading font-bold uppercase rounded hover:bg-red-700 transition" title="Hapus Foto">
+                                            Hapus
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         @endforeach
                     </div>
@@ -69,6 +106,17 @@
                         Belum ada foto yang diunggah untuk unit ini.
                     </div>
                 @endif
+
+                {{-- Quick Upload New Photos --}}
+                <div class="pt-3 border-t border-gunmetal/60">
+                    <form action="{{ route('admin.cars.photos.store', $car) }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-3">
+                        @csrf
+                        <input type="file" name="photos[]" multiple accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" required class="flex-1 bg-nero border border-gunmetal px-3 py-1.5 text-xs text-silver-dim file:mr-2 file:py-1 file:px-2 file:border-0 file:text-[10px] file:font-heading file:uppercase file:bg-steel file:text-silver-bright hover:file:bg-giallo hover:file:text-nero cursor-pointer rounded">
+                        <button type="submit" class="px-4 py-2 bg-giallo hover:bg-arancio text-nero font-heading text-xs uppercase font-bold tracking-wider rounded transition-premium shrink-0">
+                            + Unggah Foto
+                        </button>
+                    </form>
+                </div>
             </div>
 
             {{-- Description --}}

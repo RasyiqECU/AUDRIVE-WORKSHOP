@@ -5,8 +5,8 @@
 
 <section class="relative w-full h-screen min-h-[650px] overflow-hidden flex items-center justify-center">
     
-    <img src="<?php echo e(asset('images/lambo.gif')); ?>"
-         alt="Lamborghini Supercar Experience"
+    <img src="<?php echo e(\App\Services\SettingService::getHeroBackground()); ?>"
+         alt="<?php echo e(\App\Services\SettingService::getName()); ?> Supercar Experience"
          class="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none z-0" />
 
     

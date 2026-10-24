@@ -20,9 +20,9 @@
     {{-- Logo & Role Header --}}
     <div class="p-5 border-b border-gunmetal space-y-2">
         <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 group">
-            <img src="{{ asset('images/AUDrive-logo.png') }}" alt="AUDrive Logo" class="w-9 h-9 object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(245,196,0,0.3)]" />
+            <img src="{{ \App\Services\SettingService::getLogo() }}" alt="{{ \App\Services\SettingService::getName() }} Logo" class="w-9 h-9 object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(245,196,0,0.3)]" />
             <div>
-                <h1 class="font-display text-giallo text-sm tracking-wider font-bold">AUDRIVE</h1>
+                <h1 class="font-display text-giallo text-sm tracking-wider font-bold">{{ \App\Services\SettingService::getName() }}</h1>
                 <p class="font-mono text-[9px] text-silver-dim tracking-widest uppercase">Internal Portal</p>
             </div>
         </a>
@@ -53,6 +53,26 @@
             <a href="{{ route('admin.offers.index') }}" class="sidebar-item {{ request()->routeIs('admin.offers.*') ? 'active' : '' }}">
                 <span class="text-sm">💬</span>
                 <span class="font-heading text-xs font-medium tracking-wide">Penawaran Masuk</span>
+            </a>
+
+            @php
+                $pendingAppointmentsCount = \App\Models\Appointment::where('status', 'pending')->count();
+            @endphp
+            <a href="{{ route('admin.appointments.index') }}" class="sidebar-item {{ request()->routeIs('admin.appointments.*') ? 'active' : '' }} flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm">🏁</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">Jadwal Test Drive</span>
+                </div>
+                @if($pendingAppointmentsCount > 0)
+                    <span class="px-1.5 py-0.5 bg-arancio/20 border border-arancio/40 text-arancio text-[10px] font-mono font-bold rounded">
+                        {{ $pendingAppointmentsCount }}
+                    </span>
+                @endif
+            </a>
+
+            <a href="{{ route('admin.vouchers.index') }}" class="sidebar-item {{ request()->routeIs('admin.vouchers.*', 'admin.promotions.*') ? 'active' : '' }}">
+                <span class="text-sm">🎟️</span>
+                <span class="font-heading text-xs font-medium tracking-wide">Voucher & Promo</span>
             </a>
         @endif
 
@@ -118,7 +138,44 @@
         {{-- Section CRM & Laporan (Super Admin, Manager, Sales, Cashier, Inventory) --}}
         <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">CRM & Laporan</p>
 
+        @if(in_array($role, ['super-admin', 'manager', 'sales'], true))
+            @php
+                $unreadMessagesCount = \App\Models\ContactMessage::where('status', 'unread')->count();
+            @endphp
+            <a href="{{ route('admin.contact-messages.index') }}" class="sidebar-item {{ request()->routeIs('admin.contact-messages.*') ? 'active' : '' }} flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm">📬</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">Pesan Customer</span>
+                </div>
+                @if($unreadMessagesCount > 0)
+                    <span class="px-1.5 py-0.5 bg-giallo/20 border border-giallo/40 text-giallo text-[10px] font-mono font-bold rounded animate-pulse">
+                        {{ $unreadMessagesCount }}
+                    </span>
+                @endif
+            </a>
+
+            @php
+                $openTicketsCount = \App\Models\SupportTicket::where('status', 'open')->count();
+            @endphp
+            <a href="{{ route('admin.tickets.index') }}" class="sidebar-item {{ request()->routeIs('admin.tickets.*') ? 'active' : '' }} flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm">🎫</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">Tiket Layanan</span>
+                </div>
+                @if($openTicketsCount > 0)
+                    <span class="px-1.5 py-0.5 bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-mono font-bold rounded animate-pulse">
+                        {{ $openTicketsCount }}
+                    </span>
+                @endif
+            </a>
+        @endif
+
         @if(in_array($role, ['super-admin', 'manager', 'sales', 'cashier'], true))
+            <a href="{{ route('admin.loyalty.index') }}" class="sidebar-item {{ request()->routeIs('admin.loyalty.*') ? 'active' : '' }}">
+                <span class="text-sm">👑</span>
+                <span class="font-heading text-xs font-medium tracking-wide">Program Loyalitas</span>
+            </a>
+
             <a href="{{ route('admin.customers.index') }}" class="sidebar-item {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
                 <span class="text-sm">👥</span>
                 <span class="font-heading text-xs font-medium tracking-wide">Database Pelanggan</span>

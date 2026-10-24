@@ -19,6 +19,7 @@ use App\Models\SalesOrder;
 use App\Models\SalesOrderItem;
 use App\Models\SparePart;
 use App\Models\StockMovement;
+use App\Services\Notification\NotificationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -26,8 +27,11 @@ use Illuminate\Support\Str;
 class CheckoutService
 {
     public function __construct(
-        protected CartService $cartService
-    ) {}
+        protected CartService $cartService,
+        protected ?NotificationService $notificationService = null
+    ) {
+        $this->notificationService = $notificationService ?? app(NotificationService::class);
+    }
 
 
     public function processCheckout(
@@ -94,7 +98,23 @@ class CheckoutService
 
                 // Reduce stock
                 $part->decrement('stock', $item->qty);
+                $part->refresh();
 
+                // Peringatan stok menipis otomatis ke Inventory & Super Admin
+                if ($part->stock <= ($part->low_stock_threshold ?? 5)) {
+                    try {
+                        $this->notificationService->notifyRoles(['inventory', 'super-admin'], 'low_stock_alert', [
+                            'title'           => "Peringatan Stok Suku Cadang Menipis: {$part->name}",
+                            'message'         => "Suku cadang {$part->name} tersisa {$part->stock} unit (Batas minimum: {$part->low_stock_threshold}). Segera lakukan restock.",
+                            'part_id'         => $part->id,
+                            'part_name'       => $part->name,
+                            'remaining_stock' => $part->stock,
+                            'action_url'      => route('admin.spare-parts.show', $part->id),
+                        ]);
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning('Gagal kirim notifikasi low stock: ' . $e->getMessage());
+                    }
+                }
 
                 // Create stock movement
                 StockMovement::create([
@@ -108,13 +128,11 @@ class CheckoutService
                 ]);
             }
 
-
             // Add loyalty points if customer is logged in
             if ($customer) {
                 $points = (int) ($subtotal / 10000); // 1 point per Rp 10.000
                 if ($points > 0) {
                     $customer->increment('loyalty_points', $points);
-
 
                     // Create loyalty transaction
                     $customer->loyaltyTransactions()->create([
@@ -127,10 +145,30 @@ class CheckoutService
                 }
             }
 
-
             // Clear cart
             $this->cartService->clearCart($cart);
 
+            // Notifikasi Pembelian Baru ke Customer & Role Terkait
+            $customerUser = $customer?->user;
+            if ($customerUser) {
+                $this->notificationService->send($customerUser, 'order_created', [
+                    'title'      => "Pesanan Berhasil Dibuat: #{$salesOrder->code}",
+                    'message'    => "Pesanan suku cadang #{$salesOrder->code} berhasil dibuat senilai Rp " . number_format($salesOrder->total_idr, 0, ',', '.') . ". Silakan lakukan pembayaran.",
+                    'order_code' => $salesOrder->code,
+                    'amount'     => $salesOrder->total_idr,
+                    'action_url' => route('parts.orders.show', $salesOrder->id),
+                ]);
+            }
+
+            // Notifikasi ke Tim Kasir & Gudang/Inventory + Super Admin
+            $customerName = $customerUser?->name ?? 'Pelanggan';
+            $this->notificationService->notifyRoles(['cashier', 'inventory', 'super-admin'], 'order_created', [
+                'title'      => "Pesanan Suku Cadang Masuk: #{$salesOrder->code}",
+                'message'    => "Pesanan suku cadang baru masuk dari {$customerName} (#{$salesOrder->code}) senilai Rp " . number_format($salesOrder->total_idr, 0, ',', '.'),
+                'order_code' => $salesOrder->code,
+                'amount'     => $salesOrder->total_idr,
+                'action_url' => route('admin.pos.index'),
+            ]);
 
             return $salesOrder;
         });
@@ -174,6 +212,26 @@ class CheckoutService
                 ]);
             }
 
+            // Notifikasi Pembayaran Berhasil ke Customer
+            $customerUser = $salesOrder->customer?->user;
+            if ($customerUser) {
+                $this->notificationService->send($customerUser, 'payment_success', [
+                    'title'      => "Pembayaran Berhasil: #{$salesOrder->code}",
+                    'message'    => "Pembayaran sebesar Rp " . number_format($amount, 0, ',', '.') . " untuk pesanan #{$salesOrder->code} telah diverifikasi.",
+                    'order_code' => $salesOrder->code,
+                    'amount'     => $amount,
+                    'action_url' => route('parts.orders.show', $salesOrder->id),
+                ]);
+            }
+
+            // Notifikasi ke Tim Kasir & Sales + Super Admin
+            $this->notificationService->notifyRoles(['cashier', 'sales', 'super-admin'], 'payment_success', [
+                'title'      => "Pembayaran Diterima: #{$salesOrder->code}",
+                'message'    => "Pembayaran sebesar Rp " . number_format($amount, 0, ',', '.') . " untuk pesanan #{$salesOrder->code} telah diterima via {$method}.",
+                'order_code' => $salesOrder->code,
+                'amount'     => $amount,
+                'action_url' => route('admin.pos.index'),
+            ]);
 
             return $payment;
         });

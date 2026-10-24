@@ -17,7 +17,7 @@ class VoucherController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
-        $customer = $user->customer ?? Customer::firstOrCreate(['user_id' => $user->id]);
+        $customer = $user->customer ?? $user->getOrCreateCustomerProfile();
         $claimedVouchers = $customer->voucherRedemptions()->with('voucher')->latest()->get();
         $availableVouchers = Voucher::active()->latest()->get();
 
@@ -27,7 +27,7 @@ class VoucherController extends Controller
     public function claim(Request $request, Voucher $voucher): RedirectResponse
     {
         $user = $request->user();
-        $customer = $user->customer ?? Customer::firstOrCreate(['user_id' => $user->id]);
+        $customer = $user->customer ?? $user->getOrCreateCustomerProfile();
 
         if (!$voucher->isAvailable()) {
             return back()->with('error', 'Voucher tidak tersedia atau sudah habis.');

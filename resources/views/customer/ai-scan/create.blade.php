@@ -129,7 +129,7 @@
 
 
     {{-- Recent Scans --}}
-    @if($recentScans->count() > 0)
+    @if(isset($recentScans) && $recentScans->count() > 0)
         <div class="panel border border-gunmetal overflow-hidden">
             <div class="bg-steel/30 px-5 py-3 border-b border-gunmetal flex items-center justify-between">
                 <h2 class="font-heading text-xs uppercase tracking-wider text-silver-bright">

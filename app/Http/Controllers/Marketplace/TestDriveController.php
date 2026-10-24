@@ -8,6 +8,7 @@ use App\Enums\AppointmentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\CarUnit;
+use App\Services\Notification\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,6 +16,10 @@ use Illuminate\View\View;
 
 class TestDriveController extends Controller
 {
+    public function __construct(
+        protected NotificationService $notificationService
+    ) {}
+
     public function create(CarUnit $car): View
     {
         return view('marketplace.test-drive', compact('car'));
@@ -35,7 +40,7 @@ class TestDriveController extends Controller
 
         $datetime = Carbon::parse($request->scheduled_at . ' ' . $request->time_slot);
 
-        Appointment::create([
+        $appointment = Appointment::create([
             'type'         => 'test_drive',
             'car_unit_id'  => $car->id,
             'customer_id'  => $customer->id,
@@ -44,8 +49,29 @@ class TestDriveController extends Controller
             'notes'        => $request->notes,
         ]);
 
+        $carName = "{$car->brand} {$car->model}";
+        $scheduledStr = $datetime->format('d M Y, H:i') . ' WIB';
+
+        // 1. Notifikasi ke Tim Sales & Super Admin
+        $this->notificationService->notifyRoles(['sales', 'super-admin'], 'test_drive_requested', [
+            'title'         => "Permohonan Test Drive Baru: {$carName}",
+            'customer_name' => $request->user()->name,
+            'car_name'      => $carName,
+            'scheduled_at'  => $scheduledStr,
+            'action_url'    => route('admin.appointments.show', $appointment->id),
+        ]);
+
+        // 2. Notifikasi ke Customer pemohon
+        $this->notificationService->send($request->user(), 'test_drive_requested', [
+            'title'        => "Permohonan Test Drive Terkirim: {$carName}",
+            'message'      => "Permohonan jadwal uji kendaraan untuk unit {$carName} pada {$scheduledStr} berhasil diajukan. Tim Sales kami akan segera mengonfirmasi ketersediaan unit.",
+            'car_name'     => $carName,
+            'scheduled_at' => $scheduledStr,
+            'action_url'   => route('marketplace.show', $car->slug),
+        ]);
+
         return redirect()
             ->route('marketplace.show', $car->slug)
-            ->with('success', 'Jadwal Test Drive berhasil diajukan. Tim kami akan menghubungi Anda.');
+            ->with('success', 'Jadwal Test Drive berhasil diajukan. Tim Sales AUDrive akan segera mengonfirmasi jadwal Anda.');
     }
 }

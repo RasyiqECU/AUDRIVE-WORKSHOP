@@ -52,6 +52,13 @@ class AppServiceProvider extends ServiceProvider
         CustomerVehicle::class => CustomerVehiclePolicy::class,
     ];
 
+    public function register(): void
+    {
+        $this->app->singleton(
+            \App\Services\Notification\Contracts\NotificationServiceContract::class,
+            \App\Services\Notification\NotificationService::class
+        );
+    }
 
     public function boot(): void
     {
@@ -64,6 +71,15 @@ class AppServiceProvider extends ServiceProvider
                 return true;
             }
         });
+
+        // Set dynamic app.name from SettingService
+        try {
+            $appName = \App\Services\SettingService::getName();
+            if (!empty($appName)) {
+                config(['app.name' => $appName]);
+            }
+        } catch (\Throwable) {
+        }
     }
 }
 

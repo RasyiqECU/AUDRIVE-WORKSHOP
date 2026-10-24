@@ -8,12 +8,17 @@ use App\Enums\OfferStatus;
 use App\Http\Controllers\Controller;
 use App\Models\CarUnit;
 use App\Models\Offer;
+use App\Services\Notification\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class OfferController extends Controller
 {
+    public function __construct(
+        protected NotificationService $notificationService
+    ) {}
+
     public function index(Request $request): View
     {
         $customer = $request->user()?->customer;
@@ -36,7 +41,7 @@ class OfferController extends Controller
             return back()->with('error', 'Silakan lengkapi profil customer Anda terlebih dahulu.');
         }
 
-        Offer::create([
+        $offer = Offer::create([
             'car_unit_id' => $car->id,
             'customer_id' => $customer->id,
             'amount_idr'  => (int)$request->amount_idr,
@@ -45,9 +50,29 @@ class OfferController extends Controller
             'expires_at'  => now()->addDays(7),
         ]);
 
+        $carName = "{$car->brand} {$car->model}";
+
+        // 1. Notifikasi ke Tim Sales & Super Admin
+        $this->notificationService->notifyRoles(['sales', 'super-admin'], 'offer_submitted', [
+            'title'         => "Penawaran Harga Masuk: {$carName}",
+            'customer_name' => $request->user()->name,
+            'car_name'      => $carName,
+            'amount'        => $offer->amount_idr,
+            'action_url'    => route('admin.offers.show', $offer->id),
+        ]);
+
+        // 2. Notifikasi ke Customer pembuat penawaran
+        $this->notificationService->send($request->user(), 'offer_submitted', [
+            'title'      => "Penawaran Harga Terkirim: {$carName}",
+            'message'    => "Penawaran harga Anda untuk {$carName} sebesar Rp " . number_format($offer->amount_idr, 0, ',', '.') . " telah diteruskan ke tim Sales AUDrive.",
+            'car_name'   => $carName,
+            'amount'     => $offer->amount_idr,
+            'action_url' => route('marketplace.show', $car->slug),
+        ]);
+
         return redirect()
             ->route('marketplace.show', $car->slug)
-            ->with('success', 'Penawaran harga berhasil dikirimkan.');
+            ->with('success', 'Penawaran harga berhasil dikirimkan ke tim Sales.');
     }
 
     public function update(Request $request, Offer $offer): RedirectResponse

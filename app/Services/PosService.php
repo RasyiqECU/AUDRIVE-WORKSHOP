@@ -13,6 +13,7 @@ use App\Enums\SalesOrderStatus;
 use App\Enums\SalesOrderType;
 use App\Enums\StockMovementType;
 use App\Enums\WorkOrderStatus;
+use App\Models\AuditLog;
 use App\Models\CarUnit;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -22,6 +23,7 @@ use App\Models\SalesOrderItem;
 use App\Models\SparePart;
 use App\Models\StockMovement;
 use App\Models\WorkOrder;
+use App\Services\Notification\Contracts\NotificationServiceContract;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -260,13 +262,55 @@ class PosService
                 }
             }
 
-            // Update status Work Order ke Completed jika masih in_progress
-            if ($workOrder->status === WorkOrderStatus::InProgress || $workOrder->status === WorkOrderStatus::QualityControl) {
-                $workOrder->update(['status' => WorkOrderStatus::Completed, 'completed_at' => now()]);
-            }
+            // Update status Work Order langsung ke Delivered setelah dibayar lunas di kasir
+            $oldStatus = $workOrder->status;
+            $workOrder->update([
+                'status' => WorkOrderStatus::Delivered,
+                'completed_at' => $workOrder->completed_at ?? now(),
+            ]);
 
             if ($workOrder->serviceBooking) {
                 $workOrder->serviceBooking->update(['status' => 'completed']);
+            }
+
+            // Catat ke Audit Log
+            AuditLog::create([
+                'user_id'     => auth()->id() ?? $userId,
+                'action'      => 'status_changed',
+                'model_type'  => 'work_order',
+                'model_id'    => $workOrder->id,
+                'old_values'  => ['status' => $oldStatus->value ?? (string) $oldStatus],
+                'new_values'  => ['status' => 'delivered'],
+                'description' => "Work Order #{$workOrder->code} status changed from " . ($oldStatus->value ?? (string) $oldStatus) . " to delivered",
+            ]);
+
+            // Notifikasi ke Customer & Mekanik terkait
+            $customerUser = $workOrder->vehicle?->customer?->user ?? $workOrder->serviceBooking?->customer?->user;
+            $vehicleName = $workOrder->vehicle ? ($workOrder->vehicle->brand . ' ' . $workOrder->vehicle->model . ' (' . $workOrder->vehicle->plate_number . ')') : 'Kendaraan Pelanggan';
+
+            try {
+                $notifService = app(NotificationServiceContract::class);
+                if ($customerUser) {
+                    $notifService->send($customerUser, 'work_order_delivered', [
+                        'title'           => "Pembayaran Diterima & Kendaraan Diserahkan: {$vehicleName}",
+                        'message'         => "Pembayaran servis {$vehicleName} (WO #{$workOrder->code}) sebesar Rp " . number_format($total, 0, ',', '.') . " telah berhasil diproses di kasir. Kendaraan telah resmi diserahterimakan.",
+                        'vehicle'         => $vehicleName,
+                        'work_order_code' => $workOrder->code,
+                        'action_url'      => route('workshop.tracking.show', $workOrder->id),
+                    ]);
+                }
+
+                if ($workOrder->mechanic) {
+                    $notifService->send($workOrder->mechanic, 'work_order_delivered', [
+                        'title'           => "Unit WO #{$workOrder->code} Telah Lunas & Diserahkan",
+                        'message'         => "Kendaraan {$vehicleName} (WO #{$workOrder->code}) telah lunas dibayar di Kasir dan resmi diserahterimakan kepada pelanggan.",
+                        'vehicle'         => $vehicleName,
+                        'work_order_code' => $workOrder->code,
+                        'action_url'      => route('admin.work-orders.show', $workOrder->id),
+                    ]);
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning("Gagal mengirim notifikasi POS: " . $e->getMessage());
             }
 
             return $salesOrder;

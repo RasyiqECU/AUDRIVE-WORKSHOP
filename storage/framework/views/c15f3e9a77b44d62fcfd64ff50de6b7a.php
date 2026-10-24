@@ -7,10 +7,17 @@
 <?php $__env->startSection('content'); ?>
 <div class="space-y-6">
     
-    <div>
-        <p class="font-heading text-xs uppercase tracking-[0.2em] text-giallo">Selamat Datang</p>
-        <h1 class="font-display text-2xl md:text-3xl text-silver-bright tracking-wide mt-1"><?php echo e($customer->user->name); ?></h1>
-        <p class="font-mono text-xs text-silver-dim mt-1">Customer ID: <?php echo e($customer->code); ?></p>
+    <div class="relative overflow-hidden border border-gunmetal bg-carbon p-6 md:p-8">
+        <img src="<?php echo e(\App\Services\SettingService::getDashboardBackground()); ?>" 
+             alt="Dashboard Banner" 
+             class="absolute inset-0 w-full h-full object-cover object-center pointer-events-none opacity-20 select-none z-0" />
+        <div class="absolute inset-0 bg-gradient-to-r from-carbon via-carbon/90 to-carbon/70 z-0 pointer-events-none"></div>
+
+        <div class="relative z-10">
+            <p class="font-heading text-xs uppercase tracking-[0.2em] text-giallo">Selamat Datang</p>
+            <h1 class="font-display text-2xl md:text-3xl text-silver-bright font-bold tracking-wide mt-1"><?php echo e($customer->user->name); ?></h1>
+            <p class="font-mono text-xs text-silver-dim mt-1">Customer ID: <?php echo e($customer->code); ?></p>
+        </div>
     </div>
 
 
@@ -158,6 +165,14 @@
                         </div>
                         <p class="font-mono text-[10px] text-silver-dim"><?php echo e($booking->preferred_date->format('d M Y')); ?>, <?php echo e($booking->preferred_time); ?></p>
                         <p class="font-body text-[11px] text-silver-dim mt-1"><?php echo e($booking->vehicle->full_name); ?></p>
+                        <?php if($booking->workOrder): ?>
+                            <div class="mt-2.5 pt-2 border-t border-gunmetal/30 flex justify-between items-center">
+                                <span class="font-mono text-[10px] text-silver-dim">WO: <?php echo e($booking->workOrder->code); ?></span>
+                                <a href="<?php echo e(route('workshop.tracking.show', $booking->workOrder)); ?>" class="font-heading text-[10px] text-giallo hover:text-arancio uppercase tracking-wider transition-premium">
+                                    Lacak Servis &rarr;
+                                </a>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <?php if (isset($component)) { $__componentOriginal3607a477fdef7402bc742abad5df9c51 = $component; } ?>

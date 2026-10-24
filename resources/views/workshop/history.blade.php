@@ -23,9 +23,15 @@
                     <div>
                         <div class="flex items-center gap-2">
                             <span class="font-heading font-bold text-silver-bright text-sm uppercase">{{ $booking->service_type }}</span>
-                            <span class="px-2 py-0.5 text-[10px] font-semibold rounded uppercase tracking-wider {{ $booking->status->value === 'completed' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30' }}">
-                                {{ $booking->status->value ?? $booking->status }}
-                            </span>
+                            @if($booking->workOrder && ($booking->workOrder->status->value ?? $booking->workOrder->status) === 'delivered')
+                                <span class="px-2 py-0.5 text-[10px] font-semibold rounded uppercase tracking-wider bg-green-500/20 text-green-400 border border-green-500/30">
+                                    Diserahkan (Delivered)
+                                </span>
+                            @else
+                                <span class="px-2 py-0.5 text-[10px] font-semibold rounded uppercase tracking-wider {{ ($booking->status->value ?? $booking->status) === 'completed' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30' }}">
+                                    {{ ($booking->status->value ?? $booking->status) === 'completed' ? 'Selesai' : 'Dibatalkan' }}
+                                </span>
+                            @endif
                         </div>
                         <p class="text-xs text-silver-dim mt-1">
                             Kendaraan: <span class="text-silver-bright">{{ $booking->vehicle?->license_plate ?? 'N/A' }}</span> — {{ $booking->vehicle?->brand }} {{ $booking->vehicle?->model }}
@@ -34,7 +40,12 @@
                             Tanggal: {{ $booking->preferred_date?->format('d M Y') }}
                         </p>
                     </div>
-                    <div>
+                    <div class="flex items-center gap-2">
+                        @if($booking->workOrder)
+                            <a href="{{ route('workshop.tracking.show', $booking->workOrder) }}" class="px-3 py-1.5 bg-giallo/20 text-giallo text-xs rounded hover:bg-giallo/30 transition">
+                                Lacak Servis
+                            </a>
+                        @endif
                         <a href="{{ route('workshop.booking.show', $booking) }}" class="px-3 py-1.5 border border-white/20 text-xs text-silver-bright rounded hover:border-giallo transition">
                             Lihat Detail
                         </a>

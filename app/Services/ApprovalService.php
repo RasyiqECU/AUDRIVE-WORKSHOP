@@ -9,13 +9,20 @@ namespace App\Services;
 
 use App\Models\ApprovalRequest;
 use App\Models\User;
+use App\Services\Notification\Contracts\NotificationServiceContract;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-
 class ApprovalService
 {
+    protected ?NotificationServiceContract $notificationService = null;
+
+    public function __construct(?NotificationServiceContract $notificationService = null)
+    {
+        $this->notificationService = $notificationService ?? app(NotificationServiceContract::class);
+    }
+
     /**
      * Create approval request
      */
@@ -32,18 +39,29 @@ class ApprovalService
                 'status' => 'pending',
             ]);
 
-
             Log::info('Approval request created', [
                 'approval_id' => $approval->id,
                 'type' => $type,
                 'requested_by' => $requester->id,
             ]);
 
+            // Notifikasi khusus ke Manager dan Super Admin
+            try {
+                $this->notificationService?->notifyRoles(['manager', 'super-admin'], 'approval_requested', [
+                    'title'          => "Pengajuan Approval Baru: " . strtoupper(str_replace('_', ' ', $type)),
+                    'message'        => "Pengajuan approval " . strtoupper(str_replace('_', ' ', $type)) . " diajukan oleh {$requester->name}. Menunggu evaluasi Anda.",
+                    'type'           => strtoupper(str_replace('_', ' ', $type)),
+                    'approval_id'    => $approval->id,
+                    'requester_name' => $requester->name,
+                    'action_url'     => route('admin.approvals.show', $approval->id),
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('Gagal kirim notifikasi approval request: ' . $e->getMessage());
+            }
 
             return $approval;
         });
     }
-
 
     /**
      * Approve request
@@ -51,33 +69,44 @@ class ApprovalService
     public function approve(ApprovalRequest $approval, User $approver, ?string $notes = null): ApprovalRequest
     {
         return DB::transaction(function () use ($approval, $approver, $notes) {
-            if ($approval->status !== 'pending') {
+            if ($approval->status !== 'pending' && $approval->status?->value !== 'pending') {
                 throw new \Exception('Approval request is not pending');
             }
-
 
             $approval->update([
                 'status' => 'approved',
                 'approved_by' => $approver->id,
-                'approved_at' => now(),
-                'notes' => $notes,
+                'decided_at' => now(),
+                'reason' => $notes,
             ]);
-
 
             // Execute approval action based on type
             $this->executeApprovalAction($approval);
-
 
             Log::info('Approval request approved', [
                 'approval_id' => $approval->id,
                 'approved_by' => $approver->id,
             ]);
 
+            // Notifikasi balik ke staf yang mengajukan
+            try {
+                if ($approval->requester) {
+                    $this->notificationService?->send($approval->requester, 'approval_resolved', [
+                        'title'         => "Approval Disetujui: " . strtoupper(str_replace('_', ' ', $approval->type)),
+                        'message'       => "Pengajuan approval #" . $approval->id . " (" . strtoupper(str_replace('_', ' ', $approval->type)) . ") telah DISETUJUI oleh " . $approver->name . ($notes ? ". Catatan: {$notes}" : "."),
+                        'status'        => 'DISETUJUI',
+                        'approval_id'   => $approval->id,
+                        'approver_name' => $approver->name,
+                        'action_url'    => route('admin.approvals.show', $approval->id),
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Gagal kirim notifikasi approval approved: ' . $e->getMessage());
+            }
 
             return $approval;
         });
     }
-
 
     /**
      * Reject request
@@ -85,24 +114,37 @@ class ApprovalService
     public function reject(ApprovalRequest $approval, User $rejector, ?string $notes = null): ApprovalRequest
     {
         return DB::transaction(function () use ($approval, $rejector, $notes) {
-            if ($approval->status !== 'pending') {
+            if ($approval->status !== 'pending' && $approval->status?->value !== 'pending') {
                 throw new \Exception('Approval request is not pending');
             }
-
 
             $approval->update([
                 'status' => 'rejected',
                 'approved_by' => $rejector->id,
-                'approved_at' => now(),
-                'notes' => $notes,
+                'decided_at' => now(),
+                'reason' => $notes,
             ]);
-
 
             Log::info('Approval request rejected', [
                 'approval_id' => $approval->id,
                 'rejected_by' => $rejector->id,
             ]);
 
+            // Notifikasi balik ke staf yang mengajukan
+            try {
+                if ($approval->requester) {
+                    $this->notificationService?->send($approval->requester, 'approval_resolved', [
+                        'title'         => "Approval Ditolak: " . strtoupper(str_replace('_', ' ', $approval->type)),
+                        'message'       => "Pengajuan approval #" . $approval->id . " (" . strtoupper(str_replace('_', ' ', $approval->type)) . ") DITOLAK oleh " . $rejector->name . ($notes ? ". Catatan: {$notes}" : "."),
+                        'status'        => 'DITOLAK',
+                        'approval_id'   => $approval->id,
+                        'approver_name' => $rejector->name,
+                        'action_url'    => route('admin.approvals.show', $approval->id),
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Gagal kirim notifikasi approval rejected: ' . $e->getMessage());
+            }
 
             return $approval;
         });
