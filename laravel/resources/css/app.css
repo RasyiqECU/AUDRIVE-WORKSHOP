@@ -1,0 +1,288 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════
+AUDrive — Tailwind CSS 4 Theme
+═══════════════════════════════════════════════════════ */
+
+@theme {
+    /* ───────────────────────────────────────────────────
+  Colors
+  ─────────────────────────────────────────────────── */
+
+    --color-nero: #0a0a0a;
+    --color-carbon: #1a1a1a;
+    --color-steel: #242424;
+    --color-gunmetal: #2a2a2a;
+
+    --color-silver: #c0c0c0;
+    --color-silver-bright: #e5e5e5;
+    --color-silver-dim: #808080;
+
+    --color-giallo: #f5c400;
+    --color-arancio: #ff6a00;
+
+    --color-danger: #ef4444;
+    --color-verde: #22c55e;
+
+    /* ───────────────────────────────────────────────────
+  Fonts
+  ─────────────────────────────────────────────────── */
+
+    --font-heading: "Instrument Sans", sans-serif;
+    --font-body: "Instrument Sans", sans-serif;
+    --font-display: "Instrument Sans", sans-serif;
+
+    /* ───────────────────────────────────────────────────
+  Shadows
+  ─────────────────────────────────────────────────── */
+
+    --shadow-panel: 0 4px 20px rgb(0 0 0 / 0.25);
+}
+
+/* ═══════════════════════════════════════════════════════
+AUDrive — Custom Utilities
+═══════════════════════════════════════════════════════ */
+
+@utility transition-premium {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ═══════════════════════════════════════════════════════
+AUDrive — Main CSS Entry
+═══════════════════════════════════════════════════════ */
+
+@layer base {
+    * {
+        box-sizing: border-box;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply bg-nero text-silver font-body antialiased;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ───────────────────────────────────────────────────
+  Scrollbar
+  ─────────────────────────────────────────────────── */
+
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        @apply bg-carbon;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        @apply bg-gunmetal rounded;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        @apply bg-giallo;
+    }
+}
+
+@layer components {
+    /* ───────────────────────────────────────────────────
+  Panel
+  ─────────────────────────────────────────────────── */
+
+    .panel {
+        @apply bg-carbon border border-gunmetal shadow-panel;
+    }
+
+    /* ───────────────────────────────────────────────────
+  Panel Chamfered
+  ─────────────────────────────────────────────────── */
+
+    .panel-chamfered {
+        @apply bg-carbon border border-gunmetal shadow-panel;
+
+        clip-path: polygon(0 12px,
+                12px 0,
+                calc(100% - 12px) 0,
+                100% 12px,
+                100% calc(100% - 12px),
+                calc(100% - 12px) 100%,
+                12px 100%,
+                0 calc(100% - 12px));
+    }
+
+    /* ───────────────────────────────────────────────────
+  Badge Dashboard
+  ─────────────────────────────────────────────────── */
+
+    .badge-dashboard {
+        @apply font-heading font-semibold uppercase tracking-wider text-[0.7rem] px-2.5 py-0.5 border;
+
+        clip-path: polygon(0 0,
+                calc(100% - 6px) 0,
+                100% 6px,
+                100% 100%,
+                6px 100%,
+                0 calc(100% - 6px));
+    }
+
+    /* ───────────────────────────────────────────────────
+  Button Primary
+  ─────────────────────────────────────────────────── */
+
+    .btn-primary {
+        @apply px-5 py-2 bg-giallo text-nero font-heading font-bold text-sm uppercase tracking-wider hover:bg-arancio transition-premium;
+
+        clip-path: polygon(0 0,
+                calc(100% - 8px) 0,
+                100% 8px,
+                100% 100%,
+                8px 100%,
+                0 calc(100% - 8px));
+    }
+
+    /* ───────────────────────────────────────────────────
+  Button Secondary
+  ─────────────────────────────────────────────────── */
+
+    .btn-secondary {
+        @apply px-5 py-2 border border-giallo text-giallo font-heading font-bold text-sm uppercase tracking-wider hover:bg-giallo hover:text-nero transition-premium;
+
+        clip-path: polygon(0 0,
+                calc(100% - 8px) 0,
+                100% 8px,
+                100% 100%,
+                8px 100%,
+                0 calc(100% - 8px));
+    }
+
+    /* ───────────────────────────────────────────────────
+  Button Ghost
+  ─────────────────────────────────────────────────── */
+
+    .btn-ghost {
+        @apply px-5 py-2 bg-steel border border-gunmetal text-silver font-heading font-medium text-sm uppercase tracking-wider hover:border-silver-dim transition-premium;
+
+        clip-path: polygon(0 0,
+                calc(100% - 8px) 0,
+                100% 8px,
+                100% 100%,
+                8px 100%,
+                0 calc(100% - 8px));
+    }
+
+    /* ───────────────────────────────────────────────────
+  Button Danger
+  ─────────────────────────────────────────────────── */
+
+    .btn-danger {
+        @apply px-5 py-2 bg-danger/10 border border-danger text-danger font-heading font-bold text-sm uppercase tracking-wider hover:bg-danger hover:text-nero transition-premium;
+
+        clip-path: polygon(0 0,
+                calc(100% - 8px) 0,
+                100% 8px,
+                100% 100%,
+                8px 100%,
+                0 calc(100% - 8px));
+    }
+
+    /* ───────────────────────────────────────────────────
+  Form Input
+  ─────────────────────────────────────────────────── */
+
+    .input-audrive {
+        @apply w-full bg-nero border border-gunmetal px-4 py-2.5 text-silver-bright font-body text-sm placeholder:text-silver-dim/40 focus:border-giallo focus:outline-none focus:ring-1 focus:ring-giallo/30 transition-premium;
+    }
+
+    /* ───────────────────────────────────────────────────
+  Form Label
+  ─────────────────────────────────────────────────── */
+
+    .label-audrive {
+        @apply font-heading text-xs uppercase tracking-wider text-silver-dim block mb-1;
+    }
+
+    /* ───────────────────────────────────────────────────
+  Form Select
+  ─────────────────────────────────────────────────── */
+
+    .select-audrive {
+        @apply w-full bg-nero border border-gunmetal px-4 py-2.5 text-silver-bright font-body text-sm focus:border-giallo focus:outline-none focus:ring-1 focus:ring-giallo/30 transition-premium appearance-none;
+    }
+
+    /* ───────────────────────────────────────────────────
+  Table
+  ─────────────────────────────────────────────────── */
+
+    .table-audrive {
+        @apply w-full text-sm;
+    }
+
+    .table-audrive thead th {
+        @apply text-left px-4 py-3 font-heading text-[10px] uppercase tracking-wider text-silver-dim border-b border-gunmetal bg-steel/30;
+    }
+
+    .table-audrive tbody td {
+        @apply px-4 py-3 border-b border-gunmetal/30;
+    }
+
+    .table-audrive tbody tr {
+        @apply hover:bg-steel/20 transition-premium;
+    }
+
+    /* ───────────────────────────────────────────────────
+  Stat Card
+  ─────────────────────────────────────────────────── */
+
+    .stat-card {
+        @apply bg-steel/30 border border-gunmetal/50 p-4;
+    }
+
+    .stat-card .stat-value {
+        @apply font-display text-2xl font-bold text-giallo;
+    }
+
+    .stat-card .stat-label {
+        @apply font-heading text-[10px] uppercase tracking-wider text-silver-dim;
+    }
+
+    .stat-card .stat-trend {
+        @apply font-mono text-[9px] text-verde mt-1;
+    }
+
+    /* ───────────────────────────────────────────────────
+  Sidebar Item
+  ─────────────────────────────────────────────────── */
+
+    .sidebar-item {
+        @apply w-full flex items-center gap-3 px-3 py-2.5 text-left border-l-2 border-transparent text-silver-dim hover:text-silver hover:bg-steel/50 transition-premium;
+    }
+
+    .sidebar-item.active {
+        @apply bg-steel text-giallo border-l-giallo;
+    }
+
+    /* ───────────────────────────────────────────────────
+  Topbar
+  ─────────────────────────────────────────────────── */
+
+    .topbar {
+        @apply sticky top-0 z-20 bg-carbon/95 backdrop-blur-sm border-b border-gunmetal px-4 md:px-6 py-3;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════
+AUDrive — Custom Utilities
+═══════════════════════════════════════════════════════ */
+
+@layer utilities {
+    .text-gradient-giallo {
+        background: linear-gradient(135deg, #ffd100, #ff6a00);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+}
