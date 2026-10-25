@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Marketplace;
 
+use App\Enums\CarUnitStatus;
 use App\Enums\OfferStatus;
 use App\Http\Controllers\Controller;
 use App\Models\CarUnit;
@@ -35,6 +36,10 @@ class OfferController extends Controller
             'amount_idr' => 'required|numeric|min:1000000',
             'note'       => 'nullable|string|max:500',
         ]);
+
+        if (!$car->status || $car->status !== CarUnitStatus::Available) {
+            return back()->withErrors(['car_unit' => 'Unit tidak tersedia untuk penawaran.']);
+        }
 
         $customer = $request->user()?->customer;
         if (!$customer) {

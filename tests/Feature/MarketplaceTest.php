@@ -64,6 +64,7 @@ test('customer can book test drive', function () {
     $response = $this->actingAs($this->customer)
         ->post(route('marketplace.test-drive.store', $this->car->slug), [
             'scheduled_at' => $scheduledAt,
+            'time_slot' => '09:00',
             'notes' => 'Test drive request',
         ]);
 
@@ -101,6 +102,7 @@ test('customer cannot book test drive for unavailable car', function () {
     $response = $this->actingAs($this->customer)
         ->post(route('marketplace.test-drive.store', $this->car->slug), [
             'scheduled_at' => now()->addDays(3)->format('Y-m-d H:i:s'),
+            'time_slot' => '09:00',
         ]);
 
 
@@ -151,7 +153,7 @@ test('customer can view their offers', function () {
 
 
     $response = $this->actingAs($this->customer)
-        ->get(route('customer.offers.index'));
+        ->get(route('marketplace.offer.index'));
 
 
     $response->assertStatus(200);

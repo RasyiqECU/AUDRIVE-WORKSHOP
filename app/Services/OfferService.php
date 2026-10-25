@@ -75,11 +75,14 @@ class OfferService
         }
 
 
-        return $offer->update([
+        $offer->update([
             'status' => OfferStatus::Rejected,
             'reviewed_by' => $reviewedBy,
             'note' => $offer->note . ($reason ? "\n\nAlasan penolakan: {$reason}" : ''),
         ]);
+
+
+        return $offer->fresh();
     }
 
 
@@ -90,7 +93,10 @@ class OfferService
         }
 
 
-        return $offer->update(['status' => OfferStatus::Cancelled]);
+        $offer->update(['status' => OfferStatus::Cancelled]);
+
+
+        return $offer->fresh();
     }
 
 

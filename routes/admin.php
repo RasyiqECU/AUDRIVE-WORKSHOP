@@ -131,11 +131,17 @@ Route::get('reports', [ReportController::class, 'index'])->name('reports.index')
 Route::get('reports/sales', [ReportController::class, 'sales'])->name('reports.sales');
 Route::get('reports/workshop', [ReportController::class, 'workshop'])->name('reports.workshop');
 Route::get('reports/inventory', [ReportController::class, 'inventory'])->name('reports.inventory');
-Route::get('reports/finance', [ReportController::class, 'finance'])->name('reports.finance');
+Route::get('reports/finance', [ReportController::class, 'finance'])
+    ->name('reports.finance')
+    ->middleware('role:super-admin|manager|cashier');
 
 // ── User Management ──
-Route::resource('users', UserController::class);
-Route::patch('users/{user}/role', [UserController::class, 'updateRole'])->name('users.role');
+// ── Manajemen Pengguna (hanya super-admin & manager) ──
+Route::resource('users', UserController::class)
+    ->middleware('role:super-admin|manager');
+Route::patch('users/{user}/role', [UserController::class, 'updateRole'])
+    ->name('users.role')
+    ->middleware('role:super-admin|manager');
 
 // ── Settings (Khusus Super Admin) ──
 Route::middleware('role:super-admin')->group(function () {

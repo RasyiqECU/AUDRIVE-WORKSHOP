@@ -1,58 +1,98 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# AUDrive
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi manajemen dealership & workshop otomotif berbasis **Laravel 13**, dilengkapi **AI Diagnostik Suara Mesin** sebagai microservice Python/FastAPI di folder `ai-service/`.
 
-## About Laravel
+## Struktur Project
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Root aplikasi adalah folder `audrive/` — bukan `audrive/laravel/`. Tidak ada lagi salinan aplikasi kedua.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```text
+audrive/
+├── ai-service/          # Python/FastAPI — AI Diagnostik Suara Mesin (port 8001)
+├── app/                 # Kode aplikasi Laravel (Controllers, Models, Enums, Services, ...)
+├── bootstrap/           # Bootstrap Laravel (app.php + cache/)
+├── config/              # Konfigurasi Laravel (ai_service.php, database.php, ...)
+├── database/            # Migrations, factories, seeders
+├── docker/              # Placeholder konfigurasi Docker (saat ini kosong)
+├── public/              # Entrypoint web + hasil build Vite (public/build)
+├── resources/           # Blade views, CSS, JS
+├── routes/              # Definisi route (web, api, admin, customer, marketplace, ...)
+├── storage/             # Log, cache, upload user (audio/mobil/spectrogram)
+├── tests/               # PHPUnit tests
+├── vendor/              # Dependensi Composer (di-install, jangan diedit)
+├── node_modules/        # Dependensi npm (di-install, jangan diedit)
+├── artisan              # CLI Laravel
+├── composer.json        # Manifest dependensi PHP
+├── package.json         # Manifest dependensi JS
+├── .env                 # Kredensial aktif (jangan di-commit)
+├── .env.example         # Template environment
+└── STRUCTURE.md         # Pendokumentasian struktur folder lengkap
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## Prasyarat
 
-## Contributing
+- PHP 8.3+
+- Composer 2.x
+- Node.js (npm) 18+
+- Python 3.12+ (untuk ai-service)
+- MySQL (database Laravel aktif)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Menjalankan Laravel (dari root `audrive/`)
 
-## Code of Conduct
+```bash
+composer install
+cp .env.example .env       # jika .env belum ada
+php artisan key:generate
+npm install
+npm run build              # build asset produksi
+php artisan serve          # web di http://localhost:8000
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Development mode (asset live-reload):
 
-## Security Vulnerabilities
+```bash
+npm run dev                # Vite dev server
+php artisan serve          # terminal terpisah
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Menjalankan AI Service (Python)
 
-## License
+```bash
+cd ai-service
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# pertama kali: buat venv lokal & install dependensi
+python -m venv .venv
+.venv\Scripts\activate     # Windows  |  source .venv/bin/activate (Linux/macOS)
+pip install -r requirements.txt
+
+# jalankan service (port 8001)
+uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+```
+
+- Model ML (.pkl/.pth/.keras/.onnx/.tflite) ditaruh manual di `ai-service/models/…` — lihat `ai-service/models/README.txt`.
+- Tanpa model, service berjalan dengan `MODEL_BACKEND=dummy`.
+- Konfigurasi Python: `ai-service/.env` (copy dari `ai-service/.env.example`).
+
+## Integrasi Laravel ↔ Python
+
+- Komunikasi **via HTTP** (bukan path file): Laravel `App\Services\AiScanService` mengirim audio ke `POST /predict`, mengunduh spectrogram dari `GET /spectrogram/{filename}`, dan health check `GET /health`.
+- Konfigurasi endpoint ada di `config/ai_service.php`, diisi dari `.env` Laravel:
+  `AI_SERVICE_URL`, `AI_SERVICE_SECRET`, `AI_SERVICE_TIMEOUT`, `AI_SERVICE_RETRY`.
+- Python memvalidasi secret lewat header `X-Api-Secret` (`API_SECRET` di `ai-service/.env`).
+
+## Menjalankan Test
+
+```bash
+# Laravel
+php artisan test
+
+# Python (dari ai-service/)
+python -m compileall -q .      # cek sintaks
+.venv\Scripts\python -m pytest # atau test suite lain jika ditambahkan
+```
+
+## Catatan Penting
+
+- `.env` dan `database/database.sqlite` **tidak** dilacak Git.
+- `node_modules/`, `vendor/`, `.venv/`, hasil build (`public/build`), cache, dan log diabaikan Git.
+- Database aktif adalah **MySQL** (lihat `.env`), migration tidak dijalankan otomatis oleh tooling ini.

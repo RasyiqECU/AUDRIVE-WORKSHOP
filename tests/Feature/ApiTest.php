@@ -36,6 +36,23 @@ beforeEach(function () {
         'stock' => 10,
         'price_idr' => 500000,
     ]);
+
+    // Mock AI service (Python) agar test tidak bergantung pada service yang berjalan
+    \Illuminate\Support\Facades\Http::fake([
+        '*/predict' => \Illuminate\Support\Facades\Http::response([
+            'success' => true,
+            'result' => [
+                'predicted_class' => 'engine_knock',
+                'class_label' => 'Engine Knock',
+                'confidence' => 0.87,
+                'urgency' => ['level' => 'medium'],
+                'wave_analysis' => 'Polanya konsisten dengan getaran mesin ringan.',
+                'audio_quality' => ['quality_score' => 0.9, 'warning' => null],
+                'recommendations' => ['Periksa komponen mesin'],
+                'backend' => 'mock',
+            ],
+        ], 200),
+    ]);
 });
 
 

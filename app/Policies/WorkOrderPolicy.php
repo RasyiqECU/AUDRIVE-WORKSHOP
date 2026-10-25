@@ -49,11 +49,12 @@ class WorkOrderPolicy
 
     public function update(User $user, WorkOrder $workOrder): bool
     {
-        if (in_array($user->role, ['super-admin', 'manager', 'cashier', 'mechanic'])) {
+        if (in_array($user->role, ['super-admin', 'manager', 'cashier'])) {
             return true;
         }
 
-        return false;
+        // Mekanik hanya boleh melanjutkan work order yang di-assign ke dirinya
+        return $user->role === 'mechanic' && $workOrder->assigned_mechanic_id === $user->id;
     }
 
     public function delete(User $user, WorkOrder $workOrder): bool
@@ -68,11 +69,12 @@ class WorkOrderPolicy
 
     public function updateStatus(User $user, WorkOrder $workOrder): bool
     {
-        if (in_array($user->role, ['super-admin', 'manager', 'cashier', 'mechanic'])) {
+        if (in_array($user->role, ['super-admin', 'manager', 'cashier'])) {
             return true;
         }
 
-        return false;
+        // Mekanik hanya boleh mengubah status work order yang di-assign ke dirinya
+        return $user->role === 'mechanic' && $workOrder->assigned_mechanic_id === $user->id;
     }
 
     public function deliver(User $user, WorkOrder $workOrder): bool

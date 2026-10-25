@@ -1,6 +1,8 @@
 *.log
 .DS_Store
 .env
+.env.*
+!.env.example
 .env.backup
 .env.production
 .phpactor.json
@@ -20,8 +22,25 @@
 /public/storage
 /storage/*.key
 /storage/pail
-/vendor
+vendor/
+node_modules/
 _ide_helper.php
+
+# Python (ai-service)
+ai-service/__pycache__/
+ai-service/**/__pycache__/
+ai-service/venv/
+ai-service/.venv/
+ai-service/output/
+ai-service/models/preprocessing/*
+ai-service/models/core/*
+ai-service/models/universal/*
+ai-service/models/edge/*
+!ai-service/models/preprocessing/.gitkeep
+!ai-service/models/core/.gitkeep
+!ai-service/models/universal/.gitkeep
+!ai-service/models/edge/.gitkeep
+!ai-service/models/README.txt
 Homestead.json
 Homestead.yaml
 Thumbs.db

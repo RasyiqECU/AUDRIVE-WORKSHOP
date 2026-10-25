@@ -26,7 +26,7 @@ class FakePaymentService implements PaymentServiceContract
             'success' => true,
             'transaction_id' => $transactionId,
             'payment_url' => url("/payment/fake/{$transactionId}"),
-            'amount' => $order->total_amount,
+            'amount' => $order->total_idr,
             'currency' => 'IDR',
             'metadata' => [
                 'order_id' => $order->id,

@@ -21,8 +21,8 @@ class WhatsAppNotificationChannel implements NotificationChannelContract
 
     public function __construct()
     {
-        $this->apiUrl = config('services.whatsapp.api_url', '');
-        $this->token = config('services.whatsapp.token', '');
+        $this->apiUrl = config('services.whatsapp.api_url') ?? '';
+        $this->token = config('services.whatsapp.token') ?? '';
     }
 
 

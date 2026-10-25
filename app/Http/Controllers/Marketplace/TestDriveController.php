@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Marketplace;
 
 use App\Enums\AppointmentStatus;
+use App\Enums\CarUnitStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\CarUnit;
@@ -33,12 +34,16 @@ class TestDriveController extends Controller
             'notes'        => 'nullable|string|max:500',
         ]);
 
+        if (!$car->status || $car->status !== CarUnitStatus::Available) {
+            return back()->withErrors(['car_unit' => 'Unit tidak tersedia untuk test drive.']);
+        }
+
         $customer = $request->user()?->customer;
         if (!$customer) {
             return back()->with('error', 'Silakan lengkapi profil customer Anda terlebih dahulu.');
         }
 
-        $datetime = Carbon::parse($request->scheduled_at . ' ' . $request->time_slot);
+        $datetime = Carbon::parse($request->scheduled_at)->setTimeFromTimeString($request->time_slot);
 
         $appointment = Appointment::create([
             'type'         => 'test_drive',

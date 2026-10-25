@@ -16,6 +16,11 @@ use App\Http\Controllers\Marketplace\InspectionController;
 // Public listings (no auth required)
 Route::get('/marketplace', [CarListingController::class, 'index'])->name('marketplace.index');
 Route::get('/marketplace/search', [CarListingController::class, 'search'])->name('marketplace.search');
+// Catatan: rute statis harus didaftar sebelum wildcard /marketplace/{car:slug}
+// agar "offers" tidak tertangkap sebagai slug unit mobil.
+Route::get('/marketplace/offers', [OfferController::class, 'index'])
+    ->middleware('auth')
+    ->name('marketplace.offer.index');
 Route::get('/marketplace/{car:slug}', [CarListingController::class, 'show'])->name('marketplace.show');
 Route::get('/marketplace/{car:slug}/inspection', [InspectionController::class, 'show'])->name('marketplace.inspection');
 
@@ -30,8 +35,6 @@ Route::middleware('auth')->group(function () {
     // Offers / Negotiation
     Route::post('/marketplace/{car:slug}/offer', [OfferController::class, 'store'])
         ->name('marketplace.offer.store');
-    Route::get('/marketplace/offers', [OfferController::class, 'index'])
-        ->name('marketplace.offer.index');
     Route::patch('/marketplace/offers/{offer}', [OfferController::class, 'update'])
         ->name('marketplace.offer.update');
     Route::delete('/marketplace/offers/{offer}', [OfferController::class, 'destroy'])

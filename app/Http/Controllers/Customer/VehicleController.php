@@ -31,6 +31,14 @@ class VehicleController extends Controller
     }
 
 
+    public function show(Request $request, CustomerVehicle $vehicle): View
+    {
+        $this->authorize('view', $vehicle);
+
+        return view('customer.vehicles.show', compact('vehicle'));
+    }
+
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([

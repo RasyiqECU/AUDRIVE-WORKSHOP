@@ -44,8 +44,8 @@ class VoucherService
 
 
         // Check minimum purchase
-        if ($orderAmount < $voucher->min_purchase) {
-            $errors[] = 'Minimum purchase not met. Required: Rp ' . number_format($voucher->min_purchase);
+        if ($orderAmount < $voucher->min_purchase_idr) {
+            $errors[] = 'Minimum purchase not met. Required: Rp ' . number_format($voucher->min_purchase_idr);
         }
 
 
@@ -72,8 +72,8 @@ class VoucherService
      */
     public function calculateDiscount(Voucher $voucher, int $orderAmount): int
     {
-        if ($voucher->type === 'percentage') {
-            $discount = (int) ($orderAmount * ($voucher->discount_value / 100));
+        if ($voucher->type === 'percent') {
+            $discount = (int) ($orderAmount * ($voucher->value / 100));
 
 
             // Apply max discount if set
@@ -87,7 +87,7 @@ class VoucherService
 
 
         // Fixed amount
-        return $voucher->discount_value;
+        return $voucher->value;
     }
 
 
@@ -98,7 +98,7 @@ class VoucherService
     {
         return DB::transaction(function () use ($voucher, $customer, $order) {
             // Validate voucher
-            $validation = $this->validate($voucher, $customer, $order->total_amount);
+            $validation = $this->validate($voucher, $customer, $order->total_idr);
 
 
             if (!$validation['valid']) {
@@ -117,7 +117,7 @@ class VoucherService
                 'voucher_id' => $voucher->id,
                 'customer_id' => $customer->id,
                 'sales_order_id' => $order->id,
-                'discount_amount' => $this->calculateDiscount($voucher, $order->total_amount),
+                'discount_amount' => $this->calculateDiscount($voucher, $order->total_idr),
             ]);
 
 
