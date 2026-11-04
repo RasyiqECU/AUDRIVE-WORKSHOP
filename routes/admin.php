@@ -1,25 +1,29 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\CarController;
-use App\Http\Controllers\Admin\ServiceBookingController;
 use App\Http\Controllers\Admin\AdminWorkOrderController;
 use App\Http\Controllers\Admin\AiScanReviewController;
-use App\Http\Controllers\Admin\SparePartController;
-use App\Http\Controllers\Admin\PurchaseOrderController;
-use App\Http\Controllers\Admin\InventoryController;
-use App\Http\Controllers\Admin\CustomerController;
-use App\Http\Controllers\Admin\ReportController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\SettingController;
-use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\AppointmentController;
+use App\Http\Controllers\Admin\ApprovalController;
+use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\CarController;
 use App\Http\Controllers\Admin\ContactMessageController;
-use App\Http\Controllers\Admin\TicketController;
-use App\Http\Controllers\Admin\VoucherController;
-use App\Http\Controllers\Admin\PromotionController;
+use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\LoyaltyController;
+use App\Http\Controllers\Admin\OfferController;
+use App\Http\Controllers\Admin\PosController;
+use App\Http\Controllers\Admin\PromotionController;
+use App\Http\Controllers\Admin\PurchaseOrderController;
+use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\ServiceBookingController;
+use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\SparePartController;
+use App\Http\Controllers\Admin\TicketController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\VoucherController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,9 +49,9 @@ Route::post('cars/{car}/photos/{photo}/primary', [CarController::class, 'setPrim
 Route::post('cars/{car}/photos/{photo}/replace', [CarController::class, 'replacePhoto'])->name('cars.photos.replace');
 
 // ── Offers / Penawaran Harga Mobil ──
-Route::resource('offers', \App\Http\Controllers\Admin\OfferController::class)->only(['index', 'show']);
-Route::post('offers/{offer}/accept', [\App\Http\Controllers\Admin\OfferController::class, 'accept'])->name('offers.accept');
-Route::post('offers/{offer}/reject', [\App\Http\Controllers\Admin\OfferController::class, 'reject'])->name('offers.reject');
+Route::resource('offers', OfferController::class)->only(['index', 'show']);
+Route::post('offers/{offer}/accept', [OfferController::class, 'accept'])->name('offers.accept');
+Route::post('offers/{offer}/reject', [OfferController::class, 'reject'])->name('offers.reject');
 
 // ── Test Drive / Uji Kendaraan ──
 Route::resource('appointments', AppointmentController::class)->only(['index', 'show']);
@@ -55,13 +59,21 @@ Route::patch('appointments/{appointment}/status', [AppointmentController::class,
 
 // ── Point of Sales (POS / Kasir) ──
 Route::middleware('role:super-admin|manager|cashier')->group(function () {
-    Route::get('pos', [\App\Http\Controllers\Admin\PosController::class, 'index'])->name('pos.index');
-    Route::post('pos', [\App\Http\Controllers\Admin\PosController::class, 'store'])->name('pos.store');
-    Route::post('pos/work-orders/{workOrder}/pay', [\App\Http\Controllers\Admin\PosController::class, 'payWorkOrder'])->name('pos.work-orders.pay');
-    Route::post('pos/car-sales/{salesOrder}/pay', [\App\Http\Controllers\Admin\PosController::class, 'payCarSales'])->name('pos.car-sales.pay');
-    Route::get('pos/search', [\App\Http\Controllers\Admin\PosController::class, 'search'])->name('pos.search');
-    Route::get('pos/{salesOrder}/receipt', [\App\Http\Controllers\Admin\PosController::class, 'receipt'])->name('pos.receipt');
-    Route::get('pos/{salesOrder}/print', [\App\Http\Controllers\Admin\PosController::class, 'printReceipt'])->name('pos.print');
+    Route::get('pos', [PosController::class, 'index'])->name('pos.index');
+    Route::post('pos', [PosController::class, 'store'])->name('pos.store');
+    Route::post('pos/work-orders/{workOrder}/pay', [PosController::class, 'payWorkOrder'])->name('pos.work-orders.pay');
+    Route::post('pos/car-sales/{salesOrder}/pay', [PosController::class, 'payCarSales'])->name('pos.car-sales.pay');
+    Route::get('pos/search', [PosController::class, 'search'])->name('pos.search');
+    Route::get('pos/{salesOrder}/receipt', [PosController::class, 'receipt'])->name('pos.receipt');
+    Route::get('pos/{salesOrder}/print', [PosController::class, 'printReceipt'])->name('pos.print');
+});
+
+// ── Invoices & Bukti Pembayaran ──
+Route::middleware('role:super-admin|manager|cashier|sales')->group(function () {
+    Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+    Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+    Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'download'])->name('invoices.pdf');
+    Route::get('invoices/{invoice}/print', [InvoiceController::class, 'print'])->name('invoices.print');
 });
 
 // ── Workshop ──
@@ -154,10 +166,10 @@ Route::middleware('role:super-admin')->group(function () {
 Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
 
 // ── Approvals ──
-Route::get('approvals', [\App\Http\Controllers\Admin\ApprovalController::class, 'index'])->name('approvals.index');
-Route::patch('approvals/{approval}', [\App\Http\Controllers\Admin\ApprovalController::class, 'update'])->name('approvals.update');
+Route::get('approvals', [ApprovalController::class, 'index'])->name('approvals.index');
+Route::patch('approvals/{approval}', [ApprovalController::class, 'update'])->name('approvals.update');
 
 // ── Notifications ──
 Route::get('notifications', [DashboardController::class, 'notifications'])->name('notifications.index');
 Route::patch('notifications/{notification}/read', [DashboardController::class, 'markRead'])->name('notifications.read');
-Route::post('notifications/read-all', [DashboardController::class, 'markAllRead'])->name('notifications.read-all');
+Route::post('notifications/read-all', [DashboardController::class, 'markAllRead'])->name('notifications.read-all');

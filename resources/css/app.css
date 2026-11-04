@@ -286,3 +286,145 @@ AUDrive — Custom Utilities
         background-clip: text;
     }
 }
+
+/* ═══════════════════════════════════════════════════════
+   AUDrive — High-End Official Document Print Stylesheet
+   ═══════════════════════════════════════════════════════ */
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 10mm 12mm 12mm 12mm;
+    }
+
+    html, body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-size: 9.5pt !important;
+        line-height: 1.35 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* Hide ALL screen-only UI elements, sidebars, topbars, buttons, interactive tabs, and filters */
+    nav,
+    aside,
+    header,
+    .topbar,
+    .sidebar-item,
+    button,
+    form,
+    input,
+    select,
+    textarea,
+    details summary,
+    .no-print,
+    .print\:hidden,
+    .action-col,
+    .actions-column,
+    .actions-cell,
+    th.action-header,
+    td.action-cell,
+    [class*="admin-sidebar"],
+    [class*="customer-sidebar"],
+    [class*="topbar"],
+    .fixed,
+    .btn,
+    .pagination {
+        display: none !important;
+    }
+
+    /* Reset Main container margins so document utilizes 100% full width */
+    main {
+        margin: 0 !important;
+        margin-left: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        position: static !important;
+    }
+
+    .max-w-7xl,
+    .max-w-4xl,
+    .container {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Convert dark panels to clean corporate document panels */
+    .panel,
+    .card,
+    .bg-carbon,
+    .bg-nero,
+    .bg-steel {
+        background: #ffffff !important;
+        border: 1px solid #d1d5db !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+        border-radius: 4px !important;
+    }
+
+    /* Neutral black text for high readability */
+    .text-silver-bright,
+    .text-silver,
+    .text-silver-dim {
+        color: #1f2937 !important;
+    }
+
+    .text-giallo,
+    .text-arancio {
+        color: #111827 !important;
+        font-weight: 700 !important;
+    }
+
+    /* Clean document tables with borders */
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        color: #000000 !important;
+        margin-top: 6px !important;
+        margin-bottom: 12px !important;
+    }
+
+    thead {
+        display: table-header-group !important;
+    }
+
+    th {
+        background-color: #f3f4f6 !important;
+        color: #111827 !important;
+        border: 1px solid #d1d5db !important;
+        padding: 6px 8px !important;
+        font-weight: 700 !important;
+        font-size: 8pt !important;
+        text-transform: uppercase !important;
+    }
+
+    td {
+        border: 1px solid #e5e7eb !important;
+        color: #111827 !important;
+        padding: 5px 8px !important;
+        font-size: 8pt !important;
+    }
+
+    tr {
+        page-break-inside: avoid !important;
+    }
+
+    /* Badges as formal document stamps */
+    span.rounded,
+    span.badge,
+    span[class*="border"] {
+        border: 1px solid #9ca3af !important;
+        background: transparent !important;
+        color: #000000 !important;
+        font-weight: 600 !important;
+    }
+
+    /* Print only visibility helper */
+    .print-only,
+    .print\:block {
+        display: block !important;
+    }
+}

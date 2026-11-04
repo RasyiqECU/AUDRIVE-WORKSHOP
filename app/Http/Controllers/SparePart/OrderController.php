@@ -6,7 +6,10 @@ namespace App\Http\Controllers\SparePart;
 
 use App\Http\Controllers\Controller;
 use App\Models\SalesOrder;
+use App\Services\InvoiceService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 class OrderController extends Controller
@@ -36,7 +39,7 @@ class OrderController extends Controller
         return view('spare-parts.orders.show', compact('order'));
     }
 
-    public function invoice(Request $request, SalesOrder $order): View
+    public function invoice(Request $request, SalesOrder $order): Response|RedirectResponse
     {
         $customer = $request->user()?->customer;
 
@@ -45,7 +48,12 @@ class OrderController extends Controller
         }
 
         $order->load(['items.sparePart', 'customer']);
+        $invoice = app(InvoiceService::class)->ensureInvoiceForSalesOrder($order);
 
-        return view('spare-parts.orders.show', compact('order'));
+        if ($request->boolean('download')) {
+            return app(InvoiceService::class)->renderPdf($invoice, stream: false);
+        }
+
+        return redirect()->route('customer.invoices.show', $invoice);
     }
 }

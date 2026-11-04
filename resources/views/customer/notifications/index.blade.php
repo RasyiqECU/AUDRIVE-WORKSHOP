@@ -44,6 +44,24 @@
                                     {{ $notification->data['detail'] }}
                                 </p>
                             @endif
+
+                            @php
+                                $actionUrl = $notification->data['action_url'] ?? ($notification->data['invoice_url'] ?? null);
+                                $orderCode = $notification->data['order_code'] ?? null;
+                            @endphp
+
+                            @if($actionUrl || $orderCode)
+                                <div class="mt-2.5 flex items-center gap-2">
+                                    @if($actionUrl)
+                                        <a href="{{ $actionUrl }}" class="inline-flex items-center gap-1.5 px-3 py-1 bg-giallo/20 hover:bg-giallo/30 border border-giallo/50 text-giallo rounded text-[10px] font-heading font-bold uppercase tracking-wider transition-premium">
+                                            <span>🧾</span> Lihat Invoice / Bukti Bayar
+                                        </a>
+                                    @endif
+                                    <a href="{{ route('customer.invoices.index', ['search' => $orderCode]) }}" class="text-[10px] text-silver-dim hover:text-silver-bright font-heading uppercase tracking-wider underline">
+                                        Arsip Invoice
+                                    </a>
+                                </div>
+                            @endif
                             <p class="font-mono text-[10px] text-silver-dim mt-1.5 flex items-center gap-2">
                                 <span>{{ $notification->created_at->diffForHumans() }}</span>
                                 <span>&bull;</span>

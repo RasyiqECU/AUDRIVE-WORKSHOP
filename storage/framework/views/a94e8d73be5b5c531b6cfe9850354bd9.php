@@ -1,5 +1,5 @@
 
-<div class="fixed top-0 left-0 h-full w-72 bg-carbon border-r border-gunmetal z-50 hidden lg:block">
+<div class="no-print fixed top-0 left-0 h-full w-72 bg-carbon border-r border-gunmetal z-50 hidden lg:block">
     
     <div class="p-5 border-b border-gunmetal">
         <a href="<?php echo e(route('customer.dashboard')); ?>" class="flex items-center gap-3 group">
@@ -12,7 +12,7 @@
     </div>
 
     
-    <nav class="p-3 space-y-0.5 overflow-y-auto h-[calc(100%-160px)]">
+    <nav id="customer-sidebar-nav" class="p-3 space-y-0.5 overflow-y-auto h-[calc(100%-160px)]">
         <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-1">Portal</p>
 
         <a href="<?php echo e(route('customer.dashboard')); ?>" class="sidebar-item <?php echo e(request()->routeIs('customer.dashboard') ? 'active' : ''); ?>">
@@ -33,6 +33,11 @@
         <a href="<?php echo e(route('customer.loyalty.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('customer.loyalty.*') ? 'active' : ''); ?>">
             <span class="text-sm">⭐</span>
             <span class="font-heading text-xs font-medium tracking-wide">Loyalty Point</span>
+        </a>
+
+        <a href="<?php echo e(route('customer.invoices.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('customer.invoices.*') ? 'active' : ''); ?>">
+            <span class="text-sm">🧾</span>
+            <span class="font-heading text-xs font-medium tracking-wide">Tagihan & Invoice</span>
         </a>
 
         <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-4">Layanan</p>
@@ -95,4 +100,37 @@
             </form>
         </div>
     </div>
-</div><?php /**PATH C:\Users\Pongo\Documents\audrive\resources\views/components/layout/customer-sidebar.blade.php ENDPATH**/ ?>
+</div>
+
+<script>
+    (function () {
+        const nav = document.getElementById('customer-sidebar-nav');
+        if (!nav) return;
+
+        const STORAGE_KEY = 'audrive_customer_sidebar_scroll';
+
+        // Restore scroll position
+        const savedScroll = sessionStorage.getItem(STORAGE_KEY);
+        if (savedScroll !== null) {
+            nav.scrollTop = parseInt(savedScroll, 10);
+        } else {
+            const activeItem = nav.querySelector('.sidebar-item.active');
+            if (activeItem) {
+                activeItem.scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        // Save scroll position when clicking any sidebar link
+        nav.addEventListener('click', function (e) {
+            const link = e.target.closest('a');
+            if (link) {
+                sessionStorage.setItem(STORAGE_KEY, nav.scrollTop);
+            }
+        });
+
+        // Continuously persist scroll position while scrolling
+        nav.addEventListener('scroll', function () {
+            sessionStorage.setItem(STORAGE_KEY, nav.scrollTop);
+        }, { passive: true });
+    })();
+</script><?php /**PATH C:\Users\Pongo\Documents\audrive\resources\views/components/layout/customer-sidebar.blade.php ENDPATH**/ ?>

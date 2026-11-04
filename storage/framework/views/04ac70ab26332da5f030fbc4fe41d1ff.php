@@ -106,7 +106,7 @@
     
     <div>
         <h2 class="font-heading text-xs uppercase tracking-[0.2em] text-silver-bright mb-3">Aksi Cepat</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
             <a href="<?php echo e(route('workshop.booking.create')); ?>" class="bg-carbon border border-arancio/30 hover:border-arancio p-4 text-center transition-premium">
                 <span class="text-2xl block mb-2">🔧</span>
                 <span class="font-heading text-[10px] text-silver-bright uppercase tracking-wider">Booking Servis</span>
@@ -122,6 +122,10 @@
             <a href="<?php echo e(route('parts.index')); ?>" class="bg-carbon border border-silver/20 hover:border-silver p-4 text-center transition-premium">
                 <span class="text-2xl block mb-2">⚙️</span>
                 <span class="font-heading text-[10px] text-silver-bright uppercase tracking-wider">Beli Spare Part</span>
+            </a>
+            <a href="<?php echo e(route('customer.invoices.index')); ?>" class="bg-carbon border border-giallo/40 hover:border-giallo p-4 text-center transition-premium group">
+                <span class="text-2xl block mb-2">🧾</span>
+                <span class="font-heading text-[10px] text-silver-bright uppercase tracking-wider group-hover:text-giallo">Tagihan & Bukti Bayar</span>
             </a>
         </div>
     </div>

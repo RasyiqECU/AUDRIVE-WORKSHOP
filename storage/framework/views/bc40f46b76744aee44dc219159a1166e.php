@@ -3,7 +3,7 @@
 <?php $__env->startSection('content'); ?>
 <div class="space-y-6">
     
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div class="no-print flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
             <div class="flex items-center gap-2">
                 <span class="text-giallo font-mono text-sm tracking-widest uppercase">Tata Kelola & Keamanan</span>
@@ -19,9 +19,27 @@
         </div>
         <div class="flex items-center gap-2">
             <button onclick="window.print()" class="px-4 py-2 bg-steel/40 hover:bg-steel text-silver-bright border border-gunmetal font-heading text-xs uppercase tracking-wider rounded transition-premium flex items-center gap-2">
-                <span>🖨️</span> Cetak Log Audit
+                <span>🖨️</span> Cetak Laporan Audit
             </button>
         </div>
+    </div>
+
+    
+    <div class="hidden print:block border-b-2 border-black pb-4 mb-6">
+        <table class="w-full text-black">
+            <tr>
+                <td style="width: 60%; vertical-align: top;">
+                    <h2 class="text-2xl font-bold uppercase tracking-wider">PT AUDRIVE SUPERCAR INDONESIA</h2>
+                    <p class="text-xs font-semibold uppercase text-gray-600">Audit Trail, Keamanan Siber & Log Aktivitas Sistem</p>
+                    <p class="text-[10px] text-gray-600">Graha AUDrive Kav. 88, SCBD, Jakarta Selatan &bull; Telp: +62 21 8088 9900</p>
+                </td>
+                <td style="width: 40%; text-align: right; vertical-align: top;">
+                    <h3 class="text-lg font-bold uppercase">LAPORAN AUDIT TRAIL SISTEM</h3>
+                    <p class="text-xs font-mono">Dokumen: AUD-LOG-<?php echo e(date('Ymd-His')); ?></p>
+                    <p class="text-[10px] text-gray-500">Dicetak: <?php echo e(now()->format('d/m/Y H:i')); ?> WIB oleh <?php echo e(auth()->user()->name); ?></p>
+                </td>
+            </tr>
+        </table>
     </div>
 
     
@@ -61,7 +79,7 @@
     </div>
 
     
-    <div class="panel border border-gunmetal bg-carbon p-4">
+    <div class="no-print panel border border-gunmetal bg-carbon p-4">
         <form method="GET" action="<?php echo e(route('admin.audit-logs.index')); ?>" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             
             <div>
@@ -127,7 +145,7 @@
                         <th class="py-3 px-4">Aksi & Target</th>
                         <th class="py-3 px-4">Deskripsi Tindakan</th>
                         <th class="py-3 px-4">IP & Device</th>
-                        <th class="py-3 px-4 text-right">Data Mutasi</th>
+                        <th class="py-3 px-4 text-right no-print">Data Mutasi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gunmetal/30">
@@ -151,14 +169,14 @@
                             <td class="py-3.5 px-4 font-mono">
                                 <span class="text-silver-bright font-bold block"><?php echo e($log->created_at->format('d/m/Y')); ?></span>
                                 <span class="text-giallo text-[11px]"><?php echo e($log->created_at->format('H:i:s')); ?></span>
-                                <span class="text-silver-dim text-[9px] block"><?php echo e($log->created_at->diffForHumans()); ?></span>
+                                <span class="text-silver-dim text-[9px] block no-print"><?php echo e($log->created_at->diffForHumans()); ?></span>
                             </td>
 
                             
                             <td class="py-3.5 px-4">
                                 <?php if($log->user): ?>
                                     <div class="flex items-center gap-2">
-                                        <div class="w-7 h-7 rounded bg-steel/60 border border-gunmetal flex items-center justify-center font-heading text-[10px] font-bold text-giallo">
+                                        <div class="w-7 h-7 rounded bg-steel/60 border border-gunmetal flex items-center justify-center font-heading text-[10px] font-bold text-giallo no-print">
                                             <?php echo e(substr($log->user->name, 0, 1)); ?>
 
                                         </div>
@@ -205,7 +223,7 @@
                             </td>
 
                             
-                            <td class="py-3.5 px-4 text-right">
+                            <td class="py-3.5 px-4 text-right no-print">
                                 <?php if(!empty($log->old_values) || !empty($log->new_values)): ?>
                                     <details class="relative inline-block text-left">
                                         <summary class="cursor-pointer px-2.5 py-1 bg-steel/40 hover:bg-steel border border-gunmetal rounded font-heading text-[10px] uppercase text-giallo list-none transition-premium">
@@ -216,7 +234,7 @@
                                                 <div class="flex items-center justify-between border-b border-gunmetal pb-3">
                                                     <div>
                                                         <h4 class="font-heading text-sm font-bold text-silver-bright uppercase">
-                                                            Mutasi Data: <?php echo e($log->action); ?> (<?php echo e($modelBasename); ?> #<?php echo e($log->model_id); ?>)
+                                                             Mutasi Data: <?php echo e($log->action); ?> (<?php echo e($modelBasename); ?> #<?php echo e($log->model_id); ?>)
                                                         </h4>
                                                         <p class="text-[10px] font-mono text-silver-dim">
                                                             Eksekutor: <?php echo e($log->user->name ?? 'System'); ?> • <?php echo e($log->created_at->format('d/m/Y H:i:s')); ?>
@@ -280,11 +298,30 @@
             </table>
         </div>
         <?php if($logs->hasPages()): ?>
-            <div class="p-4 border-t border-gunmetal">
+            <div class="p-4 border-t border-gunmetal no-print">
                 <?php echo e($logs->links()); ?>
 
             </div>
         <?php endif; ?>
+    </div>
+
+    
+    <div class="hidden print:block pt-8">
+        <table class="w-full text-center text-black text-xs">
+            <tr>
+                <td style="width: 50%;">
+                    <p class="text-[10px] font-semibold text-gray-600 mb-14">Diverifikasi Oleh (IT Security / Lead Auditor):</p>
+                    <p class="font-bold underline"><?php echo e(auth()->user()->name); ?></p>
+                    <p class="text-[9px] text-gray-500">Divisi Keamanan Sistem & Audit</p>
+                </td>
+                <td style="width: 50%;">
+                    <p class="text-[10px] font-semibold text-gray-600 mb-14">Mengetahui (Direktur / Compliance Officer):</p>
+                    <p class="font-bold underline">Super Admin AUDrive</p>
+                    <p class="text-[9px] text-gray-500">Direksi & Kepatuhan Tata Kelola</p>
+                </td>
+            </tr>
+        </table>
+    </div>
     </div>
 </div>
 <?php $__env->stopSection(); ?>

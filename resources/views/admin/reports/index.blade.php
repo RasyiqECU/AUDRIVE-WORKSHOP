@@ -4,8 +4,8 @@
 
 @section('content')
 <div class="space-y-6">
-    {{-- Header & Sub-navigation Tabs --}}
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    {{-- Header (Screen only) --}}
+    <div class="no-print flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
             <div class="flex items-center gap-2">
                 <span class="text-giallo font-mono text-sm tracking-widest uppercase">AUDrive Intelligence</span>
@@ -13,22 +13,22 @@
                 <span class="text-silver-dim text-xs font-mono">Executive Summary</span>
             </div>
             <h1 class="font-display text-2xl md:text-3xl font-bold text-silver-bright tracking-wide mt-1">
-                LAPORAN & ANALITIK PERFORMA
+                LAPORAN & ANALITIK EKSEKUTIF
             </h1>
             <p class="text-sm text-silver-dim mt-1">
-                Ringkasan komprehensif performa penjualan supercar, workshop servis, perputaran inventori, dan arus kas.
+                Ikhtisar komprehensif seluruh divisi: Penjualan Supercar, Workshop Servis, Suku Cadang, dan Kasir Keuangan.
             </p>
         </div>
         <div class="flex items-center gap-2">
-            <button onclick="window.print()" class="px-4 py-2 bg-steel/40 hover:bg-steel text-silver-bright border border-gunmetal font-heading text-xs uppercase tracking-wider rounded transition-premium flex items-center gap-2">
-                <span>🖨️</span> Cetak / Simpan PDF
+            <button onclick="window.print()" class="px-4 py-2 bg-steel/60 hover:bg-steel text-silver-bright border border-gunmetal font-heading text-xs uppercase tracking-wider rounded transition-premium flex items-center gap-2 shadow-sm">
+                <span>🖨️</span> Cetak Laporan Eksekutif
             </button>
         </div>
     </div>
 
-    {{-- Sub Navigation Tabs --}}
-    <div class="flex items-center gap-2 border-b border-gunmetal overflow-x-auto pb-2">
-        <a href="{{ route('admin.reports.index') }}" class="px-4 py-2 border-b-2 border-giallo text-giallo font-heading text-xs uppercase tracking-wider flex items-center gap-2">
+    {{-- Sub Navigation Tabs (Screen only) --}}
+    <div class="no-print flex items-center gap-2 border-b border-gunmetal overflow-x-auto pb-2">
+        <a href="{{ route('admin.reports.index') }}" class="px-4 py-2 border-b-2 border-giallo text-giallo font-heading text-xs uppercase tracking-wider flex items-center gap-2 font-bold">
             <span>📊</span> Ikhtisar Utama
         </a>
         <a href="{{ route('admin.reports.sales') }}" class="px-4 py-2 border-b-2 border-transparent text-silver-dim hover:text-silver-bright font-heading text-xs uppercase tracking-wider transition-premium flex items-center gap-2">
@@ -43,6 +43,71 @@
         <a href="{{ route('admin.reports.finance') }}" class="px-4 py-2 border-b-2 border-transparent text-silver-dim hover:text-silver-bright font-heading text-xs uppercase tracking-wider transition-premium flex items-center gap-2">
             <span>💳</span> Finansial & Kasir
         </a>
+    </div>
+
+    {{-- Interactive Period Filter Bar (Screen only) --}}
+    <div class="no-print panel border border-gunmetal bg-carbon p-4">
+        <form method="GET" action="{{ route('admin.reports.index') }}" class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            {{-- Quick Preset Buttons --}}
+            <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-xs font-heading uppercase text-silver-dim mr-1">Periode:</span>
+                <a href="{{ route('admin.reports.index', ['preset' => 'today']) }}"
+                   class="px-3 py-1.5 rounded text-xs font-mono uppercase {{ $preset === 'today' ? 'bg-giallo text-carbon font-bold' : 'bg-steel/30 text-silver-dim hover:text-silver-bright hover:bg-steel' }}">
+                    Hari Ini
+                </a>
+                <a href="{{ route('admin.reports.index', ['preset' => 'this_week']) }}"
+                   class="px-3 py-1.5 rounded text-xs font-mono uppercase {{ $preset === 'this_week' ? 'bg-giallo text-carbon font-bold' : 'bg-steel/30 text-silver-dim hover:text-silver-bright hover:bg-steel' }}">
+                    Minggu Ini
+                </a>
+                <a href="{{ route('admin.reports.index', ['preset' => 'this_month']) }}"
+                   class="px-3 py-1.5 rounded text-xs font-mono uppercase {{ $preset === 'this_month' ? 'bg-giallo text-carbon font-bold' : 'bg-steel/30 text-silver-dim hover:text-silver-bright hover:bg-steel' }}">
+                    Bulan Ini
+                </a>
+                <a href="{{ route('admin.reports.index', ['preset' => 'last_month']) }}"
+                   class="px-3 py-1.5 rounded text-xs font-mono uppercase {{ $preset === 'last_month' ? 'bg-giallo text-carbon font-bold' : 'bg-steel/30 text-silver-dim hover:text-silver-bright hover:bg-steel' }}">
+                    Bulan Lalu
+                </a>
+                <a href="{{ route('admin.reports.index', ['preset' => 'this_year']) }}"
+                   class="px-3 py-1.5 rounded text-xs font-mono uppercase {{ $preset === 'this_year' ? 'bg-giallo text-carbon font-bold' : 'bg-steel/30 text-silver-dim hover:text-silver-bright hover:bg-steel' }}">
+                    Tahun Ini
+                </a>
+                <a href="{{ route('admin.reports.index', ['preset' => 'all']) }}"
+                   class="px-3 py-1.5 rounded text-xs font-mono uppercase {{ $preset === 'all' ? 'bg-giallo text-carbon font-bold' : 'bg-steel/30 text-silver-dim hover:text-silver-bright hover:bg-steel' }}">
+                    Semua
+                </a>
+            </div>
+
+            {{-- Custom Date Inputs --}}
+            <div class="flex items-center gap-2">
+                <input type="date" name="start_date" value="{{ $startDate?->format('Y-m-d') }}"
+                       class="bg-steel/20 border border-gunmetal rounded px-2.5 py-1.5 text-xs text-silver-bright focus:border-giallo focus:outline-none font-mono">
+                <span class="text-silver-dim text-xs">s/d</span>
+                <input type="date" name="end_date" value="{{ $endDate?->format('Y-m-d') }}"
+                       class="bg-steel/20 border border-gunmetal rounded px-2.5 py-1.5 text-xs text-silver-bright focus:border-giallo focus:outline-none font-mono">
+                <button type="submit" class="px-3 py-1.5 bg-steel hover:bg-steel/80 text-silver-bright border border-gunmetal text-xs rounded font-heading uppercase">
+                    Terapkan
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {{-- Official Print Letterhead (Only visible in Print) --}}
+    <div class="hidden print:block border-b-2 border-black pb-4 mb-6">
+        <table class="w-full text-black">
+            <tr>
+                <td style="width: 60%; vertical-align: top;">
+                    <h2 class="text-2xl font-bold uppercase tracking-wider">PT AUDRIVE SUPERCAR INDONESIA</h2>
+                    <p class="text-xs font-semibold uppercase text-gray-600">Showroom, Authorized Workshop & Aftermarket Division</p>
+                    <p class="text-[10px] text-gray-600">Graha AUDrive Kav. 88, SCBD, Jl. Jend. Sudirman, Jakarta Selatan 12190 &bull; Telp: +62 21 8088 9900</p>
+                </td>
+                <td style="width: 40%; text-align: right; vertical-align: top;">
+                    <h3 class="text-lg font-bold uppercase">LAPORAN IKHTISAR EKSEKUTIF</h3>
+                    <p class="text-xs font-mono">Dokumen: RPT-EXE-{{ date('Ymd-His') }}</p>
+                    <p class="text-xs">Periode: {{ $startDate ? $startDate->format('d/m/Y') : 'Awal' }} - {{ $endDate ? $endDate->format('d/m/Y') : 'Sekarang' }}</p>
+                    <p class="text-[10px] text-gray-500">Dicetak: {{ now()->format('d/m/Y H:i') }} WIB oleh {{ auth()->user()->name }}</p>
+                </td>
+            </tr>
+        </table>
     </div>
 
     {{-- Top Executive KPI Cards --}}
@@ -68,7 +133,7 @@
             <p class="font-mono text-2xl font-bold text-arancio mt-2">
                 {{ $carSalesCount }} <span class="text-xs font-normal text-silver-dim">Unit</span>
             </p>
-            <p class="text-[10px] text-silver-dim font-mono mt-1">Tersedia: {{ $stats['sales']['available_units'] ?? 0 }} unit di showroom</p>
+            <p class="text-[10px] text-silver-dim font-mono mt-1">Nilai: Rp {{ number_format($carRevenue, 0, ',', '.') }}</p>
         </div>
 
         {{-- Completed Service --}}
@@ -80,19 +145,58 @@
             <p class="font-mono text-2xl font-bold text-verde mt-2">
                 {{ $completedWorkOrders }} <span class="text-xs font-normal text-silver-dim">Order</span>
             </p>
-            <p class="text-[10px] text-silver-dim font-mono mt-1">Aktif di workshop: {{ $stats['workshop']['active_work_orders'] ?? 0 }} WO</p>
+            <p class="text-[10px] text-silver-dim font-mono mt-1">Nilai Servis: Rp {{ number_format($workshopRevenue, 0, ',', '.') }}</p>
         </div>
 
-        {{-- Total Client Base --}}
+        {{-- Spare Parts & POS --}}
         <div class="panel border border-gunmetal bg-carbon p-5 relative overflow-hidden group hover:border-blue-400/40 transition-premium">
             <div class="flex items-center justify-between text-silver-dim text-xs font-heading uppercase tracking-wider">
-                <span>Total Basis Pelanggan</span>
-                <span class="text-blue-400">👥</span>
+                <span>Suku Cadang & Kasir POS</span>
+                <span class="text-blue-400">⚙️</span>
             </div>
-            <p class="font-mono text-2xl font-bold text-blue-400 mt-2">
-                {{ $totalCustomers }} <span class="text-xs font-normal text-silver-dim">Akun</span>
+            <p class="font-mono text-xl lg:text-2xl font-bold text-blue-400 mt-2">
+                Rp {{ number_format($sparePartRevenue, 0, ',', '.') }}
             </p>
-            <p class="text-[10px] text-silver-dim font-mono mt-1">Pelanggan showroom & servis terdaftar</p>
+            <p class="text-[10px] text-silver-dim font-mono mt-1">Total pelanggan terdaftar: {{ $totalCustomers }}</p>
+        </div>
+    </div>
+
+    {{-- Departmental Revenue Breakdown Cards --}}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="panel border border-gunmetal bg-carbon p-4 space-y-2">
+            <div class="flex items-center justify-between">
+                <span class="font-heading text-xs uppercase text-giallo font-bold">1. Showroom Supercar</span>
+                <span class="font-mono text-xs text-silver-bright font-bold">{{ $carSalesCount }} Unit</span>
+            </div>
+            <p class="font-mono text-lg font-bold text-silver-bright">Rp {{ number_format($carRevenue, 0, ',', '.') }}</p>
+            <div class="w-full bg-steel/30 rounded-full h-1.5 overflow-hidden">
+                <div class="bg-giallo h-1.5 rounded-full" style="width: {{ $totalRevenue > 0 ? min(100, round(($carRevenue / $totalRevenue) * 100)) : 0 }}%"></div>
+            </div>
+            <p class="text-[10px] text-silver-dim">{{ $totalRevenue > 0 ? round(($carRevenue / $totalRevenue) * 100, 1) : 0 }}% dari total omzet</p>
+        </div>
+
+        <div class="panel border border-gunmetal bg-carbon p-4 space-y-2">
+            <div class="flex items-center justify-between">
+                <span class="font-heading text-xs uppercase text-arancio font-bold">2. Bengkel & Servis WO</span>
+                <span class="font-mono text-xs text-silver-bright font-bold">{{ $completedWorkOrders }} WO</span>
+            </div>
+            <p class="font-mono text-lg font-bold text-silver-bright">Rp {{ number_format($workshopRevenue, 0, ',', '.') }}</p>
+            <div class="w-full bg-steel/30 rounded-full h-1.5 overflow-hidden">
+                <div class="bg-arancio h-1.5 rounded-full" style="width: {{ $totalRevenue > 0 ? min(100, round(($workshopRevenue / $totalRevenue) * 100)) : 0 }}%"></div>
+            </div>
+            <p class="text-[10px] text-silver-dim">{{ $totalRevenue > 0 ? round(($workshopRevenue / $totalRevenue) * 100, 1) : 0 }}% dari total omzet &bull; Aktif: {{ $activeWorkOrders }} WO</p>
+        </div>
+
+        <div class="panel border border-gunmetal bg-carbon p-4 space-y-2">
+            <div class="flex items-center justify-between">
+                <span class="font-heading text-xs uppercase text-blue-400 font-bold">3. Spare Parts & POS</span>
+                <span class="font-mono text-xs text-silver-bright font-bold">Komponen</span>
+            </div>
+            <p class="font-mono text-lg font-bold text-silver-bright">Rp {{ number_format($sparePartRevenue, 0, ',', '.') }}</p>
+            <div class="w-full bg-steel/30 rounded-full h-1.5 overflow-hidden">
+                <div class="bg-blue-400 h-1.5 rounded-full" style="width: {{ $totalRevenue > 0 ? min(100, round(($sparePartRevenue / $totalRevenue) * 100)) : 0 }}%"></div>
+            </div>
+            <p class="text-[10px] text-silver-dim">{{ $totalRevenue > 0 ? round(($sparePartRevenue / $totalRevenue) * 100, 1) : 0 }}% dari total omzet</p>
         </div>
     </div>
 
@@ -104,11 +208,11 @@
                 <div class="flex items-center gap-2">
                     <span class="text-arancio">🏎</span>
                     <h2 class="font-heading text-xs uppercase tracking-wider text-silver-bright font-bold">
-                        Transaksi Penjualan Terkini
+                        Transaksi Penjualan Periode Ini
                     </h2>
                 </div>
-                <a href="{{ route('admin.reports.sales') }}" class="text-[10px] font-heading uppercase text-giallo hover:underline">
-                    Lihat Semua &rarr;
+                <a href="{{ route('admin.reports.sales', ['start_date' => $startDate?->format('Y-m-d'), 'end_date' => $endDate?->format('Y-m-d')]) }}" class="no-print text-[10px] font-heading uppercase text-giallo hover:underline">
+                    Laporan Lengkap &rarr;
                 </a>
             </div>
             <div class="overflow-x-auto">
@@ -117,7 +221,7 @@
                         <tr class="bg-steel/30 text-silver-dim font-heading uppercase text-[10px] border-b border-gunmetal">
                             <th class="py-2.5 px-4">No. Order</th>
                             <th class="py-2.5 px-4">Customer</th>
-                            <th class="py-2.5 px-4 text-right">Total</th>
+                            <th class="py-2.5 px-4 text-right">Total Transaksi</th>
                             <th class="py-2.5 px-4 text-center">Status</th>
                         </tr>
                     </thead>
@@ -128,21 +232,21 @@
                                     {{ $sale->code }}
                                 </td>
                                 <td class="py-3 px-4">
-                                    <p class="font-medium text-silver-bright">{{ $sale->customer->user->name ?? 'Customer' }}</p>
-                                    <p class="text-[10px] font-mono text-silver-dim">{{ $sale->created_at->format('d/m/Y') }}</p>
+                                    <p class="font-medium text-silver-bright">{{ $sale->customer->user->name ?? 'Walk-in Customer' }}</p>
+                                    <p class="text-[10px] font-mono text-silver-dim">{{ $sale->created_at->format('d/m/Y H:i') }}</p>
                                 </td>
                                 <td class="py-3 px-4 font-mono font-bold text-giallo text-right">
                                     Rp {{ number_format($sale->total_idr, 0, ',', '.') }}
                                 </td>
                                 <td class="py-3 px-4 text-center">
-                                    <span class="inline-flex px-2 py-0.5 rounded text-[9px] font-mono uppercase font-bold {{ $sale->status->value === 'paid' ? 'bg-verde/20 text-verde border border-verde/40' : 'bg-steel/40 text-silver-dim' }}">
+                                    <span class="inline-flex px-2 py-0.5 rounded text-[9px] font-mono uppercase font-bold {{ in_array($sale->status->value ?? (string)$sale->status, ['paid', 'completed']) ? 'bg-verde/20 text-verde border border-verde/40' : 'bg-steel/40 text-silver-dim' }}">
                                         {{ $sale->status->value ?? $sale->status }}
                                     </span>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="py-8 text-center text-silver-dim">Belum ada data transaksi penjualan.</td>
+                                <td colspan="4" class="py-8 text-center text-silver-dim">Tidak ada transaksi penjualan pada periode ini.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -150,51 +254,54 @@
             </div>
         </div>
 
-        {{-- Recent Workshop Work Orders --}}
+        {{-- Recent Work Orders --}}
         <div class="panel border border-gunmetal bg-carbon overflow-hidden">
             <div class="p-4 border-b border-gunmetal flex items-center justify-between bg-steel/20">
                 <div class="flex items-center gap-2">
-                    <span class="text-verde">🔧</span>
+                    <span class="text-giallo">🔧</span>
                     <h2 class="font-heading text-xs uppercase tracking-wider text-silver-bright font-bold">
-                        Pekerjaan Servis Terkini
+                        Pengerjaan Servis Bengkel
                     </h2>
                 </div>
-                <a href="{{ route('admin.reports.workshop') }}" class="text-[10px] font-heading uppercase text-giallo hover:underline">
-                    Lihat Semua &rarr;
+                <a href="{{ route('admin.reports.workshop', ['start_date' => $startDate?->format('Y-m-d'), 'end_date' => $endDate?->format('Y-m-d')]) }}" class="no-print text-[10px] font-heading uppercase text-giallo hover:underline">
+                    Laporan Lengkap &rarr;
                 </a>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
                         <tr class="bg-steel/30 text-silver-dim font-heading uppercase text-[10px] border-b border-gunmetal">
-                            <th class="py-2.5 px-4">WO Code</th>
-                            <th class="py-2.5 px-4">Kendaraan</th>
-                            <th class="py-2.5 px-4 text-right">Total Biaya</th>
+                            <th class="py-2.5 px-4">No. WO</th>
+                            <th class="py-2.5 px-4">Kendaraan & Pelanggan</th>
+                            <th class="py-2.5 px-4 text-right">Biaya Servis</th>
                             <th class="py-2.5 px-4 text-center">Status</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gunmetal/30">
                         @forelse($recentWorkOrders as $wo)
                             <tr class="hover:bg-steel/10 transition-premium">
-                                <td class="py-3 px-4 font-mono text-silver-bright">
+                                <td class="py-3 px-4 font-mono text-silver-bright font-bold">
                                     {{ $wo->code }}
                                 </td>
                                 <td class="py-3 px-4">
                                     <p class="font-medium text-silver-bright">{{ $wo->vehicle?->brand }} {{ $wo->vehicle?->model }}</p>
-                                    <p class="text-[10px] font-mono text-silver-dim">{{ $wo->vehicle?->plate_number ?? '-' }}</p>
+                                    <p class="text-[10px] font-mono text-silver-dim">{{ $wo->vehicle?->plate_number ?? '-' }} &bull; {{ $wo->vehicle?->customer?->user?->name ?? 'Customer' }}</p>
                                 </td>
                                 <td class="py-3 px-4 font-mono font-bold text-silver-bright text-right">
                                     Rp {{ number_format($wo->total_idr ?? 0, 0, ',', '.') }}
                                 </td>
                                 <td class="py-3 px-4 text-center">
-                                    <span class="inline-flex px-2 py-0.5 rounded text-[9px] font-mono uppercase font-bold {{ $wo->status->value === 'completed' ? 'bg-verde/20 text-verde border border-verde/40' : 'bg-arancio/20 text-arancio border border-arancio/40' }}">
+                                    <span class="inline-flex px-2 py-0.5 rounded text-[9px] font-mono uppercase font-bold
+                                        @if(($wo->status->value ?? (string)$wo->status) === 'completed') bg-verde/20 text-verde border border-verde/40
+                                        @elseif(in_array($wo->status->value ?? (string)$wo->status, ['in_progress', 'queued'])) bg-arancio/20 text-arancio border border-arancio/40
+                                        @else bg-steel/40 text-silver-dim @endif">
                                         {{ $wo->status->value ?? $wo->status }}
                                     </span>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="py-8 text-center text-silver-dim">Belum ada data pengerjaan servis workshop.</td>
+                                <td colspan="4" class="py-8 text-center text-silver-dim">Tidak ada order servis pada periode ini.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -203,41 +310,27 @@
         </div>
     </div>
 
-    {{-- Inventory & Value Status --}}
-    <div class="panel border border-gunmetal bg-carbon p-6">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gunmetal pb-4">
-            <div>
-                <h3 class="font-heading text-sm uppercase tracking-wider text-silver-bright font-bold">
-                    Ikhtisar Aset & Suku Cadang (Inventory Valuation)
-                </h3>
-                <p class="text-xs text-silver-dim mt-0.5">
-                    Estimasi nilai aset suku cadang dan kesiapan stok di gudang AUDrive
-                </p>
-            </div>
-            <a href="{{ route('admin.reports.inventory') }}" class="px-3 py-1.5 bg-steel/50 hover:bg-steel border border-gunmetal text-silver-bright font-heading text-[10px] uppercase rounded transition-premium">
-                Buka Laporan Inventori Lengkap
-            </a>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-5">
-            <div>
-                <span class="text-silver-dim text-[11px] font-heading uppercase">Total Item Terkatalog</span>
-                <p class="font-mono text-2xl font-bold text-silver-bright mt-1">
-                    {{ $stats['inventory']['total_items'] ?? 0 }} <span class="text-xs font-normal text-silver-dim">SKU</span>
-                </p>
-            </div>
-            <div>
-                <span class="text-silver-dim text-[11px] font-heading uppercase">Total Valuasi Suku Cadang</span>
-                <p class="font-mono text-2xl font-bold text-giallo mt-1">
-                    Rp {{ number_format($stats['inventory']['total_parts_value'] ?? 0, 0, ',', '.') }}
-                </p>
-            </div>
-            <div>
-                <span class="text-silver-dim text-[11px] font-heading uppercase">Stok Di Bawah Batas Minimum</span>
-                <p class="font-mono text-2xl font-bold text-danger mt-1">
-                    {{ $stats['inventory']['low_stock_parts'] ?? 0 }} <span class="text-xs font-normal text-silver-dim">Perlu Restock</span>
-                </p>
-            </div>
-        </div>
+    {{-- Official Signatures for Print Mode --}}
+    <div class="hidden print:block pt-10">
+        <table class="w-full text-center text-black text-xs">
+            <tr>
+                <td style="width: 33%;">
+                    <p class="text-[10px] font-semibold text-gray-600 mb-14">Dibuat Oleh (Finance Staff):</p>
+                    <p class="font-bold underline">{{ auth()->user()->name }}</p>
+                    <p class="text-[9px] text-gray-500">Divisi Keuangan</p>
+                </td>
+                <td style="width: 33%;">
+                    <p class="text-[10px] font-semibold text-gray-600 mb-14">Diperiksa Oleh (Supervisor):</p>
+                    <p class="font-bold underline">Operations Manager</p>
+                    <p class="text-[9px] text-gray-500">Manajer Operasional</p>
+                </td>
+                <td style="width: 33%;">
+                    <p class="text-[10px] font-semibold text-gray-600 mb-14">Disetujui Oleh (Direktur):</p>
+                    <p class="font-bold underline">Super Admin AUDrive</p>
+                    <p class="text-[9px] text-gray-500">Direktur Utama</p>
+                </td>
+            </tr>
+        </table>
     </div>
 </div>
 @endsection

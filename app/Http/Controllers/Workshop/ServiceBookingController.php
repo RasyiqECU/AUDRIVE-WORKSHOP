@@ -10,9 +10,11 @@ use App\Models\CustomerVehicle;
 use App\Models\ServiceBooking;
 use App\Services\Notification\NotificationService;
 use App\Services\ServiceBookingService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 class ServiceBookingController extends Controller
@@ -105,23 +107,23 @@ class ServiceBookingController extends Controller
             );
 
             $vehicleName = "{$vehicle->brand} {$vehicle->model} ({$vehicle->plate_number})";
-            $scheduleDate = Carbon::parse($request->preferred_date)->format('d M Y') . ' jam ' . $request->preferred_time;
+            $scheduleDate = Carbon::parse($request->preferred_date)->format('d M Y').' jam '.$request->preferred_time;
 
             // 1. Notifikasi ke Customer
             $this->notificationService->send($request->user(), 'service_booking_created', [
-                'title'      => "Booking Servis Diajukan: {$vehicleName}",
-                'message'    => "Booking servis untuk {$vehicleName} pada tanggal {$scheduleDate} berhasil diajukan. Tim bengkel kami akan segera mengonfirmasi jadwal Anda.",
-                'vehicle'    => $vehicleName,
-                'date'       => $scheduleDate,
+                'title' => "Booking Servis Diajukan: {$vehicleName}",
+                'message' => "Booking servis untuk {$vehicleName} pada tanggal {$scheduleDate} berhasil diajukan. Tim bengkel kami akan segera mengonfirmasi jadwal Anda.",
+                'vehicle' => $vehicleName,
+                'date' => $scheduleDate,
                 'action_url' => route('workshop.booking.show', $booking->id),
             ]);
 
             // 2. Notifikasi ke Tim Bengkel / Mechanic & Super Admin
             $this->notificationService->notifyRoles(['mechanic', 'super-admin'], 'service_booking_created', [
-                'title'      => "Booking Servis Baru: {$vehicleName}",
-                'message'    => "Booking servis baru masuk dari {$request->user()->name} untuk {$vehicleName} pada tanggal {$scheduleDate}.",
-                'vehicle'    => $vehicleName,
-                'date'       => $scheduleDate,
+                'title' => "Booking Servis Baru: {$vehicleName}",
+                'message' => "Booking servis baru masuk dari {$request->user()->name} untuk {$vehicleName} pada tanggal {$scheduleDate}.",
+                'vehicle' => $vehicleName,
+                'date' => $scheduleDate,
                 'action_url' => route('admin.service-bookings.show', $booking->id),
             ]);
 
@@ -169,7 +171,7 @@ class ServiceBookingController extends Controller
     /**
      * Tampilkan bukti booking / kwitansi.
      */
-    public function receipt(Request $request, ServiceBooking $booking): View
+    public function receipt(Request $request, ServiceBooking $booking): Response|View
     {
         $customer = $request->user()->customer;
 
@@ -177,7 +179,23 @@ class ServiceBookingController extends Controller
             abort(403, 'Akses tidak diizinkan.');
         }
 
-        $booking->load(['vehicle', 'workOrder.items']);
+        $booking->load(['vehicle', 'workOrder.items', 'customer.user']);
+
+        if ($booking->workOrder) {
+            $workOrder = $booking->workOrder;
+            $vehicle = $booking->vehicle;
+            $items = $workOrder->items;
+
+            if ($request->boolean('download')) {
+                $pdf = Pdf::loadView('pdf.service-receipt', compact('workOrder', 'customer', 'vehicle', 'items'));
+
+                return $pdf->download("Tanda-Terima-{$workOrder->code}.pdf");
+            }
+
+            $pdf = Pdf::loadView('pdf.service-receipt', compact('workOrder', 'customer', 'vehicle', 'items'));
+
+            return $pdf->stream("Tanda-Terima-{$workOrder->code}.pdf");
+        }
 
         return view('workshop.show', compact('booking'));
     }

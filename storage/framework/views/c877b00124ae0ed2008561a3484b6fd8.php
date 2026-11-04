@@ -13,7 +13,7 @@
     $badge = $roleBadges[$role] ?? ['label' => strtoupper($role), 'color' => 'text-silver-dim border-gunmetal bg-steel/20'];
 ?>
 
-<div class="fixed top-0 left-0 h-full w-72 bg-carbon border-r border-gunmetal z-50 hidden lg:block">
+<div class="no-print fixed top-0 left-0 h-full w-72 bg-carbon border-r border-gunmetal z-50 hidden lg:block">
     
     <div class="p-5 border-b border-gunmetal space-y-2">
         <a href="<?php echo e(route('admin.dashboard')); ?>" class="flex items-center gap-3 group">
@@ -32,7 +32,7 @@
     </div>
 
     
-    <nav class="p-3 space-y-0.5 overflow-y-auto h-[calc(100%-190px)]">
+    <nav id="admin-sidebar-nav" class="p-3 space-y-0.5 overflow-y-auto h-[calc(100%-190px)]">
         
         <a href="<?php echo e(route('admin.dashboard')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.dashboard') ? 'active' : ''); ?>">
             <span class="text-sm">⬡</span>
@@ -93,12 +93,19 @@
         <?php endif; ?>
 
         
-        <?php if(in_array($role, ['super-admin', 'manager', 'cashier'], true)): ?>
-            <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Kasir & POS</p>
+        <?php if(in_array($role, ['super-admin', 'manager', 'cashier', 'sales'], true)): ?>
+            <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Kasir & Finansial</p>
 
-            <a href="<?php echo e(route('admin.pos.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.pos.*') ? 'active' : ''); ?>">
-                <span class="text-sm">💳</span>
-                <span class="font-heading text-xs font-medium tracking-wide">Point of Sales (POS)</span>
+            <?php if(in_array($role, ['super-admin', 'manager', 'cashier'], true)): ?>
+                <a href="<?php echo e(route('admin.pos.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.pos.*') ? 'active' : ''); ?>">
+                    <span class="text-sm">💳</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">Point of Sales (POS)</span>
+                </a>
+            <?php endif; ?>
+
+            <a href="<?php echo e(route('admin.invoices.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.invoices.*') ? 'active' : ''); ?>">
+                <span class="text-sm">🧾</span>
+                <span class="font-heading text-xs font-medium tracking-wide">Invoice & Bukti Bayar</span>
             </a>
         <?php endif; ?>
 
@@ -243,4 +250,37 @@
         </div>
     </div>
 </div>
+
+<script>
+    (function () {
+        const nav = document.getElementById('admin-sidebar-nav');
+        if (!nav) return;
+
+        const STORAGE_KEY = 'audrive_admin_sidebar_scroll';
+
+        // Restore scroll position
+        const savedScroll = sessionStorage.getItem(STORAGE_KEY);
+        if (savedScroll !== null) {
+            nav.scrollTop = parseInt(savedScroll, 10);
+        } else {
+            const activeItem = nav.querySelector('.sidebar-item.active');
+            if (activeItem) {
+                activeItem.scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        // Save scroll position when clicking any sidebar link
+        nav.addEventListener('click', function (e) {
+            const link = e.target.closest('a');
+            if (link) {
+                sessionStorage.setItem(STORAGE_KEY, nav.scrollTop);
+            }
+        });
+
+        // Continuously persist scroll position while scrolling
+        nav.addEventListener('scroll', function () {
+            sessionStorage.setItem(STORAGE_KEY, nav.scrollTop);
+        }, { passive: true });
+    })();
+</script>
 <?php /**PATH C:\Users\Pongo\Documents\audrive\resources\views/components/layout/admin-sidebar.blade.php ENDPATH**/ ?>

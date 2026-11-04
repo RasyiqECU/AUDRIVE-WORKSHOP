@@ -1,5 +1,5 @@
 
-<header class="topbar flex items-center justify-between">
+<header class="topbar no-print flex items-center justify-between">
     
     <button class="lg:hidden text-giallo hover:text-arancio transition-premium">
         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -2,140 +2,274 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Kontrak Jual Beli {{ $salesOrder->code }}</title>
+    <title>Surat Perjanjian Jual Beli {{ $salesOrder->code }} - AUDrive</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Arial', sans-serif; font-size: 11px; color: #333; line-height: 1.6; }
-        .container { padding: 30px; }
-        .header { text-align: center; border-bottom: 3px solid #FFD100; padding-bottom: 20px; margin-bottom: 30px; }
-        .logo { font-size: 28px; font-weight: bold; letter-spacing: 2px; margin-bottom: 10px; }
-        .logo span { color: #FFD100; }
-        .header h1 { font-size: 20px; color: #FFD100; margin-bottom: 5px; }
-        .header p { font-size: 10px; color: #666; }
-        .section { margin-bottom: 25px; }
-        .section h2 { font-size: 14px; color: #FFD100; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
-        .section p { margin-bottom: 8px; text-align: justify; }
-        .party-info { background: #f9f9f9; padding: 15px; margin: 10px 0; border-left: 3px solid #FFD100; }
-        .party-info strong { color: #101114; }
-        .vehicle-info { background: #f9f9f9; padding: 15px; margin: 10px 0; }
-        .vehicle-info table { width: 100%; }
-        .vehicle-info td { padding: 5px 0; }
-        .vehicle-info td:first-child { font-weight: bold; width: 30%; }
-        .price-box { background: #101114; color: #FFD100; padding: 15px; text-align: center; margin: 20px 0; font-size: 16px; font-weight: bold; }
-        .terms { margin: 20px 0; }
-        .terms ol { margin-left: 20px; }
-        .terms li { margin-bottom: 8px; text-align: justify; }
-        .signatures { display: flex; justify-content: space-between; margin-top: 50px; }
-        .signature-box { width: 45%; text-align: center; }
-        .signature-box p { margin-bottom: 5px; }
-        .signature-line { border-top: 1px solid #333; margin-top: 60px; padding-top: 5px; }
-        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; font-size: 9px; color: #999; }
+        @page {
+            margin: 20mm 15mm 20mm 15mm;
+            size: a4 portrait;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 10px;
+            color: #1a1a1a;
+            line-height: 1.5;
+            background: #ffffff;
+        }
+        .header-table {
+            width: 100%;
+            border-bottom: 3px solid #D97706;
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+        }
+        .company-name {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #0B0C0E;
+            text-transform: uppercase;
+        }
+        .company-name span { color: #D97706; }
+        .company-address {
+            font-size: 8.5px;
+            color: #475569;
+            margin-top: 3px;
+        }
+        .doc-title-box {
+            text-align: right;
+            vertical-align: top;
+        }
+        .doc-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: #0B0C0E;
+            letter-spacing: 0.5px;
+        }
+        .doc-badge {
+            font-size: 9px;
+            font-family: monospace;
+            font-weight: bold;
+            color: #D97706;
+            margin-top: 2px;
+        }
+
+        .section-title {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #0B0C0E;
+            border-bottom: 1px solid #CBD5E1;
+            padding-bottom: 3px;
+            margin: 12px 0 6px 0;
+        }
+
+        .parties-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 10px 0;
+            margin-bottom: 10px;
+        }
+        .party-box {
+            width: 50%;
+            border: 1px solid #E2E8F0;
+            background: #F8FAFC;
+            padding: 8px 10px;
+            border-radius: 4px;
+            vertical-align: top;
+            font-size: 9px;
+        }
+        .party-box strong { color: #0B0C0E; }
+        .party-box p { margin-bottom: 2px; }
+
+        .vehicle-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #E2E8F0;
+            margin-bottom: 10px;
+            font-size: 9px;
+        }
+        .vehicle-table td {
+            padding: 5px 8px;
+            border: 1px solid #E2E8F0;
+        }
+        .vehicle-table .label {
+            width: 25%;
+            background: #F8FAFC;
+            color: #475569;
+            font-weight: 600;
+        }
+        .vehicle-table .val {
+            width: 25%;
+            font-weight: bold;
+            color: #0B0C0E;
+        }
+
+        .price-card {
+            border: 1px solid #0B0C0E;
+            background: #0B0C0E;
+            color: #ffffff;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            margin: 8px 0;
+        }
+        .price-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #94A3B8; }
+        .price-val { font-size: 18px; font-weight: 800; color: #FBBF24; font-family: monospace; margin: 3px 0; }
+        .price-terbilang { font-size: 9px; font-style: italic; color: #E2E8F0; }
+
+        .terms-list {
+            margin-left: 18px;
+            font-size: 8.5px;
+            color: #334155;
+            line-height: 1.45;
+        }
+        .terms-list li { margin-bottom: 4px; text-align: justify; }
+
+        .signatures-table {
+            width: 100%;
+            margin-top: 20px;
+            page-break-inside: avoid;
+        }
+        .sig-cell {
+            width: 40%;
+            text-align: center;
+            vertical-align: top;
+        }
+        .sig-space { width: 20%; }
+        .sig-title { font-size: 9px; font-weight: 700; color: #1E293B; margin-bottom: 50px; }
+        .sig-name { font-size: 10px; font-weight: 700; color: #0B0C0E; border-top: 1px solid #1E293B; padding-top: 4px; display: inline-block; min-width: 140px; }
+        .sig-role { font-size: 8px; color: #64748B; }
+
+        .footer {
+            margin-top: 15px;
+            border-top: 1px solid #E2E8F0;
+            padding-top: 6px;
+            text-align: center;
+            font-size: 7.5px;
+            color: #94A3B8;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">AU<span>DRIVE</span></div>
-            <h1>KONTRAK JUAL BELI</h1>
-            <p>No: {{ $salesOrder->code }}</p>
-            <p>Tanggal: {{ $salesOrder->created_at->format('d F Y') }}</p>
-        </div>
+    @php
+        $carUnit = $carUnit ?? ($salesOrder->items->firstWhere('car_unit_id')?->carUnit ?? null);
+        $customer = $customer ?? $salesOrder->customer;
+    @endphp
 
-
-        <div class="section">
-            <h2>PIHAK-PIHAK</h2>
-            <p>Pada hari ini, {{ $salesOrder->created_at->isoFormat('dddd, D MMMM Y') }}, telah dibuat kontrak jual beli antara:</p>
-
-
-            <div class="party-info">
-                <p><strong>PIHAK PERTAMA (PENJUAL):</strong></p>
-                <p>Nama: AUDrive</p>
-                <p>Alamat: Jl. Sudirman No. 123, Jakarta Selatan 12190</p>
-                <p>Telp: +62 21 1234 5678</p>
-            </div>
-
-
-            <div class="party-info">
-                <p><strong>PIHAK KEDUA (PEMBELI):</strong></p>
-                <p>Nama: {{ $customer->user->name }}</p>
-                <p>Alamat: {{ $customer->address ?? '-' }}, {{ $customer->city ?? '-' }}</p>
-                <p>Telp: {{ $customer->user->phone ?? '-' }}</p>
-                <p>Email: {{ $customer->user->email }}</p>
-            </div>
-        </div>
-
-
-        <div class="section">
-            <h2>OBJEK JUAL BELI</h2>
-            <p>PIHAK PERTAMA setuju untuk menjual dan PIHAK KEDUA setuju untuk membeli kendaraan dengan spesifikasi sebagai berikut:</p>
-
-
-            <div class="vehicle-info">
-                <table>
-                    <tr><td>Merek</td><td>: {{ $carUnit->brand ?? '-' }}</td></tr>
-                    <tr><td>Model</td><td>: {{ $carUnit->model ?? '-' }}</td></tr>
-                    <tr><td>Tahun</td><td>: {{ $carUnit->year ?? '-' }}</td></tr>
-                    <tr><td>Warna</td><td>: {{ $carUnit->color ?? '-' }}</td></tr>
-                    <tr><td>No. Polisi</td><td>: {{ $carUnit->plate_number ?? '-' }}</td></tr>
-                    <tr><td>No. Rangka</td><td>: {{ $carUnit->vin ?? '-' }}</td></tr>
-                    <tr><td>Kilometer</td><td>: {{ number_format($carUnit->mileage_km ?? 0, 0, ',', '.') }} km</td></tr>
-                    <tr><td>Transmisi</td><td>: {{ ucfirst($carUnit->transmission ?? '-') }}</td></tr>
-                </table>
-            </div>
-        </div>
-
-
-        <div class="section">
-            <h2>HARGA DAN PEMBAYARAN</h2>
-            <p>Harga jual beli kendaraan tersebut adalah:</p>
-            <div class="price-box">
-                Rp {{ number_format($salesOrder->total_idr, 0, ',', '.') }}
-            </div>
-            <p>Pembayaran dilakukan dengan ketentuan:</p>
-            <p>1. DP (Down Payment) sebesar yang disepakati kedua belah pihak.</p>
-            <p>2. Pelunasan dilakukan sebelum serah terima kendaraan.</p>
-            <p>3. Pembayaran ditransfer ke rekening resmi AUDrive.</p>
-        </div>
-
-
-        <div class="section terms">
-            <h2>KETENTUAN</h2>
-            <ol>
-                <li>Kendaraan yang dijual adalah dalam kondisi apa adanya (as is) sesuai dengan hasil inspeksi yang telah dilakukan.</li>
-                <li>PIHAK PERTAMA menjamin bahwa kendaraan bebas dari sengketa hukum dan memiliki dokumen yang lengkap.</li>
-                <li>Serah terima kendaraan akan dilakukan setelah pembayaran lunas.</li>
-                <li>Biaya balik nama menjadi tanggung jawab PIHAK KEDUA.</li>
-                <li>Garansi mesin diberikan selama 6 bulan sejak tanggal serah terima, tidak termasuk kerusakan akibat kelalaian pengguna.</li>
-                <li>Kontrak ini dibuat dalam rangkap 2 (dua) dengan kekuatan hukum yang sama.</li>
-            </ol>
-        </div>
-
-
-        <div class="signatures">
-            <div class="signature-box">
-                <p><strong>PIHAK PERTAMA</strong></p>
-                <p>(Penjual)</p>
-                <div class="signature-line">
-                    <p>AUDrive</p>
+    {{-- Header --}}
+    <table class="header-table">
+        <tr>
+            <td style="width: 55%; vertical-align: top;">
+                <div class="company-name">AU<span>DRIVE</span> MOTORS</div>
+                <div class="company-address">
+                    Graha AUDrive Supercar Dealership, Kav. 88, SCBD, Jakarta Selatan 12190<br>
+                    Hotline: +62 21 8088 9900 | Email: legal@audrive.id
                 </div>
-            </div>
-            <div class="signature-box">
-                <p><strong>PIHAK KEDUA</strong></p>
-                <p>(Pembeli)</p>
-                <div class="signature-line">
-                    <p>{{ $customer->user->name }}</p>
+            </td>
+            <td class="doc-title-box">
+                <div class="doc-title">SURAT PERJANJIAN JUAL BELI</div>
+                <div class="doc-badge">NO: SPK/{{ $salesOrder->code }}</div>
+                <div style="font-size: 8.5px; color: #64748B; margin-top: 2px;">
+                    Tanggal: {{ $salesOrder->created_at->format('d F Y') }}
                 </div>
-            </div>
-        </div>
+            </td>
+        </tr>
+    </table>
 
+    <p style="font-size: 9px; margin-bottom: 8px;">
+        Pada hari ini, <strong>{{ $salesOrder->created_at->isoFormat('dddd, D MMMM Y') }}</strong>, telah disepakati dan ditandatangani Perjanjian Pengikatan Jual Beli Kendaraan Bermotor (SPK) antara pihak-pihak di bawah ini:
+    </p>
 
-        <div class="footer">
-            <p>Dokumen ini dibuat secara elektronik dan sah tanpa tanda tangan basah.</p>
-            <p>&copy; {{ date('Y') }} AUDrive. All rights reserved.</p>
-        </div>
+    {{-- Parties --}}
+    <table class="parties-table">
+        <tr>
+            <td class="party-box">
+                <div style="font-weight: 800; color: #D97706; margin-bottom: 4px;">PIHAK PERTAMA (PENJUAL)</div>
+                <p>Nama Perusahaan: <strong>PT AUDRIVE SUPERCAR INDONESIA</strong></p>
+                <p>Alamat: Graha AUDrive Kav. 88, SCBD, Jakarta Selatan</p>
+                <p>Telepon: +62 21 8088 9900</p>
+                <p>Diwakili Oleh: <strong>{{ $salesOrder->creator?->name ?? 'Authorized Sales Executive' }}</strong></p>
+            </td>
+            <td class="party-box">
+                <div style="font-weight: 800; color: #D97706; margin-bottom: 4px;">PIHAK KEDUA (PEMBELI)</div>
+                <p>Nama Lengkap: <strong>{{ $customer?->user?->name ?? '-' }}</strong></p>
+                <p>Alamat: {{ $customer?->address ?? '-' }}{{ $customer?->city ? ', ' . $customer->city : '' }}</p>
+                <p>Telepon / WA: {{ $customer?->user?->phone ?? '-' }}</p>
+                <p>Email: {{ $customer?->user?->email ?? '-' }}</p>
+            </td>
+        </tr>
+    </table>
+
+    {{-- Object --}}
+    <div class="section-title">PASAL 1: OBJEK JUAL BELI KENDARAAN</div>
+    <table class="vehicle-table">
+        <tr>
+            <td class="label">Merek & Model</td>
+            <td class="val">{{ $carUnit->brand ?? 'Supercar' }} {{ $carUnit->model ?? '-' }}</td>
+            <td class="label">Tahun Pembuatan</td>
+            <td class="val">{{ $carUnit->year ?? '-' }}</td>
+        </tr>
+        <tr>
+            <td class="label">Warna Eksterior</td>
+            <td class="val">{{ $carUnit->color ?? '-' }}</td>
+            <td class="label">Nomor Polisi (Plat)</td>
+            <td class="val">{{ $carUnit->plate_number ?? '-' }}</td>
+        </tr>
+        <tr>
+            <td class="label">Nomor Rangka (VIN)</td>
+            <td class="val" style="font-family: monospace;">{{ $carUnit->vin ?? '-' }}</td>
+            <td class="label">Jarak Tempuh (KM)</td>
+            <td class="val">{{ number_format($carUnit->mileage_km ?? 0, 0, ',', '.') }} KM</td>
+        </tr>
+        <tr>
+            <td class="label">Transmisi</td>
+            <td class="val">{{ ucfirst($carUnit->transmission ?? 'Dual Clutch') }}</td>
+            <td class="label">Status Dokumen</td>
+            <td class="val">Lengkap (BPKB, STNK & Faktur)</td>
+        </tr>
+    </table>
+
+    {{-- Price & Payment --}}
+    <div class="section-title">PASAL 2: HARGA DAN KETENTUAN PEMBAYARAN</div>
+    <div class="price-card">
+        <div class="price-label">NILAI KONTRAK TRANSAKSI JUAL BELI (NETT)</div>
+        <div class="price-val">Rp {{ number_format($salesOrder->total_idr, 0, ',', '.') }}</div>
+        <div class="price-terbilang">"{{ \App\Support\Terbilang::make($salesOrder->total_idr) }}"</div>
+    </div>
+
+    {{-- Terms --}}
+    <div class="section-title">PASAL 3: KETENTUAN SERAH TERIMA & GARANSI</div>
+    <ol class="terms-list">
+        <li><strong>Keaslian Dokumen:</strong> PIHAK PERTAMA menjamin unit kendaraan bebas sengketa, tidak terikat fidusia, dan memiliki legalitas resmi.</li>
+        <li><strong>Pelunasan & Serah Terima:</strong> Penyerahan unit kendaraan beserta BPKB, STNK asli, kunci cadangan, dan buku servis dilakukan setelah pembayaran dinyatakan Lunas / Efektif di rekening resmi AUDrive.</li>
+        <li><strong>Garansi Mesin & Transmisi:</strong> AUDrive memberikan garansi perlindungan mesin dan transmisi selama 6 (enam) bulan atau 5.000 KM sejak tanggal serah terima.</li>
+        <li><strong>Penyelesaian Perselisihan:</strong> Segala perselisihan yang timbul akan diselesaikan secara musyawarah dan mufakat melalui Pengadilan Negeri Jakarta Selatan.</li>
+    </ol>
+
+    {{-- Signatures --}}
+    <table class="signatures-table">
+        <tr>
+            <td class="sig-cell">
+                <div class="sig-title">PIHAK PERTAMA (PENJUAL)<br>PT AUDRIVE SUPERCAR INDONESIA</div>
+                <div class="sig-name">{{ $salesOrder->creator?->name ?? 'Sales & Showroom Executive' }}</div>
+                <div class="sig-role">Authorized Dealership Signature</div>
+            </td>
+            <td class="sig-space"></td>
+            <td class="sig-cell">
+                <div class="sig-title">PIHAK KEDUA (PEMBELI)<br>KONSUMEN SUPERCAR</div>
+                <div class="sig-name">{{ $customer?->user?->name ?? 'Pembeli' }}</div>
+                <div class="sig-role">Tanda Tangan & Nama Terang</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        Dokumen perjanjian ini dibuat dalam 2 (dua) rangkap dan mengikat secara hukum bagi kedua belah pihak.
     </div>
 </body>
 </html>
-
-
-

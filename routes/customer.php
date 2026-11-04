@@ -1,14 +1,15 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Customer\AiScanController;
 use App\Http\Controllers\Customer\DashboardController;
-use App\Http\Controllers\Customer\VehicleController;
-use App\Http\Controllers\Customer\TicketController;
+use App\Http\Controllers\Customer\InvoiceController;
 use App\Http\Controllers\Customer\LoyaltyController;
 use App\Http\Controllers\Customer\ReminderController;
 use App\Http\Controllers\Customer\ReviewController;
+use App\Http\Controllers\Customer\TicketController;
+use App\Http\Controllers\Customer\VehicleController;
 use App\Http\Controllers\Customer\VoucherController;
-use App\Http\Controllers\Customer\AiScanController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -55,3 +56,9 @@ Route::get('promotions', [VoucherController::class, 'promotions'])->name('promot
 Route::get('notifications', [DashboardController::class, 'notifications'])->name('notifications.index');
 Route::patch('notifications/{notification}/read', [DashboardController::class, 'markRead'])->name('notifications.read');
 Route::post('notifications/read-all', [DashboardController::class, 'markAllRead'])->name('notifications.read-all');
+
+// Invoices & Bukti Pembayaran
+Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'download'])->name('invoices.pdf');
+Route::get('invoices/{invoice}/print', [InvoiceController::class, 'print'])->name('invoices.print');

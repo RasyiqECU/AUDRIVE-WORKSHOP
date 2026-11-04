@@ -4,8 +4,8 @@
 
 @section('content')
 <div class="space-y-6">
-    {{-- Header --}}
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    {{-- Header (Screen only) --}}
+    <div class="no-print flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
             <div class="flex items-center gap-2">
                 <span class="text-giallo font-mono text-sm tracking-widest uppercase">CRM & Laporan</span>
@@ -21,9 +21,27 @@
         </div>
         <div class="flex items-center gap-3">
             <button onclick="window.print()" class="px-4 py-2 bg-steel/40 hover:bg-steel text-silver-bright border border-gunmetal font-heading text-xs uppercase tracking-wider rounded transition-premium flex items-center gap-2">
-                <span>🖨️</span> Cetak Daftar
+                <span>🖨️</span> Cetak Daftar Pelanggan
             </button>
         </div>
+    </div>
+
+    {{-- Official Print Letterhead (Only visible in Print) --}}
+    <div class="hidden print:block border-b-2 border-black pb-4 mb-6">
+        <table class="w-full text-black">
+            <tr>
+                <td style="width: 60%; vertical-align: top;">
+                    <h2 class="text-2xl font-bold uppercase tracking-wider">PT AUDRIVE SUPERCAR INDONESIA</h2>
+                    <p class="text-xs font-semibold uppercase text-gray-600">Database Pelanggan & Klien Eksklusif VIP (CRM)</p>
+                    <p class="text-[10px] text-gray-600">Graha AUDrive Kav. 88, SCBD, Jakarta Selatan &bull; Telp: +62 21 8088 9900</p>
+                </td>
+                <td style="width: 40%; text-align: right; vertical-align: top;">
+                    <h3 class="text-lg font-bold uppercase">LAPORAN DATA PELANGGAN</h3>
+                    <p class="text-xs font-mono">Dokumen: CRM-RPT-{{ date('Ymd-His') }}</p>
+                    <p class="text-[10px] text-gray-500">Dicetak: {{ now()->format('d/m/Y H:i') }} WIB oleh {{ auth()->user()->name }}</p>
+                </td>
+            </tr>
+        </table>
     </div>
 
     {{-- Stats Cards --}}
@@ -70,7 +88,7 @@
                         <th class="py-3 px-4">Domisili / Kota</th>
                         <th class="py-3 px-4 text-center">Unit Mobil</th>
                         <th class="py-3 px-4 text-center">Loyalty Points</th>
-                        <th class="py-3 px-4 text-right">Aksi</th>
+                        <th class="py-3 px-4 text-right no-print">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gunmetal/30">
@@ -85,7 +103,7 @@
                         <tr class="hover:bg-steel/10 transition-premium">
                             <td class="py-3.5 px-4">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded bg-steel/60 border border-gunmetal flex items-center justify-center font-heading text-xs font-bold text-giallo">
+                                    <div class="w-8 h-8 rounded bg-steel/60 border border-gunmetal flex items-center justify-center font-heading text-xs font-bold text-giallo no-print">
                                         {{ substr($customer->user->name ?? 'C', 0, 1) }}
                                     </div>
                                     <div>
@@ -99,7 +117,7 @@
                                 <div class="flex items-center gap-2 mt-0.5">
                                     <span class="font-mono text-[10px] text-silver-dim">{{ $phone ?: '-' }}</span>
                                     @if($cleanPhone)
-                                        <a href="https://wa.me/{{ $cleanPhone }}?text=Halo%20{{ urlencode($customer->user->name ?? '') }},%20salam%20dari%20AUDrive." target="_blank" class="text-emerald-400 hover:text-emerald-300 font-mono text-[9px] flex items-center gap-0.5" title="WhatsApp Customer">
+                                        <a href="https://wa.me/{{ $cleanPhone }}?text=Halo%20{{ urlencode($customer->user->name ?? '') }},%20salam%20dari%20AUDrive." target="_blank" class="no-print text-emerald-400 hover:text-emerald-300 font-mono text-[9px] flex items-center gap-0.5" title="WhatsApp Customer">
                                             <span>💬</span> WA
                                         </a>
                                     @endif
@@ -110,7 +128,8 @@
                                 <p class="text-[10px] text-silver-dim">{{ $customer->province ?: '-' }}</p>
                             </td>
                             <td class="py-3.5 px-4 text-center">
-                                <a href="{{ route('admin.customers.vehicles', $customer) }}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-steel/40 hover:bg-steel/60 border border-gunmetal text-silver-bright font-mono text-[11px] transition-premium" title="Lihat Garasi Mobil">
+                                <span class="hidden print:inline font-mono font-bold">{{ $customer->vehicles_count }} Unit</span>
+                                <a href="{{ route('admin.customers.vehicles', $customer) }}" class="no-print inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-steel/40 hover:bg-steel/60 border border-gunmetal text-silver-bright font-mono text-[11px] transition-premium" title="Lihat Garasi Mobil">
                                     <span>🏎</span>
                                     <span>{{ $customer->vehicles_count }} Unit</span>
                                 </a>
@@ -121,7 +140,7 @@
                                 </span>
                                 <span class="text-[9px] text-silver-dim uppercase block">Pts</span>
                             </td>
-                            <td class="py-3.5 px-4 text-right space-x-1.5">
+                            <td class="py-3.5 px-4 text-right space-x-1.5 no-print">
                                 <a href="{{ route('admin.customers.show', $customer) }}" class="px-2.5 py-1 bg-steel/50 hover:bg-giallo hover:text-carbon border border-gunmetal text-silver-bright font-heading text-[10px] uppercase rounded transition-premium">
                                     Detail
                                 </a>
@@ -142,10 +161,29 @@
             </table>
         </div>
         @if($customers->hasPages())
-            <div class="p-4 border-t border-gunmetal">
+            <div class="p-4 border-t border-gunmetal no-print">
                 {{ $customers->links() }}
             </div>
         @endif
+    </div>
+
+    {{-- Official Signatures for Print Mode --}}
+    <div class="hidden print:block pt-8">
+        <table class="w-full text-center text-black text-xs">
+            <tr>
+                <td style="width: 50%;">
+                    <p class="text-[10px] font-semibold text-gray-600 mb-14">Dibuat Oleh (CRM & Sales Admin):</p>
+                    <p class="font-bold underline">{{ auth()->user()->name }}</p>
+                    <p class="text-[9px] text-gray-500">Divisi Hubungan Pelanggan</p>
+                </td>
+                <td style="width: 50%;">
+                    <p class="text-[10px] font-semibold text-gray-600 mb-14">Disetujui Oleh (General Manager):</p>
+                    <p class="font-bold underline">Management AUDrive</p>
+                    <p class="text-[9px] text-gray-500">Pimpinan Operasional</p>
+                </td>
+            </tr>
+        </table>
+    </div>
     </div>
 </div>
 @endsection
