@@ -1,6 +1,6 @@
 # AUDrive - Struktur Folder
 
-Struktur final project AUDrive. Root aplikasi = folder `audrive/`.
+Struktur final project AUDrive. Root aplikasi = root repository (`AUDRIVE-WORKSHOP/`) — tidak ada lagi subfolder `audrive/` maupun `laravel/`.
 
 ## Aplikasi Laravel (root)
 
@@ -37,9 +37,10 @@ audrive/
 ├── services/                   # (dihapus — berisi stub Python v1.0.0 yang sudah digantikan ai-service/)
 ├── storage/                    # framework/cache, framework/views, logs, app/public (upload)
 ├── tests/
-│   ├── Feature/                # ApiTest, AuthTest, MarketplaceTest, QAHardeningTest, SupportServicesTest, WorkshopTest
+│   ├── Feature/                # Pest: ApiTest, AuthTest, MarketplaceTest, QAHardeningTest, SupportServicesTest, WorkshopTest
 │   ├── Unit/
 │   └── TestCase.php
+├── docs/                       # Folder dokumentasi (README, STRUCTURE, AUDrive_Context, QA_CHECKLIST)
 ├── ai-service/                 # Program Python — lihat bagian di bawah
 └── (root files)
 ```
@@ -51,12 +52,21 @@ File konfigurasi di root:
 | `artisan` | CLI Laravel |
 | `composer.json` / `composer.lock` | Dependensi PHP |
 | `package.json` / `package-lock.json` | Dependensi Node/Vite |
-| `phpunit.xml` | Konfigurasi test (sqlite :memory:) |
+| `phpunit.xml` | Konfigurasi test Pest/PHPUnit (sqlite :memory:) |
 | `vite.config.js` | Build asset (laravel-vite-plugin + Tailwind 4) |
 | `tailwind.config.js` | Konfigurasi Tailwind |
 | `.env` / `.env.example` | Environment aktif / template |
 | `.gitignore`, `.gitattributes`, `.editorconfig`, `.npmrc` | Konfigurasi repo & tooling |
-| `README.md`, `STRUCTURE.md`, `AUDrive_Context.md`, `QA_CHECKLIST.md`, `AGENTS.md`, `CLAUDE.md` | Dokumentasi |
+| `AGENTS.md`, `CLAUDE.md` | Konfigurasi tooling coding-agent (harus di root) |
+
+Dokumentasi project ada di **`docs/`**:
+
+| File | Fungsi |
+|---|---|
+| `docs/README.md` | Panduan menjalankan & prasyarat |
+| `docs/STRUCTURE.md` | File ini |
+| `docs/AUDrive_Context.md` | Konteks project, arsitektur, workflow AI Scan |
+| `docs/QA_CHECKLIST.md` | Status QA, hasil test, roadmap hardening |
 
 ## Program Python — `ai-service/`
 
@@ -91,4 +101,4 @@ ai-service/
 
 ---
 
-Terakhir diperbarui: 25 Oktober 2026 (setelah konsolidasi struktur — `laravel/` dihapus, root `audrive/` menjadi satu-satunya aplikasi).
+Terakhir diperbarui: 8 November 2026 — dokumentasi dikonsolidasikan ke folder `docs/`, root repository menjadi satu-satunya aplikasi (`laravel/` dan salinan `audrive/` sudah tidak ada).

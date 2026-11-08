@@ -36,6 +36,11 @@ def _infer_keras(model: Any, features: np.ndarray) -> np.ndarray:
     return model.predict(features.astype(np.float32).reshape(1, -1), verbose=0)[0]
 
 
+def _infer_xgboost(model: Any, features: np.ndarray) -> np.ndarray:
+    probs = model.predict_proba(features.astype(np.float32).reshape(1, -1))[0]
+    return np.asarray(probs, dtype=np.float64)
+
+
 def _infer_dummy(features: np.ndarray) -> np.ndarray:
     n = len(get_classes())
     return np.random.dirichlet(np.ones(n) * 0.5)   # lebih peaked dari uniform
@@ -46,6 +51,34 @@ def _scale(features: np.ndarray) -> np.ndarray:
     if scaler is not None:
         return scaler.transform(features.reshape(1, -1))[0]
     return features
+
+
+def _build_feature_vector(features_dict: dict) -> np.ndarray:
+    """
+    Susun vektor fitur mentah sesuai jumlah yang dibutuhkan scaler/model.
+
+    Model XGBoost/StandardScaler milik AUDrive dilatih dengan 82 fitur
+    (40 MFCC mean + 40 MFCC std + spectral_rolloff + zero_crossing_rate),
+    sementara preprocessor menghasilkan 80 fitur inti — 2 fitur spektral
+    ditambahkan di sini bila dimensi belum cukup.
+    """
+    raw_features = features_dict["mfcc"]
+
+    scams = get_model_bundle().get("scaler")
+    expected = getattr(scams, "n_features_in_", None)
+    model = get_model_bundle().get("model")
+    if expected is None and model is not None:
+        expected = getattr(model, "n_features_in_", None)
+
+    if expected is not None and len(raw_features) < expected:
+        spectral = features_dict.get("spectral", {})
+        extras = [spectral.get("spectral_rolloff_hz"),
+                  spectral.get("zero_crossing_rate")]
+        needed = expected - len(raw_features)
+        extras = [0.0 if x is None else float(x) for x in extras[:needed]]
+        raw_features = np.concatenate([raw_features, np.array(extras)])
+
+    return raw_features
 
 
 # ─── Langkah 3: Susun Laporan Diagnostik ────────────────────────────────────
@@ -59,6 +92,16 @@ CLASS_LABELS = {
     "combustion_misfire": "Masalah Pembakaran / Misfire",
     "exhaust_leak":       "Kebocoran Knalpot / Exhaust Leak",
     "bearing_alternator": "Kerusakan Bearing Alternator / Pulley",
+    # Kelas pelatihan model XGBoost (9 kelas)
+    "bad_ignition":       "Sistem Pengapian Bermasalah (Bad Ignition)",
+    "dead_battery":       "Aki Lemah / Mati (Dead Battery)",
+    "low_oil":            "Level Oli Mesin Rendah",
+    "normal_brakes":      "Rem Normal",
+    "normal_engine_idle": "Mesin Normal (Idle Sehat)",
+    "not an engine":      "Rekaman Bukan Suara Mesin",
+    "power_steering":     "Masalah Power Steering",
+    "serpentine_belt":    "Serpentine Belt Aus / Kendor",
+    "worn_out_brakes":    "Lapisan Rem Aus (Worn-out Brakes)",
 }
 
 URGENCY_LABELS = {
@@ -76,6 +119,16 @@ WAVE_DESCRIPTIONS = {
     "combustion_misfire": "Terdeteksi pola getaran tidak konsisten dan suara pincang (*misfiring*). Siklus pembakaran tidak stabil, mengindikasikan misfire pada satu atau lebih silinder.",
     "exhaust_leak":       "Terdeteksi suara mendesis (*hissing*) atau letupan (*popping*) yang berulang, khas pada kebocoran sistem gas buang.",
     "bearing_alternator": "Terdeteksi suara melengking (*whining/squeal*) di frekuensi tinggi yang konstan, mengindikasikan bearing alternator atau pulley yang aus.",
+    # Kelas pelatihan model XGBoost (9 kelas)
+    "bad_ignition":       "Terdeteksi ketukan/letupan tidak normal saat mesin menyala (*backfire / crank sound*), mengindikasikan masalah pada sistem pengapian.",
+    "dead_battery":       "Terdeteksi suara klik lemah berulang (*clicking*) saat start, ciri khas aki lemah atau sistem kelistrikan yang tidak cukup daya.",
+    "low_oil":            "Terdeteksi gesekan logam dari bagian dalam blok mesin, indikasi pelumasan tidak memadai karena level oli rendah.",
+    "normal_brakes":      "Pola gelombang saat pengereman stabil, tidak terdengar decitan (squeal) atau derit yang mengindikasikan aus.",
+    "normal_engine_idle": "Pola gelombang stabil dan reguler pada idle mesin. Tidak terdeteksi anomali signifikan.",
+    "not an engine":      "Suara pada rekaman tidak menyerupai karakteristik mesin kendaraan. Kemungkinan merekam lingkungan berisik atau sumber suara yang salah.",
+    "power_steering":     "Terdeteksi suara whining/dengungan saat kemudi diputar, menandakan pompa power steering bermasalah atau fluida hydraulic-nya rendah.",
+    "serpentine_belt":    "Terdeteksi decitan (*squealing*) di latar frekuensi tinggi, khas serpentine belt yang aus, kendur, atau licin.",
+    "worn_out_brakes":    "Terdeteksi decitan/derit logam berulang saat rem ditekan, mengindikasikan lapisan brake pad sudah tipis/aus.",
 }
 
 RECOMMENDATIONS_CUSTOMER = {
@@ -120,6 +173,56 @@ RECOMMENDATIONS_CUSTOMER = {
         "Ganti bearing alternator atau pulley yang aus.",
         "Pantau voltase aki — alternator yang rusak dapat menguras daya aki.",
     ],
+    # Kelas pelatihan model XGBoost (9 kelas)
+    "bad_ignition": [
+        "Periksa kondisi busi, koil pengapian, dan kabel/konektornya.",
+        "Cek pengapian (ignition timing) jika mesin sulit dinyalakan.",
+        "Baca kode error ECU untuk mengetahui silinder atau komponen yang bermasalah.",
+        "Hindari menyalakan mesin berulang-ulang sebelum diperiksa teknisi.",
+    ],
+    "dead_battery": [
+        "Uji voltase dan kondisi aki (idealnya di atas 12,4 V saat mesin mati).",
+        "Bersihkan terminal aki dari kerak/oksida dan pastikan pengencangnya kuat.",
+        "Cek alternator dan sistem charging — aki lemah bisa karena tidak ter-charge.",
+        "Sediakan jumper atau ganti aki jika sudah end-of-life.",
+    ],
+    "low_oil": [
+        "Segera matikan mesin dan cek level oli dengan dipstick di tempat datar.",
+        "Tambah oli sesuai spesifikasi pabrikan — jangan menunda.",
+        "Cari kebocoran (rembesan di bawah mesin, seal, drain plug) penyebab oli berkurang.",
+        "Jalankan mesin kembali hanya setelah level oli benar.",
+    ],
+    "normal_brakes": [
+        "✅ Sistem rem terdengar normal.",
+        "Lanjutkan pemeriksaan rem berkala (minyak rem, kampas, disc).",
+        "Segera konsultasikan jika muncul suara baru atau pedal terasa berubah.",
+    ],
+    "normal_engine_idle": [
+        "✅ Mesin Anda terdengar dalam kondisi sehat.",
+        "Lanjutkan jadwal servis rutin (penggantian oli, filter, dll.) sesuai rekomendasi pabrikan.",
+        "Pantau terus kondisi mesin dan segera konsultasikan jika muncul suara baru.",
+    ],
+    "not an engine": [
+        "🎤 Rekam ulang dengan mikrofon diarahkan ke area mesin/roda (buka kap mesin).",
+        "Pastikan mesin menyala saat merekam (idle, jarak 30–50 cm dari mesin).",
+        "Rekam di tempat tenang, selama 5–10 detik, tanpa suara lingkungan lain.",
+    ],
+    "power_steering": [
+        "Cek level fluida hydraulic power steering dan tambahkan sesuai spesifikasi.",
+        "Periksa selang dan sambungan — suara whining sering muncul karena bocor atau air masuk.",
+        "Periksa pompa power steering; ganti bearing/komponen yang aus.",
+        "Jangan tahan kemudi di posisi lock berulang-ulang sebelum diperiksa.",
+    ],
+    "serpentine_belt": [
+        "Periksa kondisi serpentine belt — cari retakan, kelistrikan licin, atau gigi yang hilang.",
+        "Cek satu per satu komponen yang dibawanya (alternator, AC compressor, tensioner, idler).",
+        "Ganti belt sesuai interval servis — belt putus bisa membuat mesin berhenti total.",
+    ],
+    "worn_out_brakes": [
+        "🚨 Segera periksa brake pad dan rotor — keausan ini sangat berdampak pada keselamatan.",
+        "Periksa level minyak rem dan kondisi caliper.",
+        "Jangan tunda penggantian brake pad — berhenti di tempat aman jika suara memburuk.",
+    ],
 }
 
 MECHANIC_NOTES_TEMPLATE = {
@@ -130,6 +233,16 @@ MECHANIC_NOTES_TEMPLATE = {
     "combustion_misfire": "Indikasi misfire. Rekomendasikan OBD scan untuk kode P030x. Periksa spark plug, coil, injector, dan kompresi silinder secara individual.",
     "exhaust_leak":       "Indikasi exhaust leak. Inspeksi visual pada manifold gasket, flex pipe, dan sambungan flange. Lakukan smoke test atau soapy water test untuk lokasi kebocoran.",
     "bearing_alternator": "Indikasi bearing noise pada aksesori belt drive. Lepas belt dan putar masing-masing pulley secara manual untuk isolasi sumber suara (alternator, AC compressor, idler, tensioner).",
+    # Kelas pelatihan model XGBoost (9 kelas)
+    "bad_ignition":       "Indikasi masalah sistem pengapian (spark plug / koil / distributor). Rekomendasikan inspeksi visual busi & koil, resistance test koil, dan OBD scan untuk kode P0300-P0308.",
+    "dead_battery":       "Indikasi aki lemah / charging system tidak optimum. Ukur voltase aki off & on (mesin), periksa alternator output (14,0-14,4 V), dan load test aki.",
+    "low_oil":            "Indikasi level oli rendah / pelumasan tidak memadai. Cek level dengan dipstick, telusuri sumber kebocoran, ganti oli + filter, dan periksa keausan bearing/cam jika sudah lama diabaikan.",
+    "normal_brakes":      "Rekaman pengereman terdengar normal. Pantau suara pad & rotor secara berkala; tidak perlu aksi perbaikan saat ini.",
+    "normal_engine_idle": "Audio menunjukkan pola idle normal. Tidak diperlukan intervensi mekanis. Disarankan tetap dilakukan pemeriksaan visual rutin.",
+    "not an engine":      "Rekaman tidak mengandung suara mesin — kemungkinan hanya suara lingkungan. Minta customer merekam ulang sesuai panduan untuk dianalisis kembali.",
+    "power_steering":     "Indikasi noise pada sistem power steering. Cek level & kondisi fluida hydraulic, selang (bocor/kerut), dan pompa. Lakukan uji suara pompa saat kemudi dipenuh untuk isolasi sumber.",
+    "serpentine_belt":    "Indikasi belt aus / tensioner lemah. Inspeksi visual belt (crack, glazing), ukur deflection belt, dan periksa tensioner & bearing idler pulley.",
+    "worn_out_brakes":    "HIGH PRIORITY (keselamatan). Indikasi lapisan brake pad tipis. Ukur ketebalan pad & rotor (biasanya pad < 3 mm wajib ganti), periksa caliper dan level minyak rem.",
 }
 
 
@@ -146,13 +259,15 @@ def predict(features_dict: dict, quality_info: dict) -> dict:
     backend = bundle["backend"]
     classes = get_classes()
 
-    # Feature selection
-    raw_features = features_dict["mfcc"]
+    # Feature selection — susun sesuai dimensi yang diharapkan model
+    raw_features = _build_feature_vector(features_dict)
     scaled       = _scale(raw_features)
 
     # Inference
     t0 = time.perf_counter()
-    if backend == "onnx":
+    if backend == "xgboost":
+        probs = _infer_xgboost(model, scaled)
+    elif backend == "onnx":
         probs = _infer_onnx(model, scaled)
     elif backend == "pytorch":
         probs = _infer_pytorch(model, scaled)

@@ -24,10 +24,11 @@ SCALER_FILE      = PREPROCESSING_DIR / "scaler.pkl"
 ENCODER_FILE     = PREPROCESSING_DIR / "label_encoder.pkl"
 PYTORCH_FILE     = CORE_DIR / "model.pth"
 KERAS_FILE       = CORE_DIR / "model.keras"
+XGB_FILE         = CORE_DIR / "xgb_model.joblib"       # XGBoost/XGBClassifier joblib
 ONNX_FILE        = UNIVERSAL_DIR / "model.onnx"
 TFLITE_FILE      = EDGE_DIR / "model.tflite"
 
-# ─── Backend Engine: "onnx" | "pytorch" | "keras" | "dummy" ─────────────────
+# ─── Backend Engine: "xgboost" | "onnx" | "pytorch" | "keras" | "dummy" ─────
 # "dummy" = mode placeholder tanpa model asli (untuk development)
 MODEL_BACKEND = os.getenv("MODEL_BACKEND", "dummy")
 
@@ -52,6 +53,16 @@ URGENCY_MAP = {
     "combustion_misfire": "urgent",
     "exhaust_leak":       "monitor",
     "bearing_alternator": "monitor",
+    # Kelas pelatihan model XGBoost (9 kelas)
+    "bad_ignition":       "urgent",
+    "dead_battery":       "monitor",
+    "low_oil":            "urgent",
+    "normal_brakes":      "safe",
+    "normal_engine_idle": "safe",
+    "not an engine":      "safe",
+    "power_steering":     "monitor",
+    "serpentine_belt":    "urgent",
+    "worn_out_brakes":    "urgent",
 }
 
 # ─── Ambang Batas Confidence untuk Auto Manual Review ────────────────────────

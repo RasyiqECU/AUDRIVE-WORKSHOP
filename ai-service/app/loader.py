@@ -92,6 +92,17 @@ def _load_keras():
     return model
 
 
+def _load_xgboost():
+    import xgboost  # noqa: F401 — pastikan library ter-install sebelum unpickle
+    path = config.XGB_FILE
+    if not path.exists():
+        raise FileNotFoundError(f"XGBoost model tidak ada: {path}")
+    model = joblib.load(path)
+    logger.info(f"✅ XGBoost model loaded: {path.name} "
+                f"({getattr(model, 'n_features_in_', '?')} fitur)")
+    return model
+
+
 def _load_dummy():
     """Mode development tanpa model asli — return random prediction."""
     logger.warning("🟡 DUMMY mode aktif — prediksi bersifat acak. Taruh model asli lalu ubah MODEL_BACKEND.")
@@ -103,15 +114,19 @@ def _load_dummy():
 def load_all() -> None:
     """
     Dipanggil satu kali saat startup FastAPI.
-    Urutan prioritas: ONNX → PyTorch → Keras → Dummy
-    Override dengan env MODEL_BACKEND=onnx|pytorch|keras|dummy
+    Urutan prioritas: XGBoost → ONNX → PyTorch → Keras → Dummy
+    Override dengan env MODEL_BACKEND=xgboost|onnx|pytorch|keras|dummy
     """
     _loaded["scaler"]        = _load_scaler()
     _loaded["label_encoder"] = _load_label_encoder()
 
     backend = config.MODEL_BACKEND.lower()
 
-    if backend == "onnx" or (backend == "auto" and config.ONNX_FILE.exists()):
+    if backend == "xgboost" or (backend == "auto" and config.XGB_FILE.exists()):
+        _loaded["model"]   = _load_xgboost()
+        _loaded["backend"] = "xgboost"
+
+    elif backend == "onnx" or (backend == "auto" and config.ONNX_FILE.exists()):
         _loaded["model"]   = _load_onnx()
         _loaded["backend"] = "onnx"
 
@@ -131,8 +146,11 @@ def load_all() -> None:
 
 
 def get_classes() -> list[str]:
-    """Return daftar kelas dari label encoder atau config."""
+    """Return daftar kelas — urutan harus sama dengan output probabilitas model."""
     enc = _loaded.get("label_encoder")
     if enc is not None and hasattr(enc, "classes_"):
         return list(enc.classes_)
+    # label_map berbentuk dict {label: index} → urutkan berdasarkan index
+    if isinstance(enc, dict):
+        return [k for k, _ in sorted(enc.items(), key=lambda kv: kv[1])]
     return config.CLASSES
