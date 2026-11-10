@@ -31,16 +31,6 @@ ai-service/__pycache__/
 ai-service/**/__pycache__/
 ai-service/venv/
 ai-service/.venv/
-ai-service/output/
-ai-service/models/preprocessing/*
-ai-service/models/core/*
-ai-service/models/universal/*
-ai-service/models/edge/*
-!ai-service/models/preprocessing/.gitkeep
-!ai-service/models/core/.gitkeep
-!ai-service/models/universal/.gitkeep
-!ai-service/models/edge/.gitkeep
-!ai-service/models/README.txt
 Homestead.json
 Homestead.yaml
 Thumbs.db
