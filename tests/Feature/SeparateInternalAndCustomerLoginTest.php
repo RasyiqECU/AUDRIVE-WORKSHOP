@@ -85,6 +85,42 @@ test('customer is rejected when trying to login via hidden internal login form',
     $this->assertGuest();
 });
 
+test('internal users are redirected to internal login form after logout', function () {
+    $roles = ['super-admin', 'owner', 'manager', 'sales', 'cashier', 'inventory', 'mechanic'];
+
+    foreach ($roles as $role) {
+        $staff = User::factory()->create([
+            'email' => "logout_{$role}@example.com",
+            'password' => bcrypt('password123'),
+            'role' => $role,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($staff);
+
+        $response = $this->post(route('logout'));
+
+        $response->assertRedirect(route('internal.login'));
+        $this->assertGuest();
+    }
+});
+
+test('customers are redirected to the public landing page after logout', function () {
+    $customer = User::factory()->create([
+        'email' => 'logout_customer@example.com',
+        'password' => bcrypt('password123'),
+        'role' => 'customer',
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($customer);
+
+    $response = $this->post(route('logout'));
+
+    $response->assertRedirect('/');
+    $this->assertGuest();
+});
+
 test('unauthenticated guests accessing admin routes are redirected to internal login', function () {
     $response = $this->get(route('admin.dashboard'));
     $response->assertRedirect(route('internal.login'));

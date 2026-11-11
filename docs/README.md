@@ -14,6 +14,7 @@ Semua dokumentasi project terkumpul di [`docs/`](.):
 |---|---|
 | `docs/README.md` | (file ini) Panduan menjalankan & prasyarat |
 | `docs/STRUCTURE.md` | Peta struktur folder & file konfigurasi |
+| `docs/ROLES_MODUL_FITUR.md` | Rangkuman role & hak akses serta semua modul & fitur |
 | `docs/AUDrive_Context.md` | Konteks project, arsitektur, workflow AI Scan |
 | `docs/QA_CHECKLIST.md` | Status QA, hasil test, roadmap hardening |
 

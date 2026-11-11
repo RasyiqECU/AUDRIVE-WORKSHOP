@@ -43,11 +43,18 @@ class LoginController extends Controller
 
     public function destroy(Request $request): RedirectResponse
     {
+        $user = Auth::guard('web')->user();
+
+        $isInternalUser = $user !== null && $user->role !== 'customer';
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        // Pengguna internal kembali ke form login portal internal
+        return $isInternalUser
+            ? redirect()->route('internal.login')
+            : redirect('/');
     }
 }
