@@ -90,12 +90,15 @@
         </div>
     </div>
 
-    {{-- Actions & Work Order Conversion --}}
+    {{-- Actions & Work Order Conversion (Super Admin & Kasir: frontdesk; Manager hanya memantau) --}}
     <div class="panel border border-gunmetal bg-carbon p-6 space-y-4">
         <h3 class="font-heading text-xs uppercase tracking-wider text-silver-bright">
             Tindakan & Konversi Work Order
         </h3>
 
+        @php $viewerRole = auth()->user()->role ?? ''; @endphp
+
+        @if(in_array($viewerRole, ['super-admin', 'cashier'], true))
         <div class="flex flex-wrap items-center gap-4">
             @if($serviceBooking->workOrder)
                 <div class="flex items-center gap-2">
@@ -130,6 +133,11 @@
                 </button>
             </form>
         </div>
+        @else
+            <p class="text-xs text-silver-dim italic flex items-center gap-2">
+                <span>👁️</span> Mode pantau: konfirmasi booking, update status, dan konversi ke Work Order dilakukan oleh Kasir (frontdesk).
+            </p>
+        @endif
     </div>
 </div>
 @endsection

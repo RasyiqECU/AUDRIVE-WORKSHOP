@@ -20,9 +20,11 @@
             </p>
         </div>
         <div class="flex items-center gap-2">
-            <a href="{{ route('admin.pos.index') }}" class="px-4 py-2 bg-giallo hover:bg-giallo/90 text-carbon font-heading text-xs font-bold uppercase tracking-wider rounded transition-premium flex items-center gap-1.5 shadow-md shadow-giallo/10">
-                <span>➕</span> Buka Kasir POS
-            </a>
+            @if(in_array(auth()->user()->role ?? '', ['super-admin', 'cashier'], true))
+                <a href="{{ route('admin.pos.index') }}" class="px-4 py-2 bg-giallo hover:bg-giallo/90 text-carbon font-heading text-xs font-bold uppercase tracking-wider rounded transition-premium flex items-center gap-1.5 shadow-md shadow-giallo/10">
+                    <span>➕</span> Buka Kasir POS
+                </a>
+            @endif
         </div>
     </div>
 
@@ -209,7 +211,7 @@
                                     <a href="{{ route('admin.invoices.pdf', $inv) }}" class="px-2 py-1 bg-giallo/20 hover:bg-giallo/30 border border-giallo/40 text-giallo rounded text-[10px] font-heading uppercase tracking-wider transition-premium" title="Download PDF Dokumen">
                                         PDF
                                     </a>
-                                    @if($order)
+                                    @if($order && in_array(auth()->user()->role ?? '', ['super-admin', 'cashier'], true))
                                         <a href="{{ route('admin.pos.print', $order) }}" target="_blank" class="px-2 py-1 bg-steel/30 hover:bg-steel border border-gunmetal text-silver-dim hover:text-silver-bright rounded text-[10px] font-heading uppercase tracking-wider transition-premium" title="Cetak Struk Thermal">
                                             🖨️
                                         </a>

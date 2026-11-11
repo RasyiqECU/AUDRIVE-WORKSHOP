@@ -190,12 +190,12 @@
                         </div>
                         <div>
                             <label class="block font-heading text-xs uppercase tracking-wider text-silver-dim mb-1 font-semibold">Kategori Keperluan</label>
-                            <select name="topic" class="w-full bg-steel/30 border border-gunmetal/60 rounded px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
-                                <option value="sales">Pembelian Mobil Baru / Pre-Owned</option>
-                                <option value="workshop">Booking Servis & Maintenance</option>
-                                <option value="parts">Pemesanan Spare Part / Aksesori</option>
-                                <option value="ai">Konsultasi AI Sound Diagnostic</option>
-                                <option value="other">Keperluan Lainnya</option>
+                            <select name="topic" class="w-full bg-nero border border-gunmetal rounded px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none [&>option]:bg-nero [&>option]:text-silver-bright">
+                                <option value="sales" class="bg-nero text-silver-bright">Pembelian Mobil Baru / Pre-Owned</option>
+                                <option value="workshop" class="bg-nero text-silver-bright">Booking Servis & Maintenance</option>
+                                <option value="parts" class="bg-nero text-silver-bright">Pemesanan Spare Part / Aksesori</option>
+                                <option value="ai" class="bg-nero text-silver-bright">Konsultasi AI Sound Diagnostic</option>
+                                <option value="other" class="bg-nero text-silver-bright">Keperluan Lainnya</option>
                             </select>
                         </div>
                     </div>

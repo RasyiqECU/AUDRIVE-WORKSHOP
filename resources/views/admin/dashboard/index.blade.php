@@ -39,25 +39,25 @@
 
         {{-- Quick Action Buttons Berdasarkan Role --}}
         <div class="relative z-10 flex flex-wrap items-center gap-2">
-            @if(in_array($role, ['super-admin', 'manager', 'sales'], true))
+            @if(in_array($role, ['super-admin', 'sales'], true))
                 <a href="{{ route('admin.cars.create') }}" class="px-4 py-2 bg-giallo hover:bg-arancio text-nero font-heading font-bold text-xs uppercase tracking-wider transition-premium clip-angular-button shadow-md shadow-giallo/10">
                     + Tambah Mobil
                 </a>
             @endif
 
-            @if(in_array($role, ['super-admin', 'manager', 'inventory'], true))
+            @if(in_array($role, ['super-admin', 'inventory'], true))
                 <a href="{{ route('admin.spare-parts.create') }}" class="px-4 py-2 bg-steel/60 hover:bg-steel text-silver-bright border border-gunmetal font-heading text-xs uppercase tracking-wider transition-premium">
                     + Input Spare Part
                 </a>
             @endif
 
-            @if(in_array($role, ['super-admin', 'manager', 'cashier'], true))
+            @if(in_array($role, ['super-admin', 'cashier'], true))
                 <a href="{{ route('admin.pos.index') }}" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-heading font-bold text-xs uppercase tracking-wider transition-premium shadow-md shadow-blue-500/20">
                     💳 Buka Kasir POS
                 </a>
             @endif
 
-            @if(in_array($role, ['super-admin', 'manager', 'mechanic'], true))
+            @if(in_array($role, ['super-admin', 'manager', 'cashier', 'mechanic'], true))
                 <a href="{{ route('admin.work-orders.index') }}" class="px-4 py-2 bg-verde hover:bg-emerald-600 text-nero font-heading font-bold text-xs uppercase tracking-wider transition-premium shadow-md shadow-verde/20">
                     🔧 Work Order Aktif
                 </a>
@@ -105,13 +105,12 @@
                     <p class="font-display text-2xl font-bold text-silver-bright mt-2">
                         {{ $stats['customers']['total_customers'] }} <span class="text-xs text-silver-dim font-normal">Orang</span>
                     </p>
-                    <a href="{{ route('admin.customers.index') }}" class="inline-block font-mono text-xs text-giallo hover:underline mt-2">Buka Data Pelanggan &rarr;</a>
                 </div>
             </div>
         </div>
 
         {{-- Menu Cepat Sales --}}
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <a href="{{ route('admin.cars.index') }}" class="panel p-5 border border-gunmetal hover:border-giallo transition-premium group flex items-center justify-between">
                 <div>
                     <h3 class="font-heading text-sm text-silver-bright font-semibold group-hover:text-giallo">Showroom Unit Mobil</h3>
@@ -121,17 +120,10 @@
             </a>
             <a href="{{ route('admin.offers.index') }}" class="panel p-5 border border-gunmetal hover:border-giallo transition-premium group flex items-center justify-between">
                 <div>
-                    <h3 class="font-heading text-sm text-silver-bright font-semibold group-hover:text-giallo">Penawaran Masuk</h3>
-                    <p class="text-xs text-silver-dim mt-1">Review penawaran harga dari calon pembeli</p>
+                    <h3 class="font-heading text-sm text-silver-bright font-semibold group-hover:text-giallo">Pesanan Masuk</h3>
+                    <p class="text-xs text-silver-dim mt-1">Kelola pesanan pembelian mobil dari customer</p>
                 </div>
-                <span class="text-2xl">💬</span>
-            </a>
-            <a href="{{ route('admin.service-bookings.index') }}" class="panel p-5 border border-gunmetal hover:border-giallo transition-premium group flex items-center justify-between">
-                <div>
-                    <h3 class="font-heading text-sm text-silver-bright font-semibold group-hover:text-giallo">Jadwal Booking Servis</h3>
-                    <p class="text-xs text-silver-dim mt-1">Bantu klien menjadwalkan servis berkala</p>
-                </div>
-                <span class="text-2xl">📅</span>
+                <span class="text-2xl">📋</span>
             </a>
         </div>
     @endif
@@ -273,7 +265,6 @@
                     <p class="font-display text-3xl font-bold text-verde mt-2">
                         {{ $stats['workshop']['bookings_today'] }} <span class="text-sm font-normal text-silver-dim">Mobil Terjadwal</span>
                     </p>
-                    <a href="{{ route('admin.service-bookings.index') }}" class="inline-block font-mono text-xs text-verde hover:underline mt-2">Lihat Jadwal Masuk &rarr;</a>
                 </div>
 
                 <div class="panel p-5 border border-gunmetal">

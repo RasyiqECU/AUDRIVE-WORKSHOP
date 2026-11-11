@@ -1,12 +1,13 @@
 {{--
     AUDrive Admin Sidebar Component
-    Role-tailored navigation panel for Super Admin, Manager, Sales, Inventory, and Cashier
+    Role-tailored navigation panel for Super Admin, Owner, Manager, Sales, Cashier, Inventory, and Mechanic
 --}}
 @php
     $user = auth()->user();
     $role = $user->role ?? 'admin';
     $roleBadges = [
         'super-admin' => ['label' => 'SUPER ADMIN', 'color' => 'text-giallo border-giallo/40 bg-giallo/10'],
+        'owner'       => ['label' => 'BUSINESS OWNER', 'color' => 'text-amber-400 border-amber-400/40 bg-amber-400/10'],
         'manager'     => ['label' => 'OPERATIONS MANAGER', 'color' => 'text-silver-bright border-silver-dim/40 bg-steel/20'],
         'sales'       => ['label' => 'SALES EXECUTIVE', 'color' => 'text-arancio border-arancio/40 bg-arancio/10'],
         'inventory'   => ['label' => 'INVENTORY OFFICER', 'color' => 'text-verde border-verde/40 bg-verde/10'],
@@ -35,14 +36,16 @@
 
     {{-- Navigation --}}
     <nav id="admin-sidebar-nav" class="p-3 space-y-0.5 overflow-y-auto h-[calc(100%-190px)]">
-        {{-- Dashboard Utama --}}
+        {{-- Dashboard Utama (Semua Role) --}}
         <a href="{{ route('admin.dashboard') }}" class="sidebar-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
             <span class="text-sm">⬡</span>
-            <span class="font-heading text-xs font-medium tracking-wide">Dashboard {{ ucfirst($role === 'super-admin' ? 'Executive' : $role) }}</span>
+            <span class="font-heading text-xs font-medium tracking-wide">
+                {{ $role === 'owner' ? 'Executive Dashboard' : 'Dashboard ' . ucfirst($role === 'super-admin' ? 'Executive' : $role) }}
+            </span>
         </a>
 
-        {{-- Section Showroom & Penjualan (Super Admin, Manager, Sales) --}}
-        @if(in_array($role, ['super-admin', 'manager', 'sales'], true))
+        {{-- Section Showroom & Penjualan (Super Admin, Sales) --}}
+        @if(in_array($role, ['super-admin', 'sales'], true))
             <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Showroom & Penjualan</p>
 
             <a href="{{ route('admin.cars.index') }}" class="sidebar-item {{ request()->routeIs('admin.cars.*') ? 'active' : '' }}">
@@ -51,8 +54,8 @@
             </a>
 
             <a href="{{ route('admin.offers.index') }}" class="sidebar-item {{ request()->routeIs('admin.offers.*') ? 'active' : '' }}">
-                <span class="text-sm">💬</span>
-                <span class="font-heading text-xs font-medium tracking-wide">Penawaran Masuk</span>
+                <span class="text-sm">📋</span>
+                <span class="font-heading text-xs font-medium tracking-wide">Pesanan Masuk</span>
             </a>
 
             @php
@@ -76,33 +79,40 @@
             </a>
         @endif
 
-        {{-- Section Bengkel & Servis (Super Admin, Manager, Sales, Cashier, Mechanic) --}}
-        @if(in_array($role, ['super-admin', 'manager', 'sales', 'cashier', 'mechanic'], true))
+        {{-- Section Workshop & Servis (Super Admin, Manager, Cashier, Mechanic) --}}
+        @if(in_array($role, ['super-admin', 'manager', 'cashier', 'mechanic'], true))
             <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Workshop & Servis</p>
 
-            <a href="{{ route('admin.service-bookings.index') }}" class="sidebar-item {{ request()->routeIs('admin.service-bookings.*') ? 'active' : '' }}">
-                <span class="text-sm">📅</span>
-                <span class="font-heading text-xs font-medium tracking-wide">Booking Servis</span>
+            {{-- Booking Servis: Super Admin & Cashier saja (Manager tidak beroperasi) --}}
+            @if(in_array($role, ['super-admin', 'cashier'], true))
+                <a href="{{ route('admin.service-bookings.index') }}" class="sidebar-item {{ request()->routeIs('admin.service-bookings.*') ? 'active' : '' }}">
+                    <span class="text-sm">📅</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">Booking Servis</span>
+                </a>
+            @endif
+
+            <a href="{{ route('admin.work-orders.index') }}" class="sidebar-item {{ request()->routeIs('admin.work-orders.*') ? 'active' : '' }}">
+                <span class="text-sm">🔧</span>
+                <span class="font-heading text-xs font-medium tracking-wide">{{ $role === 'mechanic' ? 'Work Order Saya' : 'Work Order & Antrean' }}</span>
             </a>
 
-            @if(in_array($role, ['super-admin', 'manager', 'cashier', 'mechanic'], true))
-                <a href="{{ route('admin.work-orders.index') }}" class="sidebar-item {{ request()->routeIs('admin.work-orders.*') ? 'active' : '' }}">
-                    <span class="text-sm">🔧</span>
-                    <span class="font-heading text-xs font-medium tracking-wide">Work Order & Antrean</span>
+            {{-- AI Sound Scan: Super Admin & Mechanic saja --}}
+            @if(in_array($role, ['super-admin', 'mechanic'], true))
+                <a href="{{ route('admin.ai-scans.index') }}" class="sidebar-item {{ request()->routeIs('admin.ai-scans.*') ? 'active' : '' }}">
+                    <span class="text-sm">🔊</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">AI Sound Scan</span>
                 </a>
             @endif
         @endif
 
-        {{-- Section Kasir & POS (Super Admin, Manager, Cashier, Sales) --}}
-        @if(in_array($role, ['super-admin', 'manager', 'cashier', 'sales'], true))
-            <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Kasir & Finansial</p>
+        {{-- Section Point of Sale & Invoice (Super Admin & Cashier ONLY) --}}
+        @if(in_array($role, ['super-admin', 'cashier'], true))
+            <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Point of Sale</p>
 
-            @if(in_array($role, ['super-admin', 'manager', 'cashier'], true))
-                <a href="{{ route('admin.pos.index') }}" class="sidebar-item {{ request()->routeIs('admin.pos.*') ? 'active' : '' }}">
-                    <span class="text-sm">💳</span>
-                    <span class="font-heading text-xs font-medium tracking-wide">Point of Sales (POS)</span>
-                </a>
-            @endif
+            <a href="{{ route('admin.pos.index') }}" class="sidebar-item {{ request()->routeIs('admin.pos.*') ? 'active' : '' }}">
+                <span class="text-sm">💳</span>
+                <span class="font-heading text-xs font-medium tracking-wide">POS Kasir</span>
+            </a>
 
             <a href="{{ route('admin.invoices.index') }}" class="sidebar-item {{ request()->routeIs('admin.invoices.*') ? 'active' : '' }}">
                 <span class="text-sm">🧾</span>
@@ -110,26 +120,16 @@
             </a>
         @endif
 
-        {{-- Section AI & Diagnostik (Super Admin, Manager, Sales, Mechanic) --}}
-        @if(in_array($role, ['super-admin', 'manager', 'sales', 'mechanic'], true))
-            <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">AI & Teknologi</p>
-
-            <a href="{{ route('admin.ai-scans.index') }}" class="sidebar-item {{ request()->routeIs('admin.ai-scans.*') ? 'active' : '' }}">
-                <span class="text-sm">🔊</span>
-                <span class="font-heading text-xs font-medium tracking-wide">AI Sound Scan</span>
-            </a>
-        @endif
-
-        {{-- Section Inventori (Super Admin, Manager, Inventory, Mechanic) --}}
-        @if(in_array($role, ['super-admin', 'manager', 'inventory', 'mechanic'], true))
-            <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Inventori & Logistik</p>
+        {{-- Section Gudang & Inventori (Super Admin, Inventory, Mechanic: lihat stok saja) --}}
+        @if(in_array($role, ['super-admin', 'inventory', 'mechanic'], true))
+            <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Gudang & Inventori</p>
 
             <a href="{{ route('admin.spare-parts.index') }}" class="sidebar-item {{ request()->routeIs('admin.spare-parts.*') ? 'active' : '' }}">
                 <span class="text-sm">⚙️</span>
                 <span class="font-heading text-xs font-medium tracking-wide">Katalog Spare Part</span>
             </a>
 
-            @if(in_array($role, ['super-admin', 'manager', 'inventory'], true))
+            @if(in_array($role, ['super-admin', 'inventory'], true))
                 <a href="{{ route('admin.inventory.index') }}" class="sidebar-item {{ request()->routeIs('admin.inventory.*') ? 'active' : '' }}">
                     <span class="text-sm">📦</span>
                     <span class="font-heading text-xs font-medium tracking-wide">Stok & Movement</span>
@@ -142,59 +142,87 @@
             @endif
         @endif
 
-        {{-- Section CRM & Laporan (Super Admin, Manager, Sales, Cashier, Inventory) --}}
-        <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">CRM & Laporan</p>
+        {{-- Section CRM & Komunikasi (Super Admin & Sales saja; Manager tidak, Cashier: loyalitas/pelanggan di dalam POS) --}}
+        @if(in_array($role, ['super-admin', 'sales'], true))
+            <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">CRM & Komunikasi</p>
 
-        @if(in_array($role, ['super-admin', 'manager', 'sales'], true))
-            @php
-                $unreadMessagesCount = \App\Models\ContactMessage::where('status', 'unread')->count();
-            @endphp
-            <a href="{{ route('admin.contact-messages.index') }}" class="sidebar-item {{ request()->routeIs('admin.contact-messages.*') ? 'active' : '' }} flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <span class="text-sm">📬</span>
-                    <span class="font-heading text-xs font-medium tracking-wide">Pesan Customer</span>
-                </div>
-                @if($unreadMessagesCount > 0)
-                    <span class="px-1.5 py-0.5 bg-giallo/20 border border-giallo/40 text-giallo text-[10px] font-mono font-bold rounded animate-pulse">
-                        {{ $unreadMessagesCount }}
-                    </span>
-                @endif
-            </a>
+            @if(in_array($role, ['super-admin', 'sales'], true))
+                @php
+                    $unreadMessagesCount = \App\Models\ContactMessage::where('status', 'unread')->count();
+                @endphp
+                <a href="{{ route('admin.contact-messages.index') }}" class="sidebar-item {{ request()->routeIs('admin.contact-messages.*') ? 'active' : '' }} flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm">📬</span>
+                        <span class="font-heading text-xs font-medium tracking-wide">Pesan Customer</span>
+                    </div>
+                    @if($unreadMessagesCount > 0)
+                        <span class="px-1.5 py-0.5 bg-giallo/20 border border-giallo/40 text-giallo text-[10px] font-mono font-bold rounded animate-pulse">
+                            {{ $unreadMessagesCount }}
+                        </span>
+                    @endif
+                </a>
 
-            @php
-                $openTicketsCount = \App\Models\SupportTicket::where('status', 'open')->count();
-            @endphp
-            <a href="{{ route('admin.tickets.index') }}" class="sidebar-item {{ request()->routeIs('admin.tickets.*') ? 'active' : '' }} flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <span class="text-sm">🎫</span>
-                    <span class="font-heading text-xs font-medium tracking-wide">Tiket Layanan</span>
-                </div>
-                @if($openTicketsCount > 0)
-                    <span class="px-1.5 py-0.5 bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-mono font-bold rounded animate-pulse">
-                        {{ $openTicketsCount }}
-                    </span>
-                @endif
+                @php
+                    $openTicketsCount = \App\Models\SupportTicket::where('status', 'open')->count();
+                @endphp
+                <a href="{{ route('admin.tickets.index') }}" class="sidebar-item {{ request()->routeIs('admin.tickets.*') ? 'active' : '' }} flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm">🎫</span>
+                        <span class="font-heading text-xs font-medium tracking-wide">Tiket Layanan</span>
+                    </div>
+                    @if($openTicketsCount > 0)
+                        <span class="px-1.5 py-0.5 bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-mono font-bold rounded animate-pulse">
+                            {{ $openTicketsCount }}
+                        </span>
+                    @endif
+                </a>
+            @endif
+
+            {{-- Program Loyalitas: Super Admin saja (penggunaan poin dilakukan di dalam POS) --}}
+            @if($role === 'super-admin')
+                <a href="{{ route('admin.loyalty.index') }}" class="sidebar-item {{ request()->routeIs('admin.loyalty.*') ? 'active' : '' }}">
+                    <span class="text-sm">👑</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">Program Loyalitas</span>
+                </a>
+            @endif
+
+            {{-- Database Pelanggan: Super Admin saja (Sales tidak berhak atas database pelanggan) --}}
+            @if($role === 'super-admin')
+                <a href="{{ route('admin.customers.index') }}" class="sidebar-item {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
+                    <span class="text-sm">👥</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">Database Pelanggan</span>
+                </a>
+            @endif
+        @endif
+
+        {{-- Section Pengajuan Approval (Sales, Cashier, Inventory) --}}
+        @if(in_array($role, ['sales', 'cashier', 'inventory'], true))
+            <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Pengajuan & Persetujuan</p>
+
+            <a href="{{ route('admin.approvals.create') }}" class="sidebar-item {{ request()->routeIs('admin.approvals.create', 'admin.approvals.store') ? 'active' : '' }}">
+                <span class="text-sm">✍️</span>
+                <span class="font-heading text-xs font-medium tracking-wide">Ajukan Approval</span>
             </a>
         @endif
 
-        @if(in_array($role, ['super-admin', 'manager', 'sales', 'cashier'], true))
-            <a href="{{ route('admin.loyalty.index') }}" class="sidebar-item {{ request()->routeIs('admin.loyalty.*') ? 'active' : '' }}">
-                <span class="text-sm">👑</span>
-                <span class="font-heading text-xs font-medium tracking-wide">Program Loyalitas</span>
-            </a>
+        {{-- Section Laporan (Super Admin, Manager, Sales, Cashier, Inventory — Owner tidak ada) --}}
+        @if(in_array($role, ['super-admin', 'manager', 'sales', 'cashier', 'inventory'], true))
+            <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Laporan</p>
 
-            <a href="{{ route('admin.customers.index') }}" class="sidebar-item {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
-                <span class="text-sm">👥</span>
-                <span class="font-heading text-xs font-medium tracking-wide">Database Pelanggan</span>
+            <a href="{{ route('admin.reports.index') }}" class="sidebar-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
+                <span class="text-sm">📊</span>
+                <span class="font-heading text-xs font-medium tracking-wide">
+                    {{ match(true) {
+                        $role === 'sales' => 'Laporan Penjualan',
+                        $role === 'cashier' => 'Laporan Shift',
+                        $role === 'inventory' => 'Laporan Inventori',
+                        default => 'Laporan Performa',
+                    } }}
+                </span>
             </a>
         @endif
 
-        <a href="{{ route('admin.reports.index') }}" class="sidebar-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
-            <span class="text-sm">📊</span>
-            <span class="font-heading text-xs font-medium tracking-wide">Laporan Performa</span>
-        </a>
-
-        {{-- Section Tata Kelola & Sistem (Super Admin, Manager) --}}
+        {{-- Section Tata Kelola (Super Admin, Manager) --}}
         @if(in_array($role, ['super-admin', 'manager'], true))
             <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Tata Kelola</p>
 
@@ -209,7 +237,7 @@
             </a>
         @endif
 
-        {{-- Menu Khusus Super Admin Saja --}}
+        {{-- Menu Khusus Super Admin Saja (HANYA Super Admin) --}}
         @if($role === 'super-admin')
             <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-giallo/80 px-3 mb-2 mt-3">Super Admin Core</p>
 

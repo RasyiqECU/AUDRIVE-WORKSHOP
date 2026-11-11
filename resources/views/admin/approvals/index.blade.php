@@ -18,6 +18,39 @@
         </div>
     </div>
 
+    {{-- Panduan Penggunaan Pusat Approval --}}
+    <div class="panel border border-giallo/30 bg-giallo/5 p-5">
+        <h2 class="font-heading text-xs uppercase tracking-[0.2em] text-giallo flex items-center gap-2">
+            📘 Tata Cara Penggunaan Pusat Approval
+        </h2>
+        <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-silver-bright leading-relaxed">
+            <div class="space-y-2">
+                <p><strong class="text-giallo">1. Apa fungsinya?</strong><br>
+                Pusat Approval adalah meja cerdas pembuat keputusan. Staf operasional (Sales, Kasir, Inventory) <em>tidak boleh</em> memutuskan hal berdampak finansial sendirian: mereka <strong>mengajukan</strong>, Anda (Manager) <strong>menyetujui atau menolak</strong>. Ini menjaga prinsip pemisahan tugas: pembuat pengajuan ≠ penyetuju.</p>
+                <p><strong class="text-giallo">2. Anda menerima pengajuan apa?</strong>
+                </p>
+                <ul class="list-disc list-inside text-silver-dim space-y-1 pl-1">
+                    <li><strong class="text-silver-bright">discount</strong> — permohonan diskon transaksi di atas wewenang staf.</li>
+                    <li><strong class="text-silver-bright">refund</strong> — permohonan pengembalian dana (void/refund transaksi kasir).</li>
+                    <li><strong class="text-silver-bright">price_adjustment</strong> — koreksi harga jual di Sales Order/katalog.</li>
+                    <li><strong class="text-silver-bright">stock_adjustment</strong> — selisih besar stok gudang yang diajukan Inventory.</li>
+                </ul>
+            </div>
+            <div class="space-y-2">
+                <p><strong class="text-giallo">3. Alur kerja harian Anda</strong></p>
+                <ol class="list-decimal list-inside text-silver-dim space-y-1 pl-1">
+                    <li>Buka menu <strong class="text-silver-bright">✅ Pusat Approval</strong> (atau klik notifikasi "Approval Requested" yang masuk ke Anda).</li>
+                    <li>Filter berdasarkan <strong class="text-silver-bright">Status = Pending</strong> untuk melihat antrean pengajuan.</li>
+                    <li>Klik <strong class="text-silver-bright">Detail</strong> untuk membaca payload: siapa pemohon, jenis pengajuan, nilai/nominal, dan referensinya.</li>
+                    <li>Putuskan: setujui atau tolak dengan catatan/reason (opsi tersedia di halaman detail).</li>
+                    <li>Sistem mencatat keputusan Anda di <strong class="text-silver-bright">Audit Trail</strong> dan mengirim notifikasi balik ke pengaju.</li>
+                </ol>
+                <p><strong class="text-giallo">4. Yang perlu diingat</strong><br>
+                <span class="text-silver-dim">Status pengajuan juga bisa dipantau oleh staf di modul masing-masing; setiap keputusan bersifat final untuk pengajuan tersebut (tidak bisa diubah ulang — harus mengajukan baru). Penyetujuan langsung mengeksekusi aksinya ke sistem.</span></p>
+            </div>
+        </div>
+    </div>
+
 
     {{-- Filters --}}
     <div class="panel p-4 border border-gunmetal">

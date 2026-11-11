@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Detail Penawaran #' . $offer->id)
+@section('title', 'Detail Pesanan #' . $offer->id)
 
 @section('content')
 <div class="space-y-6 max-w-4xl mx-auto" x-data="{ showRejectModal: false }">
@@ -19,13 +19,13 @@
     {{-- Header --}}
     <div>
         <a href="{{ route('admin.offers.index') }}" class="text-xs text-silver-dim hover:text-giallo inline-flex items-center gap-1 mb-2 transition">
-            ← Kembali ke Daftar Offers
+            ← Kembali ke Daftar Pesanan Masuk
         </a>
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <span class="text-xs text-giallo font-mono">#OFR-{{ str_pad($offer->id, 5, '0', STR_PAD_LEFT) }}</span>
+                <span class="text-xs text-giallo font-mono">#ORD-{{ str_pad($offer->id, 5, '0', STR_PAD_LEFT) }}</span>
                 <h1 class="font-display text-2xl md:text-3xl text-silver-bright font-bold tracking-wide mt-1">
-                    REVIEW PENAWARAN HARGA MOBIL
+                    DETAIL PESANAN PEMBELIAN MOBIL
                 </h1>
             </div>
             <div>
@@ -48,10 +48,10 @@
             <div class="flex items-start justify-between flex-wrap gap-4">
                 <div>
                     <h3 class="font-heading text-sm uppercase tracking-wider text-emerald-400 font-bold flex items-center gap-2">
-                        <span>✓</span> Penawaran Diterima & Mobil Di-reserve
+                        <span>✓</span> Pesanan Disetujui & Mobil Berstatus Dipesan
                     </h3>
                     <p class="text-xs text-silver-dim mt-1">
-                        Unit telah dikunci (reserved) untuk calon pembeli. Sales Order resmi telah dibuat secara otomatis.
+                        Unit telah di-reserve untuk pembeli ini. Sales Order resmi telah dibuat secara otomatis dan siap diproses di Kasir (POS).
                     </p>
                     @if($salesOrder)
                         <div class="mt-2 text-xs font-mono space-y-0.5">
@@ -65,7 +65,7 @@
                     @endif
                 </div>
 
-                @if($salesOrder)
+                @if($salesOrder && in_array(auth()->user()->role ?? '', ['super-admin', 'cashier'], true))
                     @if($salesOrder->status->value === 'paid')
                         <a href="{{ route('admin.pos.receipt', $salesOrder) }}"
                            class="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white font-heading text-xs uppercase font-bold tracking-wider rounded transition">
@@ -78,12 +78,16 @@
                             <span>→</span>
                         </a>
                     @endif
+                @elseif($salesOrder && $salesOrder->status->value !== 'paid')
+                    <span class="text-xs font-mono text-silver-dim border border-gunmetal rounded px-3 py-2">
+                        Pembayaran diproses oleh Kasir (POS)
+                    </span>
                 @endif
             </div>
         </div>
     @elseif($st === 'rejected')
         <div class="panel border border-red-800/80 bg-red-950/30 p-4 rounded text-xs text-red-300">
-            <strong>Penawaran ini telah ditolak.</strong>
+            <strong>Pesanan ini telah ditolak. Unit mobil telah dikembalikan ke status Tersedia.</strong>
             @if($offer->note && str_contains($offer->note, 'Alasan penolakan:'))
                 <p class="mt-1 font-mono text-silver-dim">{{ $offer->note }}</p>
             @endif
@@ -95,7 +99,7 @@
         {{-- Buyer Info --}}
         <div class="panel border border-gunmetal/70 bg-carbon p-6 space-y-4">
             <h3 class="font-heading text-xs uppercase tracking-wider text-giallo border-b border-gunmetal/40 pb-2">
-                Informasi Calon Pembeli
+                Informasi Pembeli
             </h3>
             <div class="space-y-2.5 text-xs">
                 <div class="flex justify-between">
@@ -111,7 +115,7 @@
                     <span class="text-silver-bright font-mono">{{ $offer->customer?->phone ?? $offer->customer?->user?->phone ?? '-' }}</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-silver-dim">Tanggal Penawaran:</span>
+                    <span class="text-silver-dim">Tanggal Pesanan:</span>
                     <span class="text-silver-bright font-mono">{{ $offer->created_at->format('d M Y, H:i') }}</span>
                 </div>
                 @if($offer->expires_at)
@@ -124,7 +128,7 @@
 
             @if($offer->note)
                 <div class="pt-3 border-t border-gunmetal/30">
-                    <span class="text-[10px] text-silver-dim uppercase font-heading block mb-1">Catatan dari Customer:</span>
+                    <span class="text-[10px] text-silver-dim uppercase font-heading block mb-1">Catatan / Preferensi dari Customer:</span>
                     <p class="text-xs text-silver-muted bg-steel/20 p-2.5 rounded border border-gunmetal/30 font-sans italic">
                         "{{ $offer->note }}"
                     </p>
@@ -147,28 +151,13 @@
                     <span class="text-silver-bright font-mono font-bold">{{ $offer->carUnit?->code ?? '-' }}</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-silver-dim">Status Unit:</span>
+                    <span class="text-silver-dim">Status Unit Mobil:</span>
                     <span class="text-silver-bright font-semibold uppercase">{{ $offer->carUnit?->status?->label() ?? 'Available' }}</span>
                 </div>
-                <div class="flex justify-between">
-                    <span class="text-silver-dim">Harga Listing:</span>
-                    <span class="text-silver-dim line-through font-mono">Rp {{ number_format($offer->carUnit?->price_sell_idr ?? 0, 0, ',', '.') }}</span>
-                </div>
                 <div class="flex justify-between items-center pt-3 border-t border-gunmetal/30">
-                    <span class="text-silver-dim font-heading uppercase text-[11px]">Harga Penawaran:</span>
+                    <span class="text-silver-dim font-heading uppercase text-[11px]">Harga Pembelian (OTR):</span>
                     <span class="text-giallo font-mono text-xl font-bold">Rp {{ number_format($offer->amount_idr, 0, ',', '.') }}</span>
                 </div>
-                @php
-                    $diff = ($offer->carUnit?->price_sell_idr ?? 0) - $offer->amount_idr;
-                @endphp
-                @if($diff != 0)
-                    <div class="flex justify-between text-[11px] font-mono">
-                        <span class="text-silver-dim">Selisih Penawaran:</span>
-                        <span class="{{ $diff > 0 ? 'text-amber-400' : 'text-emerald-400' }}">
-                            {{ $diff > 0 ? '-' : '+' }} Rp {{ number_format(abs($diff), 0, ',', '.') }}
-                        </span>
-                    </div>
-                @endif
             </div>
 
             @if($offer->carUnit)
@@ -185,27 +174,27 @@
     @if($st === 'pending')
         <div class="panel border border-gunmetal bg-carbon p-6 space-y-4">
             <h3 class="font-heading text-xs uppercase tracking-wider text-silver-bright border-b border-gunmetal/40 pb-2">
-                Respon & Keputusan Penawaran
+                Konfirmasi & Keputusan Pesanan
             </h3>
             <p class="text-xs text-silver-dim">
-                Menerima penawaran akan otomatis menandai unit sebagai <strong>Dipesan (Reserved)</strong> dan membuat <strong>Sales Order</strong> sehingga kasir dapat memproses transaksi pembayaran mobil.
+                Menyetujui pesanan akan mempertahankan status unit sebagai <strong>Dipesan (Reserved)</strong> dan membuat <strong>Sales Order</strong> sehingga kasir dapat memproses transaksi pembayaran mobil. Jika pesanan ditolak, status unit otomatis dikembalikan ke <strong>Tersedia (Available)</strong>.
             </p>
 
             <div class="flex flex-wrap items-center gap-3 pt-2">
                 {{-- Accept Form --}}
                 <form action="{{ route('admin.offers.accept', $offer->id) }}" method="POST"
-                      onsubmit="return confirm('Apakah Anda yakin menerima penawaran ini sebesar Rp {{ number_format($offer->amount_idr, 0, ',', '.') }}? Unit mobil akan di-reserve.')">
+                      onsubmit="return confirm('Apakah Anda yakin menyetujui pesanan ini seharga Rp {{ number_format($offer->amount_idr, 0, ',', '.') }}? Sales Order akan dibuat.')">
                     @csrf
                     <button type="submit"
                             class="px-5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-heading text-xs uppercase font-bold tracking-wider rounded transition flex items-center gap-2 shadow-lg shadow-emerald-900/30">
-                        <span>✓</span> Terima Penawaran (Accept)
+                        <span>✓</span> Setujui Pesanan (Approve)
                     </button>
                 </form>
 
                 {{-- Reject Button triggering modal --}}
                 <button type="button" @click="showRejectModal = true"
                         class="px-5 py-3 bg-steel/60 hover:bg-steel border border-red-800/60 text-red-400 hover:text-red-300 font-heading text-xs uppercase font-bold tracking-wider rounded transition flex items-center gap-2">
-                    <span>✕</span> Tolak Penawaran
+                    <span>✕</span> Tolak Pesanan
                 </button>
             </div>
         </div>
@@ -217,17 +206,17 @@
             <div class="panel border border-gunmetal bg-carbon max-w-md w-full p-6 space-y-4 shadow-2xl"
                  @click.away="showRejectModal = false">
                 <h3 class="font-heading text-sm uppercase tracking-wider text-red-400 font-bold">
-                    Konfirmasi Penolakan Penawaran
+                    Konfirmasi Penolakan Pesanan
                 </h3>
                 <p class="text-xs text-silver-dim">
-                    Apakah Anda yakin menolak penawaran harga sebesar <strong>Rp {{ number_format($offer->amount_idr, 0, ',', '.') }}</strong> untuk unit {{ $offer->carUnit?->full_name }}?
+                    Apakah Anda yakin menolak pesanan pembelian sebesar <strong>Rp {{ number_format($offer->amount_idr, 0, ',', '.') }}</strong> untuk unit {{ $offer->carUnit?->full_name }}? Status unit mobil akan kembali menjadi <strong>Tersedia</strong>.
                 </p>
 
                 <form action="{{ route('admin.offers.reject', $offer->id) }}" method="POST" class="space-y-4">
                     @csrf
                     <div>
                         <label class="block text-[11px] uppercase text-silver-dim mb-1 font-heading">Alasan Penolakan (Opsional)</label>
-                        <textarea name="reason" rows="3" placeholder="Contoh: Harga penawaran terlalu jauh dari target margin."
+                        <textarea name="reason" rows="3" placeholder="Contoh: Unit telah di-booking oleh saluran penjualan lain atau kendala administrasi."
                                   class="w-full bg-steel/60 border border-gunmetal text-silver-bright text-xs rounded p-3 focus:border-red-500 focus:outline-none"></textarea>
                     </div>
 
@@ -238,7 +227,7 @@
                         </button>
                         <button type="submit"
                                 class="px-4 py-2 bg-red-700 hover:bg-red-600 text-white font-heading text-xs uppercase font-bold rounded transition">
-                            Tolak Penawaran
+                            Tolak Pesanan
                         </button>
                     </div>
                 </form>

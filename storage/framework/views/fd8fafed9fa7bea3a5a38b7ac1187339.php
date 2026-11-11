@@ -184,12 +184,13 @@
             </div>
 
             
-            <div class="bg-carbon border border-gunmetal rounded-lg p-6 dashboard-card">
-                <h3 class="font-heading text-xs font-bold text-silver-bright uppercase tracking-wider mb-4 border-b border-gunmetal/40 pb-2 flex items-center gap-2">
-                    <span class="text-giallo">🚗</span> Jadwalkan Test Drive
-                </h3>
-                <?php if(auth()->guard()->check()): ?>
-                    <?php if (isset($component)) { $__componentOriginalb5894777f831183beee67d47d0ba3350 = $component; } ?>
+            <?php if($car->status === \App\Enums\CarUnitStatus::Available): ?>
+                <div class="bg-carbon border border-gunmetal rounded-lg p-6 dashboard-card">
+                    <h3 class="font-heading text-xs font-bold text-silver-bright uppercase tracking-wider mb-4 border-b border-gunmetal/40 pb-2 flex items-center gap-2">
+                        <span class="text-giallo">🚗</span> Jadwalkan Test Drive
+                    </h3>
+                    <?php if(auth()->guard()->check()): ?>
+                        <?php if (isset($component)) { $__componentOriginalb5894777f831183beee67d47d0ba3350 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalb5894777f831183beee67d47d0ba3350 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.marketplace.test-drive-form','data' => ['car' => $car]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('marketplace.test-drive-form'); ?>
@@ -209,23 +210,25 @@
 <?php $component = $__componentOriginalb5894777f831183beee67d47d0ba3350; ?>
 <?php unset($__componentOriginalb5894777f831183beee67d47d0ba3350); ?>
 <?php endif; ?>
-                <?php else: ?>
-                    <div class="text-center py-4 text-xs text-silver-dim space-y-3">
-                        <p>Silakan login terlebih dahulu untuk mengajukan jadwal test drive unit ini.</p>
-                        <a href="<?php echo e(route('login')); ?>" class="inline-block px-5 py-2 bg-giallo text-nero font-heading font-semibold text-xs uppercase tracking-wider rounded hover:bg-giallo/90 transition">
-                            Login Akun
-                        </a>
-                    </div>
-                <?php endif; ?>
-            </div>
+                    <?php else: ?>
+                        <div class="text-center py-4 text-xs text-silver-dim space-y-3">
+                            <p>Silakan login terlebih dahulu untuk mengajukan jadwal test drive unit ini.</p>
+                            <a href="<?php echo e(route('login')); ?>" class="inline-block px-5 py-2 bg-giallo text-nero font-heading font-semibold text-xs uppercase tracking-wider rounded hover:bg-giallo/90 transition">
+                                Login Akun
+                            </a>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
 
             
-            <div class="bg-carbon border border-gunmetal rounded-lg p-6 dashboard-card">
-                <h3 class="font-heading text-xs font-bold text-silver-bright uppercase tracking-wider mb-4 border-b border-gunmetal/40 pb-2 flex items-center gap-2">
-                    <span class="text-giallo">🏷️</span> Ajukan Penawaran Harga
-                </h3>
-                <?php if(auth()->guard()->check()): ?>
-                    <?php if (isset($component)) { $__componentOriginalc83155eb7d67cb1551163612a3d24390 = $component; } ?>
+            <?php if($car->status === \App\Enums\CarUnitStatus::Available): ?>
+                <div class="bg-carbon border border-gunmetal rounded-lg p-6 dashboard-card">
+                    <h3 class="font-heading text-xs font-bold text-silver-bright uppercase tracking-wider mb-4 border-b border-gunmetal/40 pb-2 flex items-center gap-2">
+                        <span class="text-giallo">⚡</span> Beli / Pesan Mobil Ini
+                    </h3>
+                    <?php if(auth()->guard()->check()): ?>
+                        <?php if (isset($component)) { $__componentOriginalc83155eb7d67cb1551163612a3d24390 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc83155eb7d67cb1551163612a3d24390 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.marketplace.offer-form','data' => ['car' => $car]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('marketplace.offer-form'); ?>
@@ -245,15 +248,42 @@
 <?php $component = $__componentOriginalc83155eb7d67cb1551163612a3d24390; ?>
 <?php unset($__componentOriginalc83155eb7d67cb1551163612a3d24390); ?>
 <?php endif; ?>
-                <?php else: ?>
-                    <div class="text-center py-4 text-xs text-silver-dim space-y-3">
-                        <p>Silakan login untuk mengirimkan penawaran harga kepada sales representatif.</p>
-                        <a href="<?php echo e(route('login')); ?>" class="inline-block px-5 py-2 border border-white/20 text-silver-bright font-heading font-semibold text-xs uppercase tracking-wider rounded hover:border-giallo transition">
-                            Login Akun
-                        </a>
+                    <?php else: ?>
+                        <div class="text-center py-4 text-xs text-silver-dim space-y-3">
+                            <p>Silakan login untuk langsung memesan unit mobil ini.</p>
+                            <a href="<?php echo e(route('login')); ?>" class="inline-block px-5 py-2.5 bg-giallo text-nero font-heading font-semibold text-xs uppercase tracking-wider rounded hover:bg-giallo/90 transition">
+                                Login Akun Pelanggan
+                            </a>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php elseif($car->status === \App\Enums\CarUnitStatus::Reserved): ?>
+                <div class="bg-carbon border border-arancio/40 rounded-lg p-6 dashboard-card bg-arancio/5 space-y-3">
+                    <div class="flex items-center gap-2 text-arancio font-heading text-xs uppercase font-bold tracking-wider">
+                        <span class="w-2 h-2 rounded-full bg-arancio animate-pulse"></span>
+                        Unit Sedang Dipesan (Reserved)
                     </div>
-                <?php endif; ?>
-            </div>
+                    <p class="text-xs text-silver-dim leading-relaxed">
+                        Unit ini sedang dalam status pemesanan oleh pembeli dan menunggu proses penyelesaian pembayaran. Jika pesanan dibatalkan, unit akan kembali tersedia.
+                    </p>
+                    <a href="<?php echo e(route('marketplace.index')); ?>" class="inline-block w-full text-center px-4 py-2.5 border border-gunmetal hover:border-giallo text-silver-bright text-xs font-heading uppercase tracking-wider rounded transition">
+                        Cari Mobil Tersedia Lainnya →
+                    </a>
+                </div>
+            <?php elseif($car->status === \App\Enums\CarUnitStatus::Sold): ?>
+                <div class="bg-carbon border border-gunmetal rounded-lg p-6 dashboard-card space-y-3">
+                    <div class="flex items-center gap-2 text-silver-bright font-heading text-xs uppercase font-bold tracking-wider">
+                        <span class="w-2 h-2 rounded-full bg-giallo"></span>
+                        Unit Telah Terjual (Sold Out)
+                    </div>
+                    <p class="text-xs text-silver-dim leading-relaxed">
+                        Mobil ini telah lunas terjual kepada pelanggan AUDrive. Anda dapat melihat koleksi mobil berkualitas lainnya di marketplace kami.
+                    </p>
+                    <a href="<?php echo e(route('marketplace.index')); ?>" class="inline-block w-full text-center px-4 py-2.5 bg-giallo text-nero text-xs font-heading font-bold uppercase tracking-wider rounded transition">
+                        Lihat Mobil Lainnya →
+                    </a>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 

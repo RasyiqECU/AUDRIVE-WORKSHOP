@@ -1,14 +1,11 @@
 <?php
 
-
 namespace Database\Seeders;
-
 
 use App\Models\Customer;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-
 
 class UserSeeder extends Seeder
 {
@@ -26,6 +23,17 @@ class UserSeeder extends Seeder
         ]);
         $superAdmin->assignRole('super-admin');
 
+        // ── Business Owner ──
+        $owner = User::create([
+            'name' => 'Business Owner',
+            'email' => 'owner@audrive.local',
+            'phone' => '081234567888',
+            'password' => Hash::make('password'),
+            'role' => 'owner',
+            'is_active' => true,
+            'email_verified_at' => now(),
+        ]);
+        $owner->assignRole('owner');
 
         // ── Manager ──
         $manager = User::create([
@@ -39,7 +47,6 @@ class UserSeeder extends Seeder
         ]);
         $manager->assignRole('manager');
 
-
         // ── Sales ──
         $sales = User::create([
             'name' => 'Andi Wijaya',
@@ -51,7 +58,6 @@ class UserSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
         $sales->assignRole('sales');
-
 
         // ── Mechanic ──
         $mechanic = User::create([
@@ -65,7 +71,6 @@ class UserSeeder extends Seeder
         ]);
         $mechanic->assignRole('mechanic');
 
-
         // ── Cashier ──
         $cashier = User::create([
             'name' => 'Siti Rahayu',
@@ -77,7 +82,6 @@ class UserSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
         $cashier->assignRole('cashier');
-
 
         // ── Inventory ──
         $inventory = User::create([
@@ -91,7 +95,6 @@ class UserSeeder extends Seeder
         ]);
         $inventory->assignRole('inventory');
 
-
         // ── Customer ──
         $customerUser = User::create([
             'name' => 'Dewi Lestari',
@@ -104,7 +107,6 @@ class UserSeeder extends Seeder
         ]);
         $customerUser->assignRole('customer');
 
-
         Customer::create([
             'user_id' => $customerUser->id,
             'code' => 'CUS-DEWI01',
@@ -115,13 +117,12 @@ class UserSeeder extends Seeder
             'loyalty_points' => 1500,
         ]);
 
-
         // ── Additional Customers ──
         for ($i = 1; $i <= 5; $i++) {
             $user = User::create([
                 'name' => fake()->name(),
                 'email' => "customer{$i}@audrive.local",
-                'phone' => '08' . fake()->numerify('##########'),
+                'phone' => '08'.fake()->numerify('##########'),
                 'password' => Hash::make('password'),
                 'role' => 'customer',
                 'is_active' => true,
@@ -129,10 +130,9 @@ class UserSeeder extends Seeder
             ]);
             $user->assignRole('customer');
 
-
             Customer::create([
                 'user_id' => $user->id,
-                'code' => 'CUS-' . strtoupper(fake()->regexify('[A-Z0-9]{6}')),
+                'code' => 'CUS-'.strtoupper(fake()->regexify('[A-Z0-9]{6}')),
                 'address' => fake()->address(),
                 'city' => fake()->randomElement(['Jakarta', 'Bandung', 'Surabaya']),
                 'province' => 'DKI Jakarta',
@@ -141,10 +141,6 @@ class UserSeeder extends Seeder
             ]);
         }
 
-
         $this->command->info('Demo users created successfully.');
     }
 }
-
-
-

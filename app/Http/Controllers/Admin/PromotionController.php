@@ -8,8 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Promotion;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
 
 class PromotionController extends Controller
 {
@@ -18,8 +18,8 @@ class PromotionController extends Controller
         $promotions = Promotion::latest()->paginate(15);
 
         $stats = [
-            'total'    => Promotion::count(),
-            'active'   => Promotion::where('is_active', true)->where('starts_at', '<=', now())->where('ends_at', '>=', now())->count(),
+            'total' => Promotion::count(),
+            'active' => Promotion::where('is_active', true)->where('starts_at', '<=', now())->where('ends_at', '>=', now())->count(),
             'upcoming' => Promotion::where('starts_at', '>', now())->count(),
         ];
 
@@ -34,17 +34,17 @@ class PromotionController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name'           => 'required|string|max:150',
-            'type'           => 'required|string|in:fixed,percent',
-            'value'          => 'required|numeric|min:1',
-            'starts_at'      => 'required|date',
-            'ends_at'        => 'required|date|after_or_equal:starts_at',
-            'applicable_to'  => 'nullable|string|max:30',
-            'description'    => 'nullable|string|max:2000',
-            'is_active'      => 'nullable|boolean',
+            'name' => 'required|string|max:150',
+            'type' => 'required|string|in:fixed,percent',
+            'value' => 'required|numeric|min:1',
+            'starts_at' => 'required|date',
+            'ends_at' => 'required|date|after_or_equal:starts_at',
+            'applicable_to' => 'nullable|string|max:30',
+            'description' => 'nullable|string|max:2000',
+            'is_active' => 'nullable|boolean',
         ]);
 
-        $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(5);
+        $validated['slug'] = Str::slug($validated['name']).'-'.Str::random(5);
         $validated['is_active'] = $request->has('is_active');
         $validated['applicable_to'] = $validated['applicable_to'] ?: 'Semua Layanan';
 
@@ -61,14 +61,14 @@ class PromotionController extends Controller
     public function update(Request $request, Promotion $promotion): RedirectResponse
     {
         $validated = $request->validate([
-            'name'           => 'required|string|max:150',
-            'type'           => 'required|string|in:fixed,percent',
-            'value'          => 'required|numeric|min:1',
-            'starts_at'      => 'required|date',
-            'ends_at'        => 'required|date|after_or_equal:starts_at',
-            'applicable_to'  => 'nullable|string|max:30',
-            'description'    => 'nullable|string|max:2000',
-            'is_active'      => 'nullable|boolean',
+            'name' => 'required|string|max:150',
+            'type' => 'required|string|in:fixed,percent',
+            'value' => 'required|numeric|min:1',
+            'starts_at' => 'required|date',
+            'ends_at' => 'required|date|after_or_equal:starts_at',
+            'applicable_to' => 'nullable|string|max:30',
+            'description' => 'nullable|string|max:2000',
+            'is_active' => 'nullable|boolean',
         ]);
 
         $validated['is_active'] = $request->has('is_active');
@@ -79,9 +79,17 @@ class PromotionController extends Controller
         return redirect()->route('admin.promotions.index')->with('success', "Promo '{$promotion->name}' berhasil diperbarui.");
     }
 
+    /**
+     * Detail satu promo (route promotions.show — view-only, parameternya numerik).
+     */
+    public function show(Promotion $promotion): View
+    {
+        return view('admin.promotions.show', compact('promotion'));
+    }
+
     public function toggle(Promotion $promotion): RedirectResponse
     {
-        $promotion->update(['is_active' => !$promotion->is_active]);
+        $promotion->update(['is_active' => ! $promotion->is_active]);
         $status = $promotion->is_active ? 'diaktifkan' : 'dinonaktifkan';
 
         return back()->with('success', "Status promo '{$promotion->name}' berhasil {$status}.");
@@ -90,6 +98,7 @@ class PromotionController extends Controller
     public function destroy(Promotion $promotion): RedirectResponse
     {
         $promotion->delete();
+
         return back()->with('success', "Promo '{$promotion->name}' berhasil dihapus.");
     }
 }

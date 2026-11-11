@@ -91,10 +91,10 @@
                 <label for="brand" class="block font-heading text-[10px] uppercase tracking-wider text-silver-dim mb-1.5 font-semibold">
                     Merek
                 </label>
-                <select name="brand" id="brand" class="w-full bg-steel/30 border border-gunmetal/60 rounded px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
-                    <option value="">Semua Merek</option>
+                <select name="brand" id="brand" class="w-full bg-nero border border-gunmetal rounded px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none [&>option]:bg-nero [&>option]:text-silver-bright">
+                    <option value="" class="bg-nero text-silver-bright">Semua Merek</option>
                     <?php $__currentLoopData = $brands; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $brandName): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                        <option value="<?php echo e($brandName); ?>" <?php echo e(request('brand') === $brandName ? 'selected' : ''); ?>>
+                        <option value="<?php echo e($brandName); ?>" class="bg-nero text-silver-bright" <?php echo e(request('brand') === $brandName ? 'selected' : ''); ?>>
                             <?php echo e($brandName); ?>
 
                         </option>
@@ -107,10 +107,10 @@
                 <label for="transmission" class="block font-heading text-[10px] uppercase tracking-wider text-silver-dim mb-1.5 font-semibold">
                     Transmisi
                 </label>
-                <select name="transmission" id="transmission" class="w-full bg-steel/30 border border-gunmetal/60 rounded px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
-                    <option value="">Semua Transmisi</option>
-                    <option value="automatic" <?php echo e(request('transmission') === 'automatic' ? 'selected' : ''); ?>>Automatic (A/T)</option>
-                    <option value="manual" <?php echo e(request('transmission') === 'manual' ? 'selected' : ''); ?>>Manual (M/T)</option>
+                <select name="transmission" id="transmission" class="w-full bg-nero border border-gunmetal rounded px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none [&>option]:bg-nero [&>option]:text-silver-bright">
+                    <option value="" class="bg-nero text-silver-bright">Semua Transmisi</option>
+                    <option value="automatic" class="bg-nero text-silver-bright" <?php echo e(request('transmission') === 'automatic' ? 'selected' : ''); ?>>Automatic (A/T)</option>
+                    <option value="manual" class="bg-nero text-silver-bright" <?php echo e(request('transmission') === 'manual' ? 'selected' : ''); ?>>Manual (M/T)</option>
                 </select>
             </div>
 
@@ -119,12 +119,12 @@
                 <label for="sort" class="block font-heading text-[10px] uppercase tracking-wider text-silver-dim mb-1.5 font-semibold">
                     Urutkan
                 </label>
-                <select name="sort" id="sort" class="w-full bg-steel/30 border border-gunmetal/60 rounded px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
-                    <option value="" <?php echo e(!request('sort') ? 'selected' : ''); ?>>Unit Terbaru</option>
-                    <option value="price_asc" <?php echo e(request('sort') === 'price_asc' ? 'selected' : ''); ?>>Harga Terendah</option>
-                    <option value="price_desc" <?php echo e(request('sort') === 'price_desc' ? 'selected' : ''); ?>>Harga Tertinggi</option>
-                    <option value="mileage_asc" <?php echo e(request('sort') === 'mileage_asc' ? 'selected' : ''); ?>>KM Terendah</option>
-                    <option value="year_desc" <?php echo e(request('sort') === 'year_desc' ? 'selected' : ''); ?>>Tahun Terbaru</option>
+                <select name="sort" id="sort" class="w-full bg-nero border border-gunmetal rounded px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none [&>option]:bg-nero [&>option]:text-silver-bright">
+                    <option value="" class="bg-nero text-silver-bright" <?php echo e(!request('sort') ? 'selected' : ''); ?>>Unit Terbaru</option>
+                    <option value="price_asc" class="bg-nero text-silver-bright" <?php echo e(request('sort') === 'price_asc' ? 'selected' : ''); ?>>Harga Terendah</option>
+                    <option value="price_desc" class="bg-nero text-silver-bright" <?php echo e(request('sort') === 'price_desc' ? 'selected' : ''); ?>>Harga Tertinggi</option>
+                    <option value="mileage_asc" class="bg-nero text-silver-bright" <?php echo e(request('sort') === 'mileage_asc' ? 'selected' : ''); ?>>KM Terendah</option>
+                    <option value="year_desc" class="bg-nero text-silver-bright" <?php echo e(request('sort') === 'year_desc' ? 'selected' : ''); ?>>Tahun Terbaru</option>
                 </select>
             </div>
 

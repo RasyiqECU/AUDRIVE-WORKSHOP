@@ -23,6 +23,7 @@
         $topbarRole = $topbarUser->role ?? 'admin';
         $topbarRoleLabel = match($topbarRole) {
             'super-admin' => 'Super Admin',
+            'owner'       => 'Business Owner',
             'manager'     => 'Manager',
             'mechanic'    => 'Mekanik',
             'sales'       => 'Sales',
@@ -59,7 +60,7 @@
                 $stat1Color = 'text-verde';
                 $stat1Link = route('admin.cars.index');
 
-                $stat2Label = 'Penawaran Masuk';
+                $stat2Label = 'Pesanan Masuk';
                 $stat2Value = \App\Models\Offer::where('status', 'pending')->count();
                 $stat2Color = 'text-giallo';
                 $stat2Link = route('admin.offers.index');
@@ -95,6 +96,22 @@
                 $stat2Value = \App\Models\WorkOrder::whereIn('status', ['queued', 'in_progress'])->count();
                 $stat2Color = 'text-giallo';
                 $stat2Link = route('admin.work-orders.index');
+            } elseif ($topbarRole === 'owner') {
+                $stat1Label = 'Omzet Bulan Ini';
+                $ownerMonthRev = (int) \App\Models\SalesOrder::whereIn('status', [\App\Enums\SalesOrderStatus::Paid, \App\Enums\SalesOrderStatus::Completed])
+                    ->where('created_at', '>=', now()->startOfMonth())
+                    ->sum('total_idr');
+                $stat1Value = 'Rp ' . number_format($ownerMonthRev / 1000000, 1, ',', '.') . ' Jt';
+                $stat1Color = 'text-giallo';
+                $stat1Link = route('admin.dashboard');
+
+                $stat2Label = 'Mobil Terjual';
+                $stat2Value = \App\Models\SalesOrder::where('type', \App\Enums\SalesOrderType::CarSales)
+                    ->whereIn('status', [\App\Enums\SalesOrderStatus::Paid, \App\Enums\SalesOrderStatus::Completed])
+                    ->where('created_at', '>=', now()->startOfMonth())
+                    ->count() . ' Unit';
+                $stat2Color = 'text-verde';
+                $stat2Link = route('admin.dashboard');
             } else {
                 // Super Admin
                 $stat1Label = 'WO Active';
@@ -127,7 +144,8 @@
             </a>
         </div>
 
-        {{-- Notifications --}}
+        {{-- Notifications (Owner tidak punya akses notifikasi) --}}
+        @if($topbarRole !== 'owner')
         <a href="{{ route('admin.notifications.index') }}" class="relative text-silver-dim hover:text-giallo transition-premium" title="Notifikasi {{ $topbarRoleLabel }}">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -138,6 +156,7 @@
                 </span>
             @endif
         </a>
+        @endif
 
         {{-- User Profile & Role Indicator --}}
         <div class="flex items-center gap-2">

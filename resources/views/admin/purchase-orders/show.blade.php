@@ -19,13 +19,22 @@
                     Dibuat oleh: {{ $purchaseOrder->creator?->name ?? 'System' }} pada {{ $purchaseOrder->created_at->format('d M Y, H:i') }}
                 </p>
             </div>
+            @php
+                $statusVal = $purchaseOrder->status instanceof \App\Enums\PurchaseOrderStatus 
+                    ? $purchaseOrder->status->value 
+                    : (string) $purchaseOrder->status;
+                $statusLabel = $purchaseOrder->status instanceof \App\Enums\PurchaseOrderStatus 
+                    ? $purchaseOrder->status->label() 
+                    : ucwords(str_replace('_', ' ', $statusVal));
+            @endphp
             <div class="flex items-center gap-2">
                 <span class="px-3 py-1 text-xs uppercase rounded font-bold
-                    @if($purchaseOrder->status === 'received') bg-emerald-950/60 text-emerald-400 border border-emerald-800
-                    @elseif($purchaseOrder->status === 'sent') bg-blue-950/60 text-blue-400 border border-blue-800
-                    @elseif($purchaseOrder->status === 'cancelled') bg-red-950/60 text-red-400 border border-red-800
+                    @if($statusVal === 'received') bg-emerald-950/60 text-emerald-400 border border-emerald-800
+                    @elseif($statusVal === 'sent') bg-blue-950/60 text-blue-400 border border-blue-800
+                    @elseif($statusVal === 'partially_received') bg-amber-950/60 text-amber-400 border border-amber-800
+                    @elseif($statusVal === 'cancelled') bg-red-950/60 text-red-400 border border-red-800
                     @else bg-steel text-silver-dim border border-gunmetal @endif">
-                    {{ str_replace('_', ' ', $purchaseOrder->status) }}
+                    {{ $statusLabel }}
                 </span>
             </div>
         </div>

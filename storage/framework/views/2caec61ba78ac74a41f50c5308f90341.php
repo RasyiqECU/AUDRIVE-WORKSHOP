@@ -97,10 +97,10 @@
                 <label for="category_id" class="block font-heading text-[10px] uppercase tracking-wider text-silver-dim mb-1.5 font-semibold">
                     Kategori
                 </label>
-                <select name="category_id" id="category_id" class="w-full bg-steel/30 border border-gunmetal/60 rounded px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
-                    <option value="">Semua Kategori</option>
+                <select name="category_id" id="category_id" class="w-full bg-nero border border-gunmetal rounded px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none [&>option]:bg-nero [&>option]:text-silver-bright">
+                    <option value="" class="bg-nero text-silver-bright">Semua Kategori</option>
                     <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $cat): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                        <option value="<?php echo e($cat->id); ?>" <?php echo e((string)($filters['category_id'] ?? request('category_id')) === (string)$cat->id ? 'selected' : ''); ?>>
+                        <option value="<?php echo e($cat->id); ?>" class="bg-nero text-silver-bright" <?php echo e((string)($filters['category_id'] ?? request('category_id')) === (string)$cat->id ? 'selected' : ''); ?>>
                             <?php echo e($cat->name); ?>
 
                         </option>
@@ -115,7 +115,7 @@
                 </label>
                 <input type="text" name="vehicle_brand" id="vehicle_brand" value="<?php echo e($filters['vehicle_brand'] ?? request('vehicle_brand')); ?>"
                        placeholder="Contoh: Porsche, BMW, Audi..."
-                       class="w-full bg-steel/30 border border-gunmetal/60 rounded px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none placeholder-silver-dim/50">
+                       class="w-full bg-nero border border-gunmetal rounded px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none placeholder-silver-dim/50">
             </div>
 
             
@@ -123,11 +123,11 @@
                 <label for="sort" class="block font-heading text-[10px] uppercase tracking-wider text-silver-dim mb-1.5 font-semibold">
                     Urutkan
                 </label>
-                <select name="sort" id="sort" class="w-full bg-steel/30 border border-gunmetal/60 rounded px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
-                    <option value="name_asc" <?php echo e(($filters['sort'] ?? '') === 'name_asc' ? 'selected' : ''); ?>>Nama (A - Z)</option>
-                    <option value="name_desc" <?php echo e(($filters['sort'] ?? '') === 'name_desc' ? 'selected' : ''); ?>>Nama (Z - A)</option>
-                    <option value="price_asc" <?php echo e(($filters['sort'] ?? '') === 'price_asc' ? 'selected' : ''); ?>>Harga Terendah</option>
-                    <option value="price_desc" <?php echo e(($filters['sort'] ?? '') === 'price_desc' ? 'selected' : ''); ?>>Harga Tertinggi</option>
+                <select name="sort" id="sort" class="w-full bg-nero border border-gunmetal rounded px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none [&>option]:bg-nero [&>option]:text-silver-bright">
+                    <option value="name_asc" class="bg-nero text-silver-bright" <?php echo e(($filters['sort'] ?? '') === 'name_asc' ? 'selected' : ''); ?>>Nama (A - Z)</option>
+                    <option value="name_desc" class="bg-nero text-silver-bright" <?php echo e(($filters['sort'] ?? '') === 'name_desc' ? 'selected' : ''); ?>>Nama (Z - A)</option>
+                    <option value="price_asc" class="bg-nero text-silver-bright" <?php echo e(($filters['sort'] ?? '') === 'price_asc' ? 'selected' : ''); ?>>Harga Terendah</option>
+                    <option value="price_desc" class="bg-nero text-silver-bright" <?php echo e(($filters['sort'] ?? '') === 'price_desc' ? 'selected' : ''); ?>>Harga Tertinggi</option>
                 </select>
             </div>
 

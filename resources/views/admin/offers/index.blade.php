@@ -1,41 +1,41 @@
 @extends('layouts.admin')
 
-@section('title', 'Penawaran Mobil Masuk')
+@section('title', 'Pesanan Mobil Masuk')
 
 @section('content')
 <div class="space-y-6">
     {{-- Header --}}
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-            <p class="font-heading text-xs uppercase tracking-[0.2em] text-giallo">Showroom Leads</p>
+            <p class="font-heading text-xs uppercase tracking-[0.2em] text-giallo">Showroom Orders</p>
             <h1 class="font-display text-2xl md:text-3xl text-silver-bright font-bold tracking-wide mt-1">
-                PENAWARAN MOBIL (OFFERS)
+                PESANAN MOBIL MASUK
             </h1>
             <p class="text-xs text-silver-dim mt-1">
-                Kelola negosiasi harga dan penawaran dari calon pembeli unit mobil showroom.
+                Kelola pesanan pembelian unit mobil dari customer showroom.
             </p>
         </div>
     </div>
 
-    {{-- Offers Table --}}
+    {{-- Orders Table --}}
     <div class="panel border border-gunmetal/70 bg-carbon overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs text-silver-muted">
                 <thead class="bg-steel/50 text-silver-bright font-heading uppercase text-[10px] tracking-wider border-b border-gunmetal">
                     <tr>
-                        <th class="p-3">ID Offer</th>
+                        <th class="p-3">ID Pesanan</th>
                         <th class="p-3">Unit Mobil</th>
                         <th class="p-3">Customer</th>
-                        <th class="p-3 text-right">Harga Penawaran</th>
+                        <th class="p-3 text-right">Harga Mobil (OTR)</th>
                         <th class="p-3">Status</th>
-                        <th class="p-3">Tanggal</th>
+                        <th class="p-3">Tanggal Pesan</th>
                         <th class="p-3 text-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gunmetal/40 font-mono">
                     @forelse($offers as $offer)
                         <tr class="hover:bg-steel/20 transition-colors">
-                            <td class="p-3 text-giallo font-semibold">#OFR-{{ str_pad($offer->id, 5, '0', STR_PAD_LEFT) }}</td>
+                            <td class="p-3 text-giallo font-semibold">#ORD-{{ str_pad($offer->id, 5, '0', STR_PAD_LEFT) }}</td>
                             <td class="p-3 font-sans text-silver-bright font-medium">{{ $offer->carUnit?->title ?? $offer->carUnit?->brand . ' ' . $offer->carUnit?->model }}</td>
                             <td class="p-3 font-sans text-silver-dim">{{ $offer->customer?->user?->name ?? 'Guest User' }}</td>
                             <td class="p-3 text-right text-silver-bright font-bold">Rp {{ number_format($offer->amount_idr, 0, ',', '.') }}</td>
@@ -50,17 +50,17 @@
                                     {{ $offer->status instanceof \App\Enums\OfferStatus ? $offer->status->label() : ucfirst($st) }}
                                 </span>
                             </td>
-                            <td class="p-3 text-silver-dim text-[11px]">{{ $offer->created_at->format('d M Y') }}</td>
+                            <td class="p-3 text-silver-dim text-[11px]">{{ $offer->created_at->format('d M Y H:i') }}</td>
                             <td class="p-3 text-right font-sans">
                                 <a href="{{ route('admin.offers.show', $offer->id) }}" class="text-xs text-giallo hover:underline font-heading uppercase">
-                                    Review →
+                                    Detail Pesanan →
                                 </a>
                             </td>
                         </tr>
                     @empty
                         <tr>
                             <td colspan="7" class="p-8 text-center text-silver-dim font-sans">
-                                Belum ada penawaran harga masuk.
+                                Belum ada pesanan mobil masuk.
                             </td>
                         </tr>
                     @endforelse

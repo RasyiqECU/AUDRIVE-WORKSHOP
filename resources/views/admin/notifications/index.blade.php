@@ -16,7 +16,7 @@
         'super-admin' => 'Pantau seluruh aktivitas operasional, pesanan, booking servis, dan pengajuan persetujuan sistem.',
         'manager'     => 'Pantau pengajuan persetujuan (approval) masuk, evaluasi operasional, dan eskalasi divisi.',
         'mechanic'    => 'Pantau booking servis baru dari pelanggan dan penugasan work order perbaikan kendaraan.',
-        'sales'       => 'Pantau permohonan test drive, penawaran harga supercar masuk, dan pertanyaan prospek pelanggan.',
+        'sales'       => 'Pantau permohonan test drive, pesanan pembelian mobil masuk, dan transaksi prospek pelanggan.',
         'inventory'   => 'Pantau peringatan stok suku cadang menipis dan pesanan masuk yang perlu disiapkan dari gudang.',
         'cashier'     => 'Pantau pesanan yang perlu diverifikasi pembayarannya dan pelunasan billing perbaikan servis.',
         default       => 'Pantau notifikasi dan aktivitas yang ditujukan khusus untuk peran Anda di AUDrive.',
@@ -91,11 +91,6 @@
                 </div>
 
                 <div class="flex items-center gap-3 shrink-0 self-end md:self-center">
-                    @if(isset($data['action_url']))
-                        <a href="{{ $data['action_url'] }}" class="px-3 py-1.5 bg-giallo hover:bg-giallo-bright text-carbon text-xs font-heading uppercase font-bold rounded clip-angular-button transition-premium">
-                            Lihat Detail →
-                        </a>
-                    @endif
                     @if($isUnread)
                         <form action="{{ route('admin.notifications.read', $notification->id) }}" method="POST">
                             @csrf

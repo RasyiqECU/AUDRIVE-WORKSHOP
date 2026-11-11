@@ -126,39 +126,69 @@
                 </div>
             </div>
 
-            {{-- Form Booking Test Drive --}}
-            <div class="bg-carbon border border-gunmetal rounded-lg p-6 dashboard-card">
-                <h3 class="font-heading text-xs font-bold text-silver-bright uppercase tracking-wider mb-4 border-b border-gunmetal/40 pb-2 flex items-center gap-2">
-                    <span class="text-giallo">🚗</span> Jadwalkan Test Drive
-                </h3>
-                @auth
-                    <x-marketplace.test-drive-form :car="$car" />
-                @else
-                    <div class="text-center py-4 text-xs text-silver-dim space-y-3">
-                        <p>Silakan login terlebih dahulu untuk mengajukan jadwal test drive unit ini.</p>
-                        <a href="{{ route('login') }}" class="inline-block px-5 py-2 bg-giallo text-nero font-heading font-semibold text-xs uppercase tracking-wider rounded hover:bg-giallo/90 transition">
-                            Login Akun
-                        </a>
-                    </div>
-                @endauth
-            </div>
+            {{-- Form Booking Test Drive (Hanya jika unit tersedia) --}}
+            @if($car->status === \App\Enums\CarUnitStatus::Available)
+                <div class="bg-carbon border border-gunmetal rounded-lg p-6 dashboard-card">
+                    <h3 class="font-heading text-xs font-bold text-silver-bright uppercase tracking-wider mb-4 border-b border-gunmetal/40 pb-2 flex items-center gap-2">
+                        <span class="text-giallo">🚗</span> Jadwalkan Test Drive
+                    </h3>
+                    @auth
+                        <x-marketplace.test-drive-form :car="$car" />
+                    @else
+                        <div class="text-center py-4 text-xs text-silver-dim space-y-3">
+                            <p>Silakan login terlebih dahulu untuk mengajukan jadwal test drive unit ini.</p>
+                            <a href="{{ route('login') }}" class="inline-block px-5 py-2 bg-giallo text-nero font-heading font-semibold text-xs uppercase tracking-wider rounded hover:bg-giallo/90 transition">
+                                Login Akun
+                            </a>
+                        </div>
+                    @endauth
+                </div>
+            @endif
 
-            {{-- Form Ajukan Penawaran Harga --}}
-            <div class="bg-carbon border border-gunmetal rounded-lg p-6 dashboard-card">
-                <h3 class="font-heading text-xs font-bold text-silver-bright uppercase tracking-wider mb-4 border-b border-gunmetal/40 pb-2 flex items-center gap-2">
-                    <span class="text-giallo">🏷️</span> Ajukan Penawaran Harga
-                </h3>
-                @auth
-                    <x-marketplace.offer-form :car="$car" />
-                @else
-                    <div class="text-center py-4 text-xs text-silver-dim space-y-3">
-                        <p>Silakan login untuk mengirimkan penawaran harga kepada sales representatif.</p>
-                        <a href="{{ route('login') }}" class="inline-block px-5 py-2 border border-white/20 text-silver-bright font-heading font-semibold text-xs uppercase tracking-wider rounded hover:border-giallo transition">
-                            Login Akun
-                        </a>
+            {{-- Form Pembelian Mobil Langsung / Status Notice --}}
+            @if($car->status === \App\Enums\CarUnitStatus::Available)
+                <div class="bg-carbon border border-gunmetal rounded-lg p-6 dashboard-card">
+                    <h3 class="font-heading text-xs font-bold text-silver-bright uppercase tracking-wider mb-4 border-b border-gunmetal/40 pb-2 flex items-center gap-2">
+                        <span class="text-giallo">⚡</span> Beli / Pesan Mobil Ini
+                    </h3>
+                    @auth
+                        <x-marketplace.offer-form :car="$car" />
+                    @else
+                        <div class="text-center py-4 text-xs text-silver-dim space-y-3">
+                            <p>Silakan login untuk langsung memesan unit mobil ini.</p>
+                            <a href="{{ route('login') }}" class="inline-block px-5 py-2.5 bg-giallo text-nero font-heading font-semibold text-xs uppercase tracking-wider rounded hover:bg-giallo/90 transition">
+                                Login Akun Pelanggan
+                            </a>
+                        </div>
+                    @endauth
+                </div>
+            @elseif($car->status === \App\Enums\CarUnitStatus::Reserved)
+                <div class="bg-carbon border border-arancio/40 rounded-lg p-6 dashboard-card bg-arancio/5 space-y-3">
+                    <div class="flex items-center gap-2 text-arancio font-heading text-xs uppercase font-bold tracking-wider">
+                        <span class="w-2 h-2 rounded-full bg-arancio animate-pulse"></span>
+                        Unit Sedang Dipesan (Reserved)
                     </div>
-                @endauth
-            </div>
+                    <p class="text-xs text-silver-dim leading-relaxed">
+                        Unit ini sedang dalam status pemesanan oleh pembeli dan menunggu proses penyelesaian pembayaran. Jika pesanan dibatalkan, unit akan kembali tersedia.
+                    </p>
+                    <a href="{{ route('marketplace.index') }}" class="inline-block w-full text-center px-4 py-2.5 border border-gunmetal hover:border-giallo text-silver-bright text-xs font-heading uppercase tracking-wider rounded transition">
+                        Cari Mobil Tersedia Lainnya →
+                    </a>
+                </div>
+            @elseif($car->status === \App\Enums\CarUnitStatus::Sold)
+                <div class="bg-carbon border border-gunmetal rounded-lg p-6 dashboard-card space-y-3">
+                    <div class="flex items-center gap-2 text-silver-bright font-heading text-xs uppercase font-bold tracking-wider">
+                        <span class="w-2 h-2 rounded-full bg-giallo"></span>
+                        Unit Telah Terjual (Sold Out)
+                    </div>
+                    <p class="text-xs text-silver-dim leading-relaxed">
+                        Mobil ini telah lunas terjual kepada pelanggan AUDrive. Anda dapat melihat koleksi mobil berkualitas lainnya di marketplace kami.
+                    </p>
+                    <a href="{{ route('marketplace.index') }}" class="inline-block w-full text-center px-4 py-2.5 bg-giallo text-nero text-xs font-heading font-bold uppercase tracking-wider rounded transition">
+                        Lihat Mobil Lainnya →
+                    </a>
+                </div>
+            @endif
         </div>
     </div>
 

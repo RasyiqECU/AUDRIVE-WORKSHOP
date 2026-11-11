@@ -1,32 +1,32 @@
 <?php
 
-
 declare(strict_types=1);
 
-
 namespace App\Http\Controllers\Admin;
-
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Services\RoleAccessMatrixService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
-
 class UserController extends Controller
 {
     protected AuditService $auditService;
 
+    protected RoleAccessMatrixService $roleMatrixService;
 
-    public function __construct(AuditService $auditService)
-    {
+    public function __construct(
+        AuditService $auditService,
+        RoleAccessMatrixService $roleMatrixService
+    ) {
         $this->auditService = $auditService;
+        $this->roleMatrixService = $roleMatrixService;
     }
-
 
     /**
      * Display list of users
@@ -35,45 +35,40 @@ class UserController extends Controller
     {
         $query = User::query();
 
-
         // Filter by role
         if ($request->filled('role')) {
             $query->where('role', $request->role);
         }
-
 
         // Filter by status
         if ($request->filled('status')) {
             $query->where('is_active', $request->status === 'active');
         }
 
-
         // Search by name or email
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
-
         $users = $query->orderBy('created_at', 'desc')->paginate(20);
+        $roleMatrix = $this->roleMatrixService->getAllRoles();
 
-
-        return view('admin.users.index', compact('users'));
+        return view('admin.users.index', compact('users', 'roleMatrix'));
     }
-
 
     /**
      * Show create user form
      */
     public function create(): View
     {
-        $roles = ['customer', 'mechanic', 'sales', 'cashier', 'inventory', 'manager', 'super-admin'];
+        $roles = ['customer', 'mechanic', 'sales', 'cashier', 'inventory', 'manager', 'owner', 'super-admin'];
+
         return view('admin.users.create', compact('roles'));
     }
-
 
     /**
      * Store new user
@@ -85,10 +80,9 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'phone' => 'nullable|string|max:20',
             'password' => 'required|string|min:8|confirmed',
-            'role' => ['required', Rule::in(['customer', 'mechanic', 'sales', 'cashier', 'inventory', 'manager', 'super-admin'])],
+            'role' => ['required', Rule::in(['customer', 'mechanic', 'sales', 'cashier', 'inventory', 'manager', 'owner', 'super-admin'])],
             'is_active' => 'boolean',
         ]);
-
 
         $user = User::create([
             'name' => $validated['name'],
@@ -100,34 +94,32 @@ class UserController extends Controller
             'email_verified_at' => now(),
         ]);
 
-
         $this->auditService->logCreated('user', $user->id, $user->toArray());
-
 
         return redirect()
             ->route('admin.users.index')
             ->with('success', 'User berhasil dibuat');
     }
 
-
     /**
      * Display user details
      */
     public function show(User $user): View
     {
-        return view('admin.users.show', compact('user'));
-    }
+        $roleInfo = $this->roleMatrixService->getRole($user->role);
 
+        return view('admin.users.show', compact('user', 'roleInfo'));
+    }
 
     /**
      * Show edit user form
      */
     public function edit(User $user): View
     {
-        $roles = ['customer', 'mechanic', 'sales', 'cashier', 'inventory', 'manager', 'super-admin'];
+        $roles = ['customer', 'mechanic', 'sales', 'cashier', 'inventory', 'manager', 'owner', 'super-admin'];
+
         return view('admin.users.edit', compact('user', 'roles'));
     }
-
 
     /**
      * Update user
@@ -139,13 +131,11 @@ class UserController extends Controller
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:8|confirmed',
-            'role' => ['required', Rule::in(['customer', 'mechanic', 'sales', 'cashier', 'inventory', 'manager', 'super-admin'])],
+            'role' => ['required', Rule::in(['customer', 'mechanic', 'sales', 'cashier', 'inventory', 'manager', 'owner', 'super-admin'])],
             'is_active' => 'boolean',
         ]);
 
-
         $oldValues = $user->toArray();
-
 
         $updateData = [
             'name' => $validated['name'],
@@ -155,23 +145,18 @@ class UserController extends Controller
             'is_active' => $validated['is_active'] ?? true,
         ];
 
-
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $updateData['password'] = Hash::make($validated['password']);
         }
 
-
         $user->update($updateData);
 
-
         $this->auditService->logUpdated('user', $user->id, $oldValues, $user->toArray());
-
 
         return redirect()
             ->route('admin.users.index')
             ->with('success', 'User berhasil diupdate');
     }
-
 
     /**
      * Toggle user active status
@@ -179,8 +164,7 @@ class UserController extends Controller
     public function toggleStatus(User $user): RedirectResponse
     {
         $oldStatus = $user->is_active;
-        $user->update(['is_active' => !$oldStatus]);
-
+        $user->update(['is_active' => ! $oldStatus]);
 
         $this->auditService->log(
             action: $user->is_active ? 'activated' : 'deactivated',
@@ -188,15 +172,13 @@ class UserController extends Controller
             modelId: $user->id,
             oldValues: ['is_active' => $oldStatus],
             newValues: ['is_active' => $user->is_active],
-            description: "User {$user->name} " . ($user->is_active ? 'activated' : 'deactivated')
+            description: "User {$user->name} ".($user->is_active ? 'activated' : 'deactivated')
         );
-
 
         return redirect()
             ->route('admin.users.index')
             ->with('success', 'Status user berhasil diubah');
     }
-
 
     /**
      * Delete user
@@ -205,15 +187,10 @@ class UserController extends Controller
     {
         $this->auditService->logDeleted('user', $user->id, $user->toArray());
 
-
         $user->delete();
-
 
         return redirect()
             ->route('admin.users.index')
             ->with('success', 'User berhasil dihapus');
     }
 }
-
-
-

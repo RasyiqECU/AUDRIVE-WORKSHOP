@@ -86,10 +86,20 @@
                         <span>✓</span> Lunas & Unit Diserahkan
                     </div>
                 @endif
+                @if($statusStr === 'completed')
+                    @can('deliver', $workOrder)
+                        <form action="{{ route('admin.work-orders.deliver', $workOrder) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="px-4 py-2 bg-steel hover:bg-steel/80 border border-gunmetal text-silver-bright font-heading font-bold text-xs uppercase tracking-wider rounded transition-premium">
+                                🏎 Serahkan ke Pelanggan
+                            </button>
+                        </form>
+                    @endcan
+                @endif
             @endif
 
-            {{-- Action buttons for SUPER ADMIN & MANAGER --}}
-            @if($isAdminOrManager)
+            {{-- Action buttons for SUPER ADMIN --}}
+            @if($role === 'super-admin')
                 @if($statusStr !== 'delivered' && $workOrder->total_idr > 0)
                     <a href="{{ route('admin.pos.index', ['work_order_id' => $workOrder->id]) }}"
                        class="px-4 py-2 bg-giallo hover:bg-arancio text-nero font-heading font-bold text-xs uppercase tracking-wider rounded shadow-lg shadow-giallo/20 transition-premium flex items-center gap-1.5">
@@ -105,12 +115,14 @@
                         </button>
                     </form>
                 @elseif($statusStr === 'completed')
-                    <form action="{{ route('admin.work-orders.deliver', $workOrder) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="px-4 py-2 bg-steel hover:bg-steel/80 border border-gunmetal text-silver-bright font-heading font-bold text-xs uppercase tracking-wider rounded transition-premium">
-                            🏎 Serahkan ke Pelanggan (Manual)
-                        </button>
-                    </form>
+                    @can('deliver', $workOrder)
+                        <form action="{{ route('admin.work-orders.deliver', $workOrder) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="px-4 py-2 bg-steel hover:bg-steel/80 border border-gunmetal text-silver-bright font-heading font-bold text-xs uppercase tracking-wider rounded transition-premium">
+                                🏎 Serahkan ke Pelanggan (Manual)
+                            </button>
+                        </form>
+                    @endcan
                 @endif
             @endif
         </div>
@@ -136,6 +148,29 @@
             @else
                 <p class="text-silver-dim italic">Belum ditugaskan ke mekanik.</p>
             @endif
+
+            @can('assignMechanic', $workOrder)
+                @if(isset($mechanics) && $mechanics->isNotEmpty())
+                    <form action="{{ route('admin.work-orders.assign', $workOrder) }}" method="POST" class="pt-2 border-t border-gunmetal/40 space-y-2">
+                        @csrf
+                        @method('PATCH')
+                        <div class="flex items-center gap-2">
+                            <select name="mechanic_id" required class="flex-1 bg-nero border border-gunmetal px-2 py-1 text-xs text-silver-bright focus:border-giallo focus:outline-none">
+                                <option value="">-- Pilih Mekanik --</option>
+                                @foreach($mechanics as $m)
+                                    <option value="{{ $m->id }}" {{ $workOrder->assigned_mechanic_id === $m->id ? 'selected' : '' }}>
+                                        {{ $m->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <button type="submit" class="px-3 py-1 bg-giallo text-nero font-heading text-[10px] uppercase font-bold hover:bg-arancio transition rounded">
+                                {{ $workOrder->mechanic ? 'Tugaskan Ulang' : 'Tugaskan' }}
+                            </button>
+                        </div>
+                    </form>
+                @endif
+            @endcan
+
             <div class="pt-2 border-t border-gunmetal/40 font-mono text-[10px] text-silver-dim">
                 <p>Mulai: {{ $workOrder->started_at ? $workOrder->started_at->format('d M Y H:i') : '-' }}</p>
                 <p>Selesai: {{ $workOrder->completed_at ? $workOrder->completed_at->format('d M Y H:i') : '-' }}</p>
@@ -198,15 +233,19 @@
                                 <td class="py-2.5 px-3 text-right text-silver-dim">Rp {{ number_format($item->unit_price_idr, 0, ',', '.') }}</td>
                                 <td class="py-2.5 px-3 text-right font-bold text-silver-bright">Rp {{ number_format($item->subtotal_idr, 0, ',', '.') }}</td>
                                 <td class="py-2.5 px-3 text-right">
-                                    @if($statusStr !== 'delivered')
-                                        <form action="{{ route('admin.work-orders.items.destroy', $item) }}" method="POST" onsubmit="return confirm('Hapus item ini?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-danger hover:underline text-[10px] font-sans uppercase">Hapus</button>
-                                        </form>
+                                    @can('update', $workOrder)
+                                        @if($statusStr !== 'delivered')
+                                            <form action="{{ route('admin.work-orders.items.destroy', $item) }}" method="POST" onsubmit="return confirm('Hapus item ini?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-danger hover:underline text-[10px] font-sans uppercase">Hapus</button>
+                                            </form>
+                                        @else
+                                            <span class="text-silver-dim text-[10px] font-sans">-</span>
+                                        @endif
                                     @else
                                         <span class="text-silver-dim text-[10px] font-sans">-</span>
-                                    @endif
+                                    @endcan
                                 </td>
                             </tr>
                         @empty
@@ -223,77 +262,81 @@
             {{-- Action Forms (Service, Parts, Status) --}}
             @if($statusStr !== 'delivered')
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-gunmetal">
-                    {{-- Form 1: Add Service Item --}}
-                    <div class="p-4 bg-steel/20 border border-gunmetal rounded-sm space-y-3">
-                        <h4 class="font-heading text-xs uppercase tracking-wider text-giallo font-semibold">+ Tambah Jasa Servis</h4>
-                        <form action="{{ route('admin.work-orders.service-items.store', $workOrder) }}" method="POST" class="space-y-3">
-                            @csrf
-                            <div>
-                                <input type="text" name="description" required placeholder="Deskripsi Jasa (cth: Tune-up)" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <input type="number" name="qty" required min="1" value="1" placeholder="Qty" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
-                                <input type="number" name="unit_price_idr" required min="0" placeholder="Biaya IDR" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
-                            </div>
-                            <button type="submit" class="w-full py-2 bg-giallo text-nero font-heading font-bold text-xs uppercase tracking-wider hover:bg-arancio transition">
-                                Tambah Jasa
-                            </button>
-                        </form>
-                    </div>
+                    @can('update', $workOrder)
+                        {{-- Form 1: Add Service Item --}}
+                        <div class="p-4 bg-steel/20 border border-gunmetal rounded-sm space-y-3">
+                            <h4 class="font-heading text-xs uppercase tracking-wider text-giallo font-semibold">+ Tambah Jasa Servis</h4>
+                            <form action="{{ route('admin.work-orders.service-items.store', $workOrder) }}" method="POST" class="space-y-3">
+                                @csrf
+                                <div>
+                                    <input type="text" name="description" required placeholder="Deskripsi Jasa (cth: Tune-up)" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="number" name="qty" required min="1" value="1" placeholder="Qty" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
+                                    <input type="number" name="unit_price_idr" required min="0" placeholder="Biaya IDR" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
+                                </div>
+                                <button type="submit" class="w-full py-2 bg-giallo text-nero font-heading font-bold text-xs uppercase tracking-wider hover:bg-arancio transition">
+                                    Tambah Jasa
+                                </button>
+                            </form>
+                        </div>
 
-                    {{-- Form 2: Add Spare Part Item --}}
-                    <div class="p-4 bg-steel/20 border border-gunmetal rounded-sm space-y-3">
-                        <h4 class="font-heading text-xs uppercase tracking-wider text-verde font-semibold">+ Tambah Suku Cadang</h4>
-                        <form action="{{ route('admin.work-orders.part-items.store', $workOrder) }}" method="POST" class="space-y-3">
-                            @csrf
-                            <div>
-                                <select name="spare_part_id" required class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
-                                    <option value="">Pilih Spare Part...</option>
-                                    @if(isset($spareParts))
-                                        @foreach($spareParts as $part)
-                                            <option value="{{ $part->id }}">
-                                                {{ $part->name }} (Rp {{ number_format($part->price_idr, 0, ',', '.') }}) — Stok: {{ $part->stock_qty }}
-                                            </option>
-                                        @endforeach
-                                    @endif
+                        {{-- Form 2: Add Spare Part Item --}}
+                        <div class="p-4 bg-steel/20 border border-gunmetal rounded-sm space-y-3">
+                            <h4 class="font-heading text-xs uppercase tracking-wider text-verde font-semibold">+ Tambah Suku Cadang</h4>
+                            <form action="{{ route('admin.work-orders.part-items.store', $workOrder) }}" method="POST" class="space-y-3">
+                                @csrf
+                                <div>
+                                    <select name="spare_part_id" required class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
+                                        <option value="">Pilih Spare Part...</option>
+                                        @if(isset($spareParts))
+                                            @foreach($spareParts as $part)
+                                                <option value="{{ $part->id }}">
+                                                    {{ $part->name }} (Rp {{ number_format($part->price_idr, 0, ',', '.') }}) — Stok: {{ $part->stock_qty }}
+                                                </option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                </div>
+                                <div>
+                                    <input type="number" name="qty" required min="1" value="1" placeholder="Jumlah Qty" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
+                                </div>
+                                <button type="submit" class="w-full py-2 bg-verde text-nero font-heading font-bold text-xs uppercase tracking-wider hover:bg-verde/80 transition">
+                                    Tambah Spare Part
+                                </button>
+                            </form>
+                        </div>
+                    @endcan
+
+                    @can('updateStatus', $workOrder)
+                        {{-- Form 3: Status Change --}}
+                        <div class="p-4 bg-steel/20 border border-gunmetal rounded-sm space-y-3">
+                            <h4 class="font-heading text-xs uppercase tracking-wider text-silver-bright font-semibold">⚙ Ubah Status Work Order</h4>
+                            <form action="{{ route('admin.work-orders.status', $workOrder) }}" method="POST" class="space-y-3">
+                                @csrf
+                                @method('PATCH')
+                                <select name="status" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
+                                    @foreach(\App\Enums\WorkOrderStatus::cases() as $sCase)
+                                        @if($isMechanic && $sCase->value === 'delivered')
+                                            {{-- Mekanik tidak boleh memilih status diserahkan/delivered secara langsung --}}
+                                            @continue
+                                        @endif
+                                        <option value="{{ $sCase->value }}" {{ $statusStr === $sCase->value ? 'selected' : '' }}>
+                                            {{ $sCase->label() }}
+                                        </option>
+                                    @endforeach
                                 </select>
-                            </div>
-                            <div>
-                                <input type="number" name="qty" required min="1" value="1" placeholder="Jumlah Qty" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
-                            </div>
-                            <button type="submit" class="w-full py-2 bg-verde text-nero font-heading font-bold text-xs uppercase tracking-wider hover:bg-verde/80 transition">
-                                Tambah Spare Part
-                            </button>
-                        </form>
-                    </div>
-
-                    {{-- Form 3: Status Change --}}
-                    <div class="p-4 bg-steel/20 border border-gunmetal rounded-sm space-y-3">
-                        <h4 class="font-heading text-xs uppercase tracking-wider text-silver-bright font-semibold">⚙ Ubah Status Work Order</h4>
-                        <form action="{{ route('admin.work-orders.status', $workOrder) }}" method="POST" class="space-y-3">
-                            @csrf
-                            @method('PATCH')
-                            <select name="status" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
-                                @foreach(\App\Enums\WorkOrderStatus::cases() as $sCase)
-                                    @if($isMechanic && $sCase->value === 'delivered')
-                                        {{-- Mekanik tidak boleh memilih status diserahkan/delivered secara langsung --}}
-                                        @continue
-                                    @endif
-                                    <option value="{{ $sCase->value }}" {{ $statusStr === $sCase->value ? 'selected' : '' }}>
-                                        {{ $sCase->label() }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <button type="submit" class="w-full py-2 bg-steel hover:bg-steel/80 border border-gunmetal text-silver-bright font-heading font-semibold text-xs uppercase tracking-wider transition">
-                                Perbarui Status
-                            </button>
-                        </form>
-                        @if($isMechanic)
-                            <p class="text-[10px] text-silver-dim italic">
-                                * Catatan: Status Diserahkan (Delivered) akan otomatis terbarui saat pembayaran diselesaikan oleh Kasir.
-                            </p>
-                        @endif
-                    </div>
+                                <button type="submit" class="w-full py-2 bg-steel hover:bg-steel/80 border border-gunmetal text-silver-bright font-heading font-semibold text-xs uppercase tracking-wider transition">
+                                    Perbarui Status
+                                </button>
+                            </form>
+                            @if($isMechanic)
+                                <p class="text-[10px] text-silver-dim italic">
+                                    * Catatan: Status Diserahkan (Delivered) akan otomatis terbarui saat pembayaran diselesaikan oleh Kasir.
+                                </p>
+                            @endif
+                        </div>
+                    @endcan
                 </div>
             @endif
         </div>

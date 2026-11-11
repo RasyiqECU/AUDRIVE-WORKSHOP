@@ -98,6 +98,23 @@ AUDrive — Main CSS Entry
     }
 
     /* ───────────────────────────────────────────────────
+  Dropdown / Select Dark (opsi yang muncul di popup
+  tanpa ini berlatar putih & teks terang = tak terlihat)
+  ─────────────────────────────────────────────────── */
+
+    select {
+        color-scheme: dark;
+        background-color: #0c0c0e;
+        color: #f0f0f2;
+    }
+
+    select option,
+    select optgroup {
+        background-color: #0c0c0e !important;
+        color: #f0f0f2 !important;
+    }
+
+    /* ───────────────────────────────────────────────────
   Panel Chamfered
   ─────────────────────────────────────────────────── */
 

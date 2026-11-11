@@ -152,6 +152,12 @@ class ReportController extends Controller
         $query = SalesOrder::where('type', SalesOrderType::CarSales)
             ->with(['customer.user', 'items.carUnit', 'creator', 'payments']);
 
+        // Sales hanya melihat laporan penjualan miliknya
+        $user = $request->user();
+        if ($user && $user->role === 'sales') {
+            $query->where('created_by', $user->id);
+        }
+
         if ($startDate && $endDate) {
             $query->whereBetween('created_at', [$startDate, $endDate]);
         }
@@ -338,6 +344,12 @@ class ReportController extends Controller
         $search = $request->input('search');
 
         $query = SalesOrder::with(['customer.user', 'creator', 'payments', 'invoice']);
+
+        // Kasir hanya melihat rekapitulasi shift/transaksi miliknya
+        $user = $request->user();
+        if ($user && $user->role === 'cashier') {
+            $query->where('created_by', $user->id);
+        }
 
         if ($startDate && $endDate) {
             $query->whereBetween('created_at', [$startDate, $endDate]);

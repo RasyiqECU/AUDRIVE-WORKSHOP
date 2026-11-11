@@ -18,34 +18,38 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-            @if($car->featured_at)
-                <form action="{{ route('admin.cars.featured.remove', $car) }}" method="POST">
+            @can('update', $car)
+                @if($car->featured_at)
+                    <form action="{{ route('admin.cars.featured.remove', $car) }}" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="px-3 py-2 bg-steel hover:bg-steel/80 border border-gunmetal text-silver-dim text-xs font-heading uppercase rounded">
+                            Hapus Featured
+                        </button>
+                    </form>
+                @else
+                    <form action="{{ route('admin.cars.featured', $car) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="px-3 py-2 bg-giallo/20 hover:bg-giallo text-giallo hover:text-nero border border-giallo/40 text-xs font-heading uppercase rounded font-bold transition-premium">
+                            ⭐ Jadikan Featured
+                        </button>
+                    </form>
+                @endif
+
+                <a href="{{ route('admin.cars.edit', $car) }}" class="px-4 py-2 bg-steel hover:bg-steel/80 border border-gunmetal text-silver-bright text-xs font-heading uppercase tracking-wider rounded transition-premium">
+                    ✏️ Edit
+                </a>
+            @endcan
+
+            @can('delete', $car)
+                <form action="{{ route('admin.cars.destroy', $car) }}" method="POST" onsubmit="return confirm('Hapus unit mobil ini secara permanen?')">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="px-3 py-2 bg-steel hover:bg-steel/80 border border-gunmetal text-silver-dim text-xs font-heading uppercase rounded">
-                        Hapus Featured
+                    <button type="submit" class="px-4 py-2 bg-danger/10 hover:bg-danger text-danger hover:text-white border border-danger/30 text-xs font-heading uppercase tracking-wider rounded transition-premium">
+                        🗑 Hapus
                     </button>
                 </form>
-            @else
-                <form action="{{ route('admin.cars.featured', $car) }}" method="POST">
-                    @csrf
-                    <button type="submit" class="px-3 py-2 bg-giallo/20 hover:bg-giallo text-giallo hover:text-nero border border-giallo/40 text-xs font-heading uppercase rounded font-bold transition-premium">
-                        ⭐ Jadikan Featured
-                    </button>
-                </form>
-            @endif
-
-            <a href="{{ route('admin.cars.edit', $car) }}" class="px-4 py-2 bg-steel hover:bg-steel/80 border border-gunmetal text-silver-bright text-xs font-heading uppercase tracking-wider rounded transition-premium">
-                ✏️ Edit
-            </a>
-
-            <form action="{{ route('admin.cars.destroy', $car) }}" method="POST" onsubmit="return confirm('Hapus unit mobil ini secara permanen?')">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="px-4 py-2 bg-danger/10 hover:bg-danger text-danger hover:text-white border border-danger/30 text-xs font-heading uppercase tracking-wider rounded transition-premium">
-                    🗑 Hapus
-                </button>
-            </form>
+            @endcan
         </div>
     </div>
 
@@ -59,9 +63,11 @@
                     <h3 class="font-heading text-xs uppercase tracking-wider text-giallo font-bold flex items-center gap-2">
                         <span>📸</span> Galeri Foto Unit ({{ $car->photos ? $car->photos->count() : 0 }})
                     </h3>
-                    <a href="{{ route('admin.cars.edit', $car) }}" class="text-[11px] text-silver-dim hover:text-giallo font-heading uppercase">
-                        Kelola di Form Edit &rarr;
-                    </a>
+                    @can('update', $car)
+                        <a href="{{ route('admin.cars.edit', $car) }}" class="text-[11px] text-silver-dim hover:text-giallo font-heading uppercase">
+                            Kelola di Form Edit &rarr;
+                        </a>
+                    @endcan
                 </div>
 
                 @if($car->photos && $car->photos->count() > 0)
@@ -127,9 +133,9 @@
                 </p>
             </div>
 
-            {{-- Offers / Penawaran --}}
+            {{-- Orders / Pesanan Masuk --}}
             <div class="panel border border-gunmetal bg-carbon p-5">
-                <h3 class="font-heading text-xs uppercase tracking-wider text-silver-bright mb-3">Penawaran Masuk ({{ $car->offers ? $car->offers->count() : 0 }})</h3>
+                <h3 class="font-heading text-xs uppercase tracking-wider text-silver-bright mb-3">Pesanan Masuk ({{ $car->offers ? $car->offers->count() : 0 }})</h3>
                 @if($car->offers && $car->offers->count() > 0)
                     <div class="space-y-2">
                         @foreach($car->offers as $offer)
@@ -139,14 +145,14 @@
                                     <p class="font-mono text-[10px] text-silver-dim">{{ $offer->created_at->format('d M Y H:i') }}</p>
                                 </div>
                                 <div class="text-right">
-                                    <p class="font-mono font-bold text-giallo">Rp {{ number_format($offer->offered_price_idr, 0, ',', '.') }}</p>
-                                    <span class="text-[10px] uppercase text-silver-dim">{{ $offer->status }}</span>
+                                    <p class="font-mono font-bold text-giallo">Rp {{ number_format($offer->amount_idr ?? $offer->offered_price_idr ?? 0, 0, ',', '.') }}</p>
+                                    <span class="text-[10px] uppercase text-silver-dim">{{ $offer->status instanceof \App\Enums\OfferStatus ? $offer->status->label() : $offer->status }}</span>
                                 </div>
                             </div>
                         @endforeach
                     </div>
                 @else
-                    <p class="text-xs text-silver-dim">Belum ada penawaran harga untuk unit ini.</p>
+                    <p class="text-xs text-silver-dim">Belum ada pesanan masuk untuk unit ini.</p>
                 @endif
             </div>
         </div>

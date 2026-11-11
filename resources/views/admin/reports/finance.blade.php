@@ -31,15 +31,21 @@
         <a href="{{ route('admin.reports.index') }}" class="px-4 py-2 border-b-2 border-transparent text-silver-dim hover:text-silver-bright font-heading text-xs uppercase tracking-wider transition-premium flex items-center gap-2">
             <span>📊</span> Ikhtisar Utama
         </a>
-        <a href="{{ route('admin.reports.sales') }}" class="px-4 py-2 border-b-2 border-transparent text-silver-dim hover:text-silver-bright font-heading text-xs uppercase tracking-wider transition-premium flex items-center gap-2">
-            <span>🏎</span> Penjualan Supercar
-        </a>
-        <a href="{{ route('admin.reports.workshop') }}" class="px-4 py-2 border-b-2 border-transparent text-silver-dim hover:text-silver-bright font-heading text-xs uppercase tracking-wider transition-premium flex items-center gap-2">
-            <span>🔧</span> Servis & Workshop
-        </a>
-        <a href="{{ route('admin.reports.inventory') }}" class="px-4 py-2 border-b-2 border-transparent text-silver-dim hover:text-silver-bright font-heading text-xs uppercase tracking-wider transition-premium flex items-center gap-2">
-            <span>⚙️</span> Suku Cadang & Stok
-        </a>
+        @if(in_array(auth()->user()->role ?? '', ['super-admin', 'owner', 'manager', 'sales'], true))
+            <a href="{{ route('admin.reports.sales') }}" class="px-4 py-2 border-b-2 border-transparent text-silver-dim hover:text-silver-bright font-heading text-xs uppercase tracking-wider transition-premium flex items-center gap-2">
+                <span>🏎</span> Penjualan Supercar
+            </a>
+        @endif
+        @if(in_array(auth()->user()->role ?? '', ['super-admin', 'owner', 'manager'], true))
+            <a href="{{ route('admin.reports.workshop') }}" class="px-4 py-2 border-b-2 border-transparent text-silver-dim hover:text-silver-bright font-heading text-xs uppercase tracking-wider transition-premium flex items-center gap-2">
+                <span>🔧</span> Servis & Workshop
+            </a>
+        @endif
+        @if(in_array(auth()->user()->role ?? '', ['super-admin', 'owner', 'manager', 'inventory'], true))
+            <a href="{{ route('admin.reports.inventory') }}" class="px-4 py-2 border-b-2 border-transparent text-silver-dim hover:text-silver-bright font-heading text-xs uppercase tracking-wider transition-premium flex items-center gap-2">
+                <span>⚙️</span> Suku Cadang & Stok
+            </a>
+        @endif
         <a href="{{ route('admin.reports.finance') }}" class="px-4 py-2 border-b-2 border-giallo text-giallo font-heading text-xs uppercase tracking-wider flex items-center gap-2 font-bold">
             <span>💳</span> Finansial & Kasir
         </a>

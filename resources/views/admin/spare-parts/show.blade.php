@@ -30,11 +30,11 @@
                     📊 Kartu Stok
                 </a>
             @endif
-            @if(in_array(auth()->user()->role ?? '', ['super-admin', 'inventory'], true))
+            @can('update', $sparePart)
                 <a href="{{ route('admin.spare-parts.edit', $sparePart) }}" class="px-4 py-2 bg-giallo hover:bg-giallo-bright text-carbon font-heading text-xs uppercase tracking-wider font-bold rounded clip-angular-button transition-premium">
                     Edit Data
                 </a>
-            @endif
+            @endcan
         </div>
     </div>
 
@@ -93,20 +93,22 @@
                         <div class="flex flex-col items-center justify-center text-gunmetal p-6 text-center">
                             <span class="text-5xl mb-2">⚙️</span>
                             <span class="text-xs text-silver-dim">Belum ada gambar</span>
-                            <a href="{{ route('admin.spare-parts.edit', $sparePart) }}" class="mt-2 text-xs text-giallo hover:underline font-heading uppercase">
-                                + Tambah Gambar
-                            </a>
+                            @can('update', $sparePart)
+                                <a href="{{ route('admin.spare-parts.edit', $sparePart) }}" class="mt-2 text-xs text-giallo hover:underline font-heading uppercase">
+                                    + Tambah Gambar
+                                </a>
+                            @endcan
                         </div>
                     @endif
                 </div>
                 @if($sparePart->image)
                     <div class="mt-3 flex items-center justify-between text-xs">
                         <span class="text-silver-dim text-[11px]">Foto Katalog</span>
-                        @if(in_array(auth()->user()->role ?? '', ['super-admin', 'inventory'], true))
+                        @can('update', $sparePart)
                             <a href="{{ route('admin.spare-parts.edit', $sparePart) }}" class="text-giallo hover:underline font-heading uppercase text-[11px]">
                                 Ganti / Hapus Foto
                             </a>
-                        @endif
+                        @endcan
                     </div>
                 @endif
             </div>

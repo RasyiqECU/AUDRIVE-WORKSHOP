@@ -1,11 +1,12 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\EmailVerificationController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\InternalLoginController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
-use App\Http\Controllers\Auth\EmailVerificationController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,9 +16,14 @@ use App\Http\Controllers\Auth\EmailVerificationController;
 
 // Guest-only routes
 Route::middleware('guest')->group(function () {
-    // Login
+    // Customer Login (Portal Pelanggan)
     Route::get('/login', [LoginController::class, 'create'])->name('login');
     Route::post('/login', [LoginController::class, 'store']);
+
+    // Internal Staff & Owner Login (Portal Terpisah & Tersembunyi)
+    Route::get('/internal/login', [InternalLoginController::class, 'create'])->name('internal.login');
+    Route::post('/internal/login', [InternalLoginController::class, 'store'])->name('internal.login.store');
+    Route::get('/admin/login', fn () => redirect()->route('internal.login'));
 
     // Register
     Route::get('/register', [RegisterController::class, 'create'])->name('register');

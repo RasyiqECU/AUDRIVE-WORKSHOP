@@ -38,6 +38,7 @@
                 <div>
                     <label class="block font-heading text-xs uppercase tracking-wider text-silver-bright mb-1">Role / Peran *</label>
                     <select name="role" required class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
+                        <option value="owner" {{ old('role') === 'owner' ? 'selected' : '' }}>Business Owner</option>
                         <option value="manager" {{ old('role') === 'manager' ? 'selected' : '' }}>Manager</option>
                         <option value="sales" {{ old('role') === 'sales' ? 'selected' : '' }}>Sales</option>
                         <option value="cashier" {{ old('role') === 'cashier' ? 'selected' : '' }}>Cashier</option>

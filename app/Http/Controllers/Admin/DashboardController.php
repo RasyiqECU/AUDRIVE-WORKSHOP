@@ -22,8 +22,16 @@ class DashboardController extends Controller
     /**
      * Display admin dashboard
      */
-    public function index(): View
+    public function index(Request $request): View
     {
+        $user = $request->user();
+
+        if ($user && $user->role === 'owner') {
+            $ownerData = $this->dashboardService->getOwnerDashboardData($request);
+
+            return view('admin.dashboard.owner', $ownerData);
+        }
+
         $stats = $this->dashboardService->getStats();
         $pendingApprovals = $this->dashboardService->getPendingApprovals();
         $recentActivities = $this->dashboardService->getRecentActivities();

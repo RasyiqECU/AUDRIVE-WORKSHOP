@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -112,6 +112,11 @@ class User extends Authenticatable
         return $this->role === 'super-admin';
     }
 
+    public function isOwner(): bool
+    {
+        return $this->role === 'owner';
+    }
+
     public function isCustomer(): bool
     {
         return $this->role === 'customer';
@@ -125,7 +130,7 @@ class User extends Authenticatable
      */
     public function getOrCreateCustomerProfile(): Customer
     {
-        if (!$this->isCustomer()) {
+        if (! $this->isCustomer()) {
             throw new \LogicException("Cannot create customer profile for user with role: {$this->role}");
         }
 
@@ -135,6 +140,7 @@ class User extends Authenticatable
     public function assignRole(string $role): self
     {
         $this->forceFill(['role' => $role])->save();
+
         return $this;
     }
 

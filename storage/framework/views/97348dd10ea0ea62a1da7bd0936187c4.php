@@ -1,12 +1,14 @@
-<?php $__env->startSection('title', 'Login'); ?>
-
+<?php $__env->startSection('title', 'Login Pelanggan'); ?>
 
 <?php $__env->startSection('content'); ?>
 <div class="space-y-6">
     
-    <div class="text-center mb-8">
-        <h2 class="font-display text-xl text-silver-bright tracking-wider">LOGIN</h2>
-        <p class="font-heading text-xs text-silver-dim uppercase tracking-wider mt-1">Masuk ke akun AUDrive Anda</p>
+    <div class="text-center mb-6">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded border text-[9px] font-heading font-bold uppercase tracking-widest text-silver-bright border-gunmetal bg-steel/30 mb-2">
+            PORTAL PELANGGAN
+        </span>
+        <h2 class="font-display text-xl text-silver-bright tracking-wider">LOGIN CUSTOMER</h2>
+        <p class="font-heading text-xs text-silver-dim tracking-wider mt-1">Masuk untuk melihat unit, jadwal servis, dan invoice Anda</p>
     </div>
 
 

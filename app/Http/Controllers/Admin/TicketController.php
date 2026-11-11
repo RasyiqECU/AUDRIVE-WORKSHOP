@@ -7,13 +7,17 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\SupportTicket;
 use App\Models\User;
-use App\Models\Notification;
+use App\Services\Notification\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class TicketController extends Controller
 {
+    public function __construct(
+        protected NotificationService $notificationService
+    ) {}
+
     public function index(Request $request): View
     {
         $query = SupportTicket::with(['customer.user', 'assignee'])->latest();
@@ -30,21 +34,21 @@ class TicketController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('code', 'like', "%{$search}%")
-                  ->orWhere('subject', 'like', "%{$search}%")
-                  ->orWhereHas('customer.user', function ($uq) use ($search) {
-                      $uq->where('name', 'like', "%{$search}%")
-                         ->orWhere('email', 'like', "%{$search}%");
-                  });
+                    ->orWhere('subject', 'like', "%{$search}%")
+                    ->orWhereHas('customer.user', function ($uq) use ($search) {
+                        $uq->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
             });
         }
 
         $tickets = $query->paginate(15)->withQueryString();
 
         $stats = [
-            'total'       => SupportTicket::count(),
-            'open'        => SupportTicket::where('status', 'open')->count(),
+            'total' => SupportTicket::count(),
+            'open' => SupportTicket::where('status', 'open')->count(),
             'in_progress' => SupportTicket::where('status', 'in_progress')->count(),
-            'resolved'    => SupportTicket::where('status', 'resolved')->count(),
+            'resolved' => SupportTicket::where('status', 'resolved')->count(),
         ];
 
         return view('admin.tickets.index', compact('tickets', 'stats'));
@@ -62,43 +66,43 @@ class TicketController extends Controller
     {
         $request->validate([
             'message' => 'required|string|max:3000',
-            'status'  => 'nullable|string|in:open,in_progress,resolved,closed',
+            'status' => 'nullable|string|in:open,in_progress,resolved,closed',
         ]);
 
         $user = $request->user();
 
         $ticket->messages()->create([
-            'user_id'     => $user->id,
+            'user_id' => $user->id,
             'sender_type' => 'staff',
-            'message'     => $request->message,
+            'message' => $request->message,
         ]);
 
         $updates = [];
         if ($request->filled('status')) {
             $updates['status'] = $request->status;
-            if ($request->status === 'resolved' && !$ticket->resolved_at) {
+            if ($request->status === 'resolved' && ! $ticket->resolved_at) {
                 $updates['resolved_at'] = now();
             }
         } elseif ($ticket->status->value === 'open') {
             $updates['status'] = 'in_progress';
         }
 
-        if (!$ticket->assigned_to) {
+        if (! $ticket->assigned_to) {
             $updates['assigned_to'] = $user->id;
         }
 
-        if (!empty($updates)) {
+        if (! empty($updates)) {
             $ticket->update($updates);
         }
 
         // Kirim notifikasi ke customer
-        if ($ticket->customer && $ticket->customer->user_id) {
-            Notification::create([
-                'user_id' => $ticket->customer->user_id,
-                'title'   => 'Balasan Tiket Support #' . $ticket->code,
+        if ($ticket->customer && $ticket->customer->user) {
+            $this->notificationService->send($ticket->customer->user, 'ticket_reply', [
+                'title' => 'Balasan Tiket Support #'.$ticket->code,
                 'message' => "Tim AUDrive telah membalas tiket Anda: '{$ticket->subject}'",
-                'type'    => 'ticket_reply',
-                'data'    => ['ticket_id' => $ticket->id, 'code' => $ticket->code],
+                'ticket_id' => $ticket->id,
+                'code' => $ticket->code,
+                'action_url' => route('customer.tickets.index'),
             ]);
         }
 
@@ -108,7 +112,7 @@ class TicketController extends Controller
     public function updateStatus(Request $request, SupportTicket $ticket): RedirectResponse
     {
         $request->validate([
-            'status'      => 'required|string|in:open,in_progress,resolved,closed',
+            'status' => 'required|string|in:open,in_progress,resolved,closed',
             'assigned_to' => 'nullable|exists:users,id',
         ]);
 

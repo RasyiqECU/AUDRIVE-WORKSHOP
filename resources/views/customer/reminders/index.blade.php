@@ -20,6 +20,25 @@
         </a>
     </div>
 
+    {{-- Active system reminders --}}
+    @if($activeReminders->isNotEmpty())
+        <div class="panel border border-giallo/40 bg-giallo/5 p-4 space-y-3">
+            <p class="font-heading text-xs uppercase tracking-[0.2em] text-giallo flex items-center gap-2">
+                🔔 {{ $activeReminders->count() }} Pengingat Aktif dari Sistem
+            </p>
+            @foreach($activeReminders as $reminder)
+                <div class="flex items-start justify-between gap-3 bg-carbon border border-gunmetal rounded p-3">
+                    <div>
+                        <p class="text-xs text-silver-bright font-heading font-semibold">{{ $reminder->data['title'] ?? 'Pengingat Servis' }}</p>
+                        <p class="text-[11px] text-silver-dim mt-0.5">{{ $reminder->data['message'] ?? '' }}</p>
+                    </div>
+                    <span class="text-[10px] font-mono text-silver-dim whitespace-nowrap">{{ $reminder->created_at->format('d M Y') }}</span>
+                </div>
+            @endforeach
+            <p class="text-[10px] text-silver-dim">Gunakan tombol "Abaikan Notifikasi" pada kartu kendaraan di bawah untuk menonaktifkan reminder terkait.</p>
+        </div>
+    @endif
+
     {{-- Alert Reminders list --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         @forelse($vehicles as $vehicle)

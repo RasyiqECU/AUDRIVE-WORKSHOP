@@ -1,7 +1,7 @@
 <?php
 
-
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,39 +14,39 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-
 // Health Check — Endpoint monitoring
 Route::get('/health', function () {
     return response()->json([
-        'status'    => 'ok',
+        'status' => 'ok',
         'timestamp' => now()->toISOString(),
-        'version'   => config('app.version', '1.0.0'),
+        'version' => config('app.version', '1.0.0'),
         'environment' => app()->environment(),
-        'timezone'  => config('app.timezone'),
+        'timezone' => config('app.timezone'),
     ]);
 })->name('health.check');
 
-
 // Public Pages
-Route::get('/', [\App\Http\Controllers\HomeController::class, 'index'])->name('home');
-Route::get('/about', function () { return view('pages.about'); })->name('about');
-Route::get('/contact', function () { return view('pages.contact'); })->name('contact');
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/about', function () {
+    return view('pages.about');
+})->name('about');
+Route::get('/contact', function () {
+    return view('pages.contact');
+})->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.send');
 
 // Generic Dashboard Redirect (Role-based)
 Route::get('/dashboard', function () {
     $user = auth()->user();
-    if (!$user) {
+    if (! $user) {
         return redirect()->route('login');
     }
 
-    return match($user->role) {
-        'super-admin', 'manager', 'sales', 'cashier', 'inventory', 'mechanic' => redirect()->route('admin.dashboard'),
+    return match ($user->role) {
+        'super-admin', 'owner', 'manager', 'sales', 'cashier', 'inventory', 'mechanic' => redirect()->route('admin.dashboard'),
         default => redirect()->route('customer.dashboard'),
     };
 })->middleware(['auth'])->name('dashboard');
-
-
 
 // Load modular route files (web middleware group)
 Route::middleware('web')->group(function () {
@@ -56,19 +56,14 @@ Route::middleware('web')->group(function () {
     require base_path('routes/spare-parts.php');
 });
 
-
 // Admin Panel Routes
 Route::prefix('admin')
     ->name('admin.')
-    ->middleware(['auth', 'role:super-admin|manager|sales|cashier|inventory|mechanic'])
+    ->middleware(['auth', 'role:super-admin|owner|manager|sales|cashier|inventory|mechanic'])
     ->group(base_path('routes/admin.php'));
-
 
 // Customer Portal Routes
 Route::prefix('customer')
     ->name('customer.')
     ->middleware(['auth', 'role:customer'])
     ->group(base_path('routes/customer.php'));
-
-
-

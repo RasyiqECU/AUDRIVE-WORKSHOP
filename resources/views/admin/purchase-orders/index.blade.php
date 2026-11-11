@@ -63,12 +63,21 @@
                             <td class="p-3 font-sans text-silver-dim">{{ $po->creator?->name ?? 'System' }}</td>
                             <td class="p-3 text-right text-silver-bright">Rp {{ number_format($po->total_cost_idr ?? 0, 0, ',', '.') }}</td>
                             <td class="p-3">
+                                @php
+                                    $poStatusVal = $po->status instanceof \App\Enums\PurchaseOrderStatus 
+                                        ? $po->status->value 
+                                        : (string) $po->status;
+                                    $poStatusLabel = $po->status instanceof \App\Enums\PurchaseOrderStatus 
+                                        ? $po->status->label() 
+                                        : ucwords(str_replace('_', ' ', $poStatusVal));
+                                @endphp
                                 <span class="px-2 py-0.5 text-[10px] uppercase rounded font-bold
-                                    @if($po->status === 'received') bg-emerald-950/60 text-emerald-400 border border-emerald-800
-                                    @elseif($po->status === 'sent') bg-blue-950/60 text-blue-400 border border-blue-800
-                                    @elseif($po->status === 'cancelled') bg-red-950/60 text-red-400 border border-red-800
+                                    @if($poStatusVal === 'received') bg-emerald-950/60 text-emerald-400 border border-emerald-800
+                                    @elseif($poStatusVal === 'sent') bg-blue-950/60 text-blue-400 border border-blue-800
+                                    @elseif($poStatusVal === 'partially_received') bg-amber-950/60 text-amber-400 border border-amber-800
+                                    @elseif($poStatusVal === 'cancelled') bg-red-950/60 text-red-400 border border-red-800
                                     @else bg-steel text-silver-dim border border-gunmetal @endif">
-                                    {{ str_replace('_', ' ', $po->status) }}
+                                    {{ $poStatusLabel }}
                                 </span>
                             </td>
                             <td class="p-3 text-silver-dim text-[11px]">{{ $po->created_at->format('d M Y') }}</td>

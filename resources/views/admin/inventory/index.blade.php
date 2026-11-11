@@ -21,9 +21,11 @@
                     ⚠️ Low Stock ({{ $lowStockCount }})
                 </a>
             @endif
-            <a href="{{ route('admin.inventory.create') }}" class="px-4 py-2 bg-giallo hover:bg-giallo-bright text-carbon font-heading text-xs uppercase tracking-wider font-bold rounded clip-angular-button transition-premium">
-                + Tambah Spare Part
-            </a>
+            @can('create', \App\Models\SparePart::class)
+                <a href="{{ route('admin.spare-parts.create') }}" class="px-4 py-2 bg-giallo hover:bg-giallo-bright text-carbon font-heading text-xs uppercase tracking-wider font-bold rounded clip-angular-button transition-premium">
+                    + Tambah Spare Part
+                </a>
+            @endcan
         </div>
     </div>
 

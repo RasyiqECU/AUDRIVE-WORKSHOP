@@ -14,12 +14,13 @@ class RoleMiddleware
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return redirect()->route('login');
         }
 
-        if (!$user->is_active) {
+        if (! $user->is_active) {
             auth()->logout();
+
             return redirect()->route('login')->withErrors(['email' => 'Akun Anda sedang dinonaktifkan. Silakan hubungi Super Admin.']);
         }
 
@@ -45,6 +46,7 @@ class RoleMiddleware
             if ($userRole === 'mechanic') {
                 return redirect()->route('workshop.index');
             }
+
             return redirect()->route('admin.dashboard');
         }
 
@@ -53,15 +55,8 @@ class RoleMiddleware
             return $next($request);
         }
 
-        // Manager memiliki akses ke semua menu admin/staf kecuali yang dikhususkan hanya untuk super-admin
-        if ($userRole === 'manager') {
-            if (!in_array('super-admin', $allowedRoles, true) || in_array('manager', $allowedRoles, true)) {
-                return $next($request);
-            }
-        }
-
         // Cek apakah role pengguna termasuk dalam role yang diizinkan
-        if (in_array($userRole, $allowedRoles, true)) {
+        if (empty($allowedRoles) || in_array($userRole, $allowedRoles, true)) {
             return $next($request);
         }
 

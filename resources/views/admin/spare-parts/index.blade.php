@@ -25,11 +25,11 @@
                     📦 Cek Inventori
                 </a>
             @endif
-            @if(in_array(auth()->user()->role ?? '', ['super-admin', 'inventory'], true))
+            @can('create', \App\Models\SparePart::class)
                 <a href="{{ route('admin.spare-parts.create') }}" class="px-4 py-2 bg-giallo hover:bg-giallo-bright text-carbon font-heading text-xs uppercase tracking-wider font-bold rounded clip-angular-button transition-premium">
                     + Tambah Spare Part
                 </a>
-            @endif
+            @endcan
         </div>
     </div>
 
@@ -110,11 +110,11 @@
                                 <a href="{{ route('admin.spare-parts.show', $part) }}" class="text-xs text-silver-dim hover:text-silver-bright">
                                     Detail
                                 </a>
-                                @if(in_array(auth()->user()->role ?? '', ['super-admin', 'inventory'], true))
+                                @can('update', $part)
                                     <a href="{{ route('admin.spare-parts.edit', $part) }}" class="text-xs text-giallo hover:underline font-heading uppercase font-semibold">
                                         Edit
                                     </a>
-                                @endif
+                                @endcan
                             </td>
                         </tr>
                     @empty

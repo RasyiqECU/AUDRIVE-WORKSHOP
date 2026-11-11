@@ -16,9 +16,11 @@
             <p class="font-mono text-xs text-giallo">{{ $invoice->number }}</p>
         </div>
         <div class="flex items-center gap-2">
-            <a href="{{ route('admin.pos.print', $salesOrder) }}" target="_blank" class="px-3.5 py-2 bg-steel/60 hover:bg-steel border border-gunmetal text-silver-bright font-heading text-xs uppercase tracking-wider rounded flex items-center gap-1.5 transition-premium" title="Cetak struk kasir thermal 80mm">
-                <span>🖨️</span> Struk Thermal
-            </a>
+            @if(in_array(auth()->user()->role ?? '', ['super-admin', 'cashier'], true))
+                <a href="{{ route('admin.pos.print', $salesOrder) }}" target="_blank" class="px-3.5 py-2 bg-steel/60 hover:bg-steel border border-gunmetal text-silver-bright font-heading text-xs uppercase tracking-wider rounded flex items-center gap-1.5 transition-premium" title="Cetak struk kasir thermal 80mm">
+                    <span>🖨️</span> Struk Thermal
+                </a>
+            @endif
             <button onclick="window.print()" class="px-3.5 py-2 bg-steel/60 hover:bg-steel border border-gunmetal text-silver-bright font-heading text-xs uppercase tracking-wider rounded flex items-center gap-1.5 transition-premium" title="Cetak Faktur A4">
                 <span>🖨️</span> Cetak A4
             </button>

@@ -1,11 +1,8 @@
 <?php
 
-
 declare(strict_types=1);
 
-
 namespace App\Services;
-
 
 use App\Enums\CarUnitStatus;
 use App\Enums\PaymentStatus;
@@ -25,8 +22,8 @@ use App\Models\StockMovement;
 use App\Models\WorkOrder;
 use App\Services\Notification\Contracts\NotificationServiceContract;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-
 
 class PosService
 {
@@ -44,17 +41,14 @@ class PosService
                     ->lockForUpdate()
                     ->first();
 
-
-                if (!$part) {
-                    throw new \Exception("Spare part tidak ditemukan.");
+                if (! $part) {
+                    throw new \Exception('Spare part tidak ditemukan.');
                 }
-
 
                 if ($part->stock < $item['qty']) {
                     throw new \Exception("Stok tidak cukup untuk {$part->name}. Tersedia: {$part->stock}");
                 }
             }
-
 
             // Calculate subtotal
             $subtotal = 0;
@@ -63,11 +57,9 @@ class PosService
                 $subtotal += $part->price_idr * $item['qty'];
             }
 
-
             // Calculate tax and total
             $tax = (int) (($subtotal - $discountIdr) * 0.11); // 11% tax
             $total = $subtotal - $discountIdr + $tax;
-
 
             // Create sales order
             $salesOrder = SalesOrder::create([
@@ -85,13 +77,11 @@ class PosService
                 'created_by' => $userId,
             ]);
 
-
             // Create sales order items and reduce stock
             foreach ($items as $item) {
                 $part = SparePart::where('id', $item['spare_part_id'])
                     ->lockForUpdate()
                     ->first();
-
 
                 // Create sales order item
                 SalesOrderItem::create([
@@ -104,10 +94,8 @@ class PosService
                     'subtotal_idr' => $part->price_idr * $item['qty'],
                 ]);
 
-
                 // Reduce stock
                 $part->decrement('stock', $item['qty']);
-
 
                 // Create stock movement
                 StockMovement::create([
@@ -121,7 +109,6 @@ class PosService
                 ]);
             }
 
-
             // Create payment
             Payment::create([
                 'paymentable_type' => SalesOrder::class,
@@ -129,28 +116,25 @@ class PosService
                 'method' => $paymentMethod,
                 'status' => PaymentStatus::Success,
                 'amount_idr' => $total,
-                'reference' => 'POS-' . strtoupper(Str::random(10)),
+                'reference' => 'POS-'.strtoupper(Str::random(10)),
                 'paid_at' => now(),
             ]);
-
 
             // Create invoice
             Invoice::create([
                 'invoiceable_type' => SalesOrder::class,
                 'invoiceable_id' => $salesOrder->id,
-                'number' => 'INV-' . date('Ymd') . '-' . strtoupper(Str::random(6)),
+                'number' => 'INV-'.date('Ymd').'-'.strtoupper(Str::random(6)),
                 'status' => 'paid',
                 'due_at' => now(),
                 'total_idr' => $total,
             ]);
-
 
             // Add loyalty points if customer is logged in
             if ($customer) {
                 $points = (int) (($subtotal - $discountIdr) / 10000); // 1 point per Rp 10.000
                 if ($points > 0) {
                     $customer->increment('loyalty_points', $points);
-
 
                     $customer->loyaltyTransactions()->create([
                         'type' => 'earning',
@@ -160,13 +144,27 @@ class PosService
                         'description' => "Poin dari transaksi POS #{$salesOrder->code}",
                     ]);
                 }
-            }
 
+                // Notifikasi Pembayaran Berhasil ke Customer
+                try {
+                    $customerUser = $customer->user;
+                    if ($customerUser) {
+                        app(NotificationServiceContract::class)->send($customerUser, 'payment_success', [
+                            'title' => "Pembayaran Berhasil: #{$salesOrder->code}",
+                            'message' => 'Pembayaran sebesar Rp '.number_format($total, 0, ',', '.')." untuk pesanan POS #{$salesOrder->code} telah berhasil diproses di kasir.",
+                            'order_code' => $salesOrder->code,
+                            'amount' => $total,
+                            'action_url' => route('customer.invoices.index'),
+                        ]);
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('Gagal mengirim notifikasi pembayaran POS: '.$e->getMessage());
+                }
+            }
 
             return $salesOrder;
         });
     }
-
 
     public function createWorkOrderPayment(
         WorkOrder $workOrder,
@@ -178,7 +176,7 @@ class PosService
             $workOrder->load(['items.sparePart', 'vehicle.customer', 'serviceBooking.customer']);
 
             if ($workOrder->total_idr <= 0) {
-                throw new \InvalidArgumentException("Total Work Order harus lebih besar dari 0.");
+                throw new \InvalidArgumentException('Total Work Order harus lebih besar dari 0.');
             }
 
             // Cek apakah transaksi sudah pernah dibuat
@@ -209,7 +207,7 @@ class PosService
                 'total_idr' => $total,
                 'paid_idr' => $total,
                 'payment_status' => PaymentStatus::Success,
-                'notes' => "Pembayaran Work Order #{$workOrder->code} - Metode: " . strtoupper($paymentMethod),
+                'notes' => "Pembayaran Work Order #{$workOrder->code} - Metode: ".strtoupper($paymentMethod),
                 'created_by' => $userId,
             ]);
 
@@ -233,7 +231,7 @@ class PosService
                 'method' => $paymentMethod,
                 'status' => PaymentStatus::Success,
                 'amount_idr' => $total,
-                'reference' => 'WO-' . strtoupper(Str::random(10)),
+                'reference' => 'WO-'.strtoupper(Str::random(10)),
                 'paid_at' => now(),
             ]);
 
@@ -241,7 +239,7 @@ class PosService
             Invoice::create([
                 'invoiceable_type' => SalesOrder::class,
                 'invoiceable_id' => $salesOrder->id,
-                'number' => 'INV-WO-' . date('Ymd') . '-' . strtoupper(Str::random(6)),
+                'number' => 'INV-WO-'.date('Ymd').'-'.strtoupper(Str::random(6)),
                 'status' => 'paid',
                 'due_at' => now(),
                 'total_idr' => $total,
@@ -275,42 +273,42 @@ class PosService
 
             // Catat ke Audit Log
             AuditLog::create([
-                'user_id'     => auth()->id() ?? $userId,
-                'action'      => 'status_changed',
-                'model_type'  => 'work_order',
-                'model_id'    => $workOrder->id,
-                'old_values'  => ['status' => $oldStatus->value ?? (string) $oldStatus],
-                'new_values'  => ['status' => 'delivered'],
-                'description' => "Work Order #{$workOrder->code} status changed from " . ($oldStatus->value ?? (string) $oldStatus) . " to delivered",
+                'user_id' => auth()->id() ?? $userId,
+                'action' => 'status_changed',
+                'model_type' => 'work_order',
+                'model_id' => $workOrder->id,
+                'old_values' => ['status' => $oldStatus->value ?? (string) $oldStatus],
+                'new_values' => ['status' => 'delivered'],
+                'description' => "Work Order #{$workOrder->code} status changed from ".($oldStatus->value ?? (string) $oldStatus).' to delivered',
             ]);
 
             // Notifikasi ke Customer & Mekanik terkait
             $customerUser = $workOrder->vehicle?->customer?->user ?? $workOrder->serviceBooking?->customer?->user;
-            $vehicleName = $workOrder->vehicle ? ($workOrder->vehicle->brand . ' ' . $workOrder->vehicle->model . ' (' . $workOrder->vehicle->plate_number . ')') : 'Kendaraan Pelanggan';
+            $vehicleName = $workOrder->vehicle ? ($workOrder->vehicle->brand.' '.$workOrder->vehicle->model.' ('.$workOrder->vehicle->plate_number.')') : 'Kendaraan Pelanggan';
 
             try {
                 $notifService = app(NotificationServiceContract::class);
                 if ($customerUser) {
                     $notifService->send($customerUser, 'work_order_delivered', [
-                        'title'           => "Pembayaran Diterima & Kendaraan Diserahkan: {$vehicleName}",
-                        'message'         => "Pembayaran servis {$vehicleName} (WO #{$workOrder->code}) sebesar Rp " . number_format($total, 0, ',', '.') . " telah berhasil diproses di kasir. Kendaraan telah resmi diserahterimakan.",
-                        'vehicle'         => $vehicleName,
+                        'title' => "Pembayaran Diterima & Kendaraan Diserahkan: {$vehicleName}",
+                        'message' => "Pembayaran servis {$vehicleName} (WO #{$workOrder->code}) sebesar Rp ".number_format($total, 0, ',', '.').' telah berhasil diproses di kasir. Kendaraan telah resmi diserahterimakan.',
+                        'vehicle' => $vehicleName,
                         'work_order_code' => $workOrder->code,
-                        'action_url'      => route('workshop.tracking.show', $workOrder->id),
+                        'action_url' => route('workshop.tracking.show', $workOrder->id),
                     ]);
                 }
 
                 if ($workOrder->mechanic) {
                     $notifService->send($workOrder->mechanic, 'work_order_delivered', [
-                        'title'           => "Unit WO #{$workOrder->code} Telah Lunas & Diserahkan",
-                        'message'         => "Kendaraan {$vehicleName} (WO #{$workOrder->code}) telah lunas dibayar di Kasir dan resmi diserahterimakan kepada pelanggan.",
-                        'vehicle'         => $vehicleName,
+                        'title' => "Unit WO #{$workOrder->code} Telah Lunas & Diserahkan",
+                        'message' => "Kendaraan {$vehicleName} (WO #{$workOrder->code}) telah lunas dibayar di Kasir dan resmi diserahterimakan kepada pelanggan.",
+                        'vehicle' => $vehicleName,
                         'work_order_code' => $workOrder->code,
-                        'action_url'      => route('admin.work-orders.show', $workOrder->id),
+                        'action_url' => route('admin.work-orders.show', $workOrder->id),
                     ]);
                 }
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::warning("Gagal mengirim notifikasi POS: " . $e->getMessage());
+                Log::warning('Gagal mengirim notifikasi POS: '.$e->getMessage());
             }
 
             return $salesOrder;
@@ -323,7 +321,7 @@ class PosService
         string $paymentMethod,
         int $userId
     ): SalesOrder {
-        return DB::transaction(function () use ($salesOrder, $discountIdr, $paymentMethod, $userId) {
+        return DB::transaction(function () use ($salesOrder, $discountIdr, $paymentMethod) {
             $salesOrder->load(['items', 'customer']);
 
             if ($salesOrder->status === SalesOrderStatus::Paid) {
@@ -340,7 +338,7 @@ class PosService
                 'total_idr' => $total,
                 'paid_idr' => $total,
                 'payment_status' => PaymentStatus::Success,
-                'notes' => trim(($salesOrder->notes ?? '') . " | Lunas via " . strtoupper($paymentMethod)),
+                'notes' => trim(($salesOrder->notes ?? '').' | Lunas via '.strtoupper($paymentMethod)),
             ]);
 
             // Update status unit mobil ke Sold (Terjual)
@@ -357,7 +355,7 @@ class PosService
                 'method' => $paymentMethod,
                 'status' => PaymentStatus::Success,
                 'amount_idr' => $total,
-                'reference' => 'CAR-' . strtoupper(Str::random(10)),
+                'reference' => 'CAR-'.strtoupper(Str::random(10)),
                 'paid_at' => now(),
             ]);
 
@@ -365,7 +363,7 @@ class PosService
             Invoice::create([
                 'invoiceable_type' => SalesOrder::class,
                 'invoiceable_id' => $salesOrder->id,
-                'number' => 'INV-CAR-' . date('Ymd') . '-' . strtoupper(Str::random(6)),
+                'number' => 'INV-CAR-'.date('Ymd').'-'.strtoupper(Str::random(6)),
                 'status' => 'paid',
                 'due_at' => now(),
                 'total_idr' => $total,
@@ -384,6 +382,22 @@ class PosService
                         'description' => "Poin dari transaksi pembelian mobil #{$salesOrder->code}",
                     ]);
                 }
+
+                // Notifikasi Pembayaran Berhasil ke Customer
+                try {
+                    $customerUser = $salesOrder->customer->user;
+                    if ($customerUser) {
+                        app(NotificationServiceContract::class)->send($customerUser, 'payment_success', [
+                            'title' => "Pembayaran Berhasil: #{$salesOrder->code}",
+                            'message' => 'Pembayaran sebesar Rp '.number_format($total, 0, ',', '.')." untuk pembelian mobil #{$salesOrder->code} telah berhasil diproses di kasir. Unit resmi menjadi milik Anda.",
+                            'order_code' => $salesOrder->code,
+                            'amount' => $total,
+                            'action_url' => route('customer.invoices.index'),
+                        ]);
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('Gagal mengirim notifikasi pembayaran mobil: '.$e->getMessage());
+                }
             }
 
             return $salesOrder;
@@ -393,13 +407,9 @@ class PosService
     protected function generateOrderCode(): string
     {
         do {
-            $code = 'POS-' . date('Ymd') . '-' . strtoupper(Str::random(6));
+            $code = 'POS-'.date('Ymd').'-'.strtoupper(Str::random(6));
         } while (SalesOrder::where('code', $code)->exists());
-
 
         return $code;
     }
 }
-
-
-

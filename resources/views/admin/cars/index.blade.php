@@ -14,9 +14,11 @@
                 Katalog supercar & mobil premium yang tersedia di showroom dan marketplace AUDrive
             </p>
         </div>
-        <a href="{{ route('admin.cars.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-giallo hover:bg-arancio text-nero font-heading font-bold text-xs uppercase tracking-wider transition-premium shadow-lg shadow-giallo/20 clip-angular-button shrink-0">
-            <span>+</span> Tambah Unit Mobil
-        </a>
+        @can('create', \App\Models\CarUnit::class)
+            <a href="{{ route('admin.cars.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-giallo hover:bg-arancio text-nero font-heading font-bold text-xs uppercase tracking-wider transition-premium shadow-lg shadow-giallo/20 clip-angular-button shrink-0">
+                <span>+</span> Tambah Unit Mobil
+            </a>
+        @endcan
     </div>
 
     {{-- Filter & Search --}}
@@ -102,9 +104,11 @@
                                 <a href="{{ route('admin.cars.show', $car) }}" class="px-2.5 py-1 bg-steel/50 hover:bg-giallo hover:text-nero border border-gunmetal text-silver-bright font-heading text-[10px] uppercase rounded transition-premium">
                                     Detail
                                 </a>
-                                <a href="{{ route('admin.cars.edit', $car) }}" class="px-2.5 py-1 bg-steel/30 hover:bg-steel border border-gunmetal text-silver-dim hover:text-silver-bright font-heading text-[10px] uppercase rounded transition-premium">
-                                    Edit
-                                </a>
+                                @can('update', $car)
+                                    <a href="{{ route('admin.cars.edit', $car) }}" class="px-2.5 py-1 bg-steel/30 hover:bg-steel border border-gunmetal text-silver-dim hover:text-silver-bright font-heading text-[10px] uppercase rounded transition-premium">
+                                        Edit
+                                    </a>
+                                @endcan
                             </td>
                         </tr>
                     @empty

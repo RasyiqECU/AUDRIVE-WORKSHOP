@@ -4,6 +4,7 @@
     $role = $user->role ?? 'admin';
     $roleBadges = [
         'super-admin' => ['label' => 'SUPER ADMIN', 'color' => 'text-giallo border-giallo/40 bg-giallo/10'],
+        'owner'       => ['label' => 'BUSINESS OWNER', 'color' => 'text-amber-400 border-amber-400/40 bg-amber-400/10'],
         'manager'     => ['label' => 'OPERATIONS MANAGER', 'color' => 'text-silver-bright border-silver-dim/40 bg-steel/20'],
         'sales'       => ['label' => 'SALES EXECUTIVE', 'color' => 'text-arancio border-arancio/40 bg-arancio/10'],
         'inventory'   => ['label' => 'INVENTORY OFFICER', 'color' => 'text-verde border-verde/40 bg-verde/10'],
@@ -36,11 +37,14 @@
         
         <a href="<?php echo e(route('admin.dashboard')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.dashboard') ? 'active' : ''); ?>">
             <span class="text-sm">⬡</span>
-            <span class="font-heading text-xs font-medium tracking-wide">Dashboard <?php echo e(ucfirst($role === 'super-admin' ? 'Executive' : $role)); ?></span>
+            <span class="font-heading text-xs font-medium tracking-wide">
+                <?php echo e($role === 'owner' ? 'Executive Dashboard' : 'Dashboard ' . ucfirst($role === 'super-admin' ? 'Executive' : $role)); ?>
+
+            </span>
         </a>
 
         
-        <?php if(in_array($role, ['super-admin', 'manager', 'sales'], true)): ?>
+        <?php if(in_array($role, ['super-admin', 'sales'], true)): ?>
             <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Showroom & Penjualan</p>
 
             <a href="<?php echo e(route('admin.cars.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.cars.*') ? 'active' : ''); ?>">
@@ -49,8 +53,8 @@
             </a>
 
             <a href="<?php echo e(route('admin.offers.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.offers.*') ? 'active' : ''); ?>">
-                <span class="text-sm">💬</span>
-                <span class="font-heading text-xs font-medium tracking-wide">Penawaran Masuk</span>
+                <span class="text-sm">📋</span>
+                <span class="font-heading text-xs font-medium tracking-wide">Pesanan Masuk</span>
             </a>
 
             <?php
@@ -76,32 +80,39 @@
         <?php endif; ?>
 
         
-        <?php if(in_array($role, ['super-admin', 'manager', 'sales', 'cashier', 'mechanic'], true)): ?>
+        <?php if(in_array($role, ['super-admin', 'manager', 'cashier', 'mechanic'], true)): ?>
             <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Workshop & Servis</p>
 
-            <a href="<?php echo e(route('admin.service-bookings.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.service-bookings.*') ? 'active' : ''); ?>">
-                <span class="text-sm">📅</span>
-                <span class="font-heading text-xs font-medium tracking-wide">Booking Servis</span>
+            
+            <?php if(in_array($role, ['super-admin', 'cashier'], true)): ?>
+                <a href="<?php echo e(route('admin.service-bookings.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.service-bookings.*') ? 'active' : ''); ?>">
+                    <span class="text-sm">📅</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">Booking Servis</span>
+                </a>
+            <?php endif; ?>
+
+            <a href="<?php echo e(route('admin.work-orders.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.work-orders.*') ? 'active' : ''); ?>">
+                <span class="text-sm">🔧</span>
+                <span class="font-heading text-xs font-medium tracking-wide"><?php echo e($role === 'mechanic' ? 'Work Order Saya' : 'Work Order & Antrean'); ?></span>
             </a>
 
-            <?php if(in_array($role, ['super-admin', 'manager', 'cashier', 'mechanic'], true)): ?>
-                <a href="<?php echo e(route('admin.work-orders.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.work-orders.*') ? 'active' : ''); ?>">
-                    <span class="text-sm">🔧</span>
-                    <span class="font-heading text-xs font-medium tracking-wide">Work Order & Antrean</span>
+            
+            <?php if(in_array($role, ['super-admin', 'mechanic'], true)): ?>
+                <a href="<?php echo e(route('admin.ai-scans.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.ai-scans.*') ? 'active' : ''); ?>">
+                    <span class="text-sm">🔊</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">AI Sound Scan</span>
                 </a>
             <?php endif; ?>
         <?php endif; ?>
 
         
-        <?php if(in_array($role, ['super-admin', 'manager', 'cashier', 'sales'], true)): ?>
-            <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Kasir & Finansial</p>
+        <?php if(in_array($role, ['super-admin', 'cashier'], true)): ?>
+            <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Point of Sale</p>
 
-            <?php if(in_array($role, ['super-admin', 'manager', 'cashier'], true)): ?>
-                <a href="<?php echo e(route('admin.pos.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.pos.*') ? 'active' : ''); ?>">
-                    <span class="text-sm">💳</span>
-                    <span class="font-heading text-xs font-medium tracking-wide">Point of Sales (POS)</span>
-                </a>
-            <?php endif; ?>
+            <a href="<?php echo e(route('admin.pos.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.pos.*') ? 'active' : ''); ?>">
+                <span class="text-sm">💳</span>
+                <span class="font-heading text-xs font-medium tracking-wide">POS Kasir</span>
+            </a>
 
             <a href="<?php echo e(route('admin.invoices.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.invoices.*') ? 'active' : ''); ?>">
                 <span class="text-sm">🧾</span>
@@ -110,25 +121,15 @@
         <?php endif; ?>
 
         
-        <?php if(in_array($role, ['super-admin', 'manager', 'sales', 'mechanic'], true)): ?>
-            <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">AI & Teknologi</p>
-
-            <a href="<?php echo e(route('admin.ai-scans.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.ai-scans.*') ? 'active' : ''); ?>">
-                <span class="text-sm">🔊</span>
-                <span class="font-heading text-xs font-medium tracking-wide">AI Sound Scan</span>
-            </a>
-        <?php endif; ?>
-
-        
-        <?php if(in_array($role, ['super-admin', 'manager', 'inventory', 'mechanic'], true)): ?>
-            <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Inventori & Logistik</p>
+        <?php if(in_array($role, ['super-admin', 'inventory', 'mechanic'], true)): ?>
+            <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Gudang & Inventori</p>
 
             <a href="<?php echo e(route('admin.spare-parts.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.spare-parts.*') ? 'active' : ''); ?>">
                 <span class="text-sm">⚙️</span>
                 <span class="font-heading text-xs font-medium tracking-wide">Katalog Spare Part</span>
             </a>
 
-            <?php if(in_array($role, ['super-admin', 'manager', 'inventory'], true)): ?>
+            <?php if(in_array($role, ['super-admin', 'inventory'], true)): ?>
                 <a href="<?php echo e(route('admin.inventory.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.inventory.*') ? 'active' : ''); ?>">
                     <span class="text-sm">📦</span>
                     <span class="font-heading text-xs font-medium tracking-wide">Stok & Movement</span>
@@ -142,58 +143,87 @@
         <?php endif; ?>
 
         
-        <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">CRM & Laporan</p>
+        <?php if(in_array($role, ['super-admin', 'sales'], true)): ?>
+            <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">CRM & Komunikasi</p>
 
-        <?php if(in_array($role, ['super-admin', 'manager', 'sales'], true)): ?>
-            <?php
-                $unreadMessagesCount = \App\Models\ContactMessage::where('status', 'unread')->count();
-            ?>
-            <a href="<?php echo e(route('admin.contact-messages.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.contact-messages.*') ? 'active' : ''); ?> flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <span class="text-sm">📬</span>
-                    <span class="font-heading text-xs font-medium tracking-wide">Pesan Customer</span>
-                </div>
-                <?php if($unreadMessagesCount > 0): ?>
-                    <span class="px-1.5 py-0.5 bg-giallo/20 border border-giallo/40 text-giallo text-[10px] font-mono font-bold rounded animate-pulse">
-                        <?php echo e($unreadMessagesCount); ?>
+            <?php if(in_array($role, ['super-admin', 'sales'], true)): ?>
+                <?php
+                    $unreadMessagesCount = \App\Models\ContactMessage::where('status', 'unread')->count();
+                ?>
+                <a href="<?php echo e(route('admin.contact-messages.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.contact-messages.*') ? 'active' : ''); ?> flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm">📬</span>
+                        <span class="font-heading text-xs font-medium tracking-wide">Pesan Customer</span>
+                    </div>
+                    <?php if($unreadMessagesCount > 0): ?>
+                        <span class="px-1.5 py-0.5 bg-giallo/20 border border-giallo/40 text-giallo text-[10px] font-mono font-bold rounded animate-pulse">
+                            <?php echo e($unreadMessagesCount); ?>
 
-                    </span>
-                <?php endif; ?>
-            </a>
+                        </span>
+                    <?php endif; ?>
+                </a>
 
-            <?php
-                $openTicketsCount = \App\Models\SupportTicket::where('status', 'open')->count();
-            ?>
-            <a href="<?php echo e(route('admin.tickets.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.tickets.*') ? 'active' : ''); ?> flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <span class="text-sm">🎫</span>
-                    <span class="font-heading text-xs font-medium tracking-wide">Tiket Layanan</span>
-                </div>
-                <?php if($openTicketsCount > 0): ?>
-                    <span class="px-1.5 py-0.5 bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-mono font-bold rounded animate-pulse">
-                        <?php echo e($openTicketsCount); ?>
+                <?php
+                    $openTicketsCount = \App\Models\SupportTicket::where('status', 'open')->count();
+                ?>
+                <a href="<?php echo e(route('admin.tickets.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.tickets.*') ? 'active' : ''); ?> flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm">🎫</span>
+                        <span class="font-heading text-xs font-medium tracking-wide">Tiket Layanan</span>
+                    </div>
+                    <?php if($openTicketsCount > 0): ?>
+                        <span class="px-1.5 py-0.5 bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-mono font-bold rounded animate-pulse">
+                            <?php echo e($openTicketsCount); ?>
 
-                    </span>
-                <?php endif; ?>
+                        </span>
+                    <?php endif; ?>
+                </a>
+            <?php endif; ?>
+
+            
+            <?php if($role === 'super-admin'): ?>
+                <a href="<?php echo e(route('admin.loyalty.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.loyalty.*') ? 'active' : ''); ?>">
+                    <span class="text-sm">👑</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">Program Loyalitas</span>
+                </a>
+            <?php endif; ?>
+
+            
+            <?php if($role === 'super-admin'): ?>
+                <a href="<?php echo e(route('admin.customers.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.customers.*') ? 'active' : ''); ?>">
+                    <span class="text-sm">👥</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">Database Pelanggan</span>
+                </a>
+            <?php endif; ?>
+        <?php endif; ?>
+
+        
+        <?php if(in_array($role, ['sales', 'cashier', 'inventory'], true)): ?>
+            <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Pengajuan & Persetujuan</p>
+
+            <a href="<?php echo e(route('admin.approvals.create')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.approvals.create', 'admin.approvals.store') ? 'active' : ''); ?>">
+                <span class="text-sm">✍️</span>
+                <span class="font-heading text-xs font-medium tracking-wide">Ajukan Approval</span>
             </a>
         <?php endif; ?>
 
-        <?php if(in_array($role, ['super-admin', 'manager', 'sales', 'cashier'], true)): ?>
-            <a href="<?php echo e(route('admin.loyalty.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.loyalty.*') ? 'active' : ''); ?>">
-                <span class="text-sm">👑</span>
-                <span class="font-heading text-xs font-medium tracking-wide">Program Loyalitas</span>
-            </a>
+        
+        <?php if(in_array($role, ['super-admin', 'manager', 'sales', 'cashier', 'inventory'], true)): ?>
+            <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Laporan</p>
 
-            <a href="<?php echo e(route('admin.customers.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.customers.*') ? 'active' : ''); ?>">
-                <span class="text-sm">👥</span>
-                <span class="font-heading text-xs font-medium tracking-wide">Database Pelanggan</span>
+            <a href="<?php echo e(route('admin.reports.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.reports.*') ? 'active' : ''); ?>">
+                <span class="text-sm">📊</span>
+                <span class="font-heading text-xs font-medium tracking-wide">
+                    <?php echo e(match(true) {
+                        $role === 'sales' => 'Laporan Penjualan',
+                        $role === 'cashier' => 'Laporan Shift',
+                        $role === 'inventory' => 'Laporan Inventori',
+                        default => 'Laporan Performa',
+                    }); ?>
+
+                </span>
             </a>
         <?php endif; ?>
-
-        <a href="<?php echo e(route('admin.reports.index')); ?>" class="sidebar-item <?php echo e(request()->routeIs('admin.reports.*') ? 'active' : ''); ?>">
-            <span class="text-sm">📊</span>
-            <span class="font-heading text-xs font-medium tracking-wide">Laporan Performa</span>
-        </a>
 
         
         <?php if(in_array($role, ['super-admin', 'manager'], true)): ?>
