@@ -53,6 +53,30 @@ def _scale(features: np.ndarray) -> np.ndarray:
     return features
 
 
+def _yamnet_embedding(bundle: dict, features_dict: dict) -> np.ndarray | None:
+    """Waveform 16 kHz → embedding YAMNet (1024,). None jika frontend tidak aktif."""
+    yam = bundle.get("yamnet")
+    if not yam or not yam[0]:
+        return None
+    kind, obj = yam
+    wave = features_dict.get("waveform_16k")
+    if wave is None:
+        logger.warning("waveform_16k tidak ada di features — pipeline YAMNet dilewati.")
+        return None
+    wave = np.asarray(wave, dtype=np.float32).reshape(-1)
+    try:
+        if kind == "onnx":
+            # yamnet.onnx diekspor dengan TensorSpec [None] → input harus rank-1
+            out = obj.run(None, {obj.get_inputs()[0].name: wave})[0]
+            return np.asarray(out, dtype=np.float32).reshape(-1)
+        # fallback TF-Hub runtime: module(wave) → (scores, embeddings, logmel)
+        _, emb, _ = obj(wave)
+        return emb.numpy().mean(axis=0).astype(np.float32)
+    except Exception as e:
+        logger.warning(f"YAMNet embedding gagal ({e}) — fallback pipeline lama.")
+        return None
+
+
 def _build_feature_vector(features_dict: dict) -> np.ndarray:
     """
     Susun vektor fitur mentah sesuai jumlah yang dibutuhkan scaler/model.
@@ -260,7 +284,16 @@ def predict(features_dict: dict, quality_info: dict) -> dict:
     classes = get_classes()
 
     # Feature selection — susun sesuai dimensi yang diharapkan model
-    raw_features = _build_feature_vector(features_dict)
+    mel_features = None
+    if backend == "onnx":
+        # Model CNN Mel-Spectrogram menerima Log-Mel yang di-flatten (27.648 fitur);
+        # model head YAMNet menerima embedding 1024 — frontend yamnet.onnx dipakai
+        # jika tersedia, fallback ke pipeline lama bila tidak.
+        mel_features = np.asarray(features_dict["mel_spectrogram"]).flatten()
+        embedding    = _yamnet_embedding(bundle, features_dict)
+        raw_features = embedding if embedding is not None else mel_features
+    else:
+        raw_features = _build_feature_vector(features_dict)
     scaled       = _scale(raw_features)
 
     # Inference
@@ -276,6 +309,39 @@ def predict(features_dict: dict, quality_info: dict) -> dict:
     else:
         probs = _infer_dummy(scaled)
     inference_ms = round((time.perf_counter() - t0) * 1000, 2)
+
+    # ── Tahap 1: Gate "mesin / bukan mesin" (hanya backend onnx, jika tersedia) ──
+    # Mencegah suara mesin asli salah dilabel 'not an engine', dan memfilter
+    # rekaman yang benar-benar bukan suara mesin sebelum klasifikasi kerusakan.
+    probs_stage2 = probs.copy()
+    gate = bundle.get("gate")
+    if backend == "onnx" and gate is not None:
+        try:
+            gname  = gate.get_inputs()[0].name
+            # Gate dilatih pada Mel 27648 — selalu pakai mel, bukan embedding
+            gate_in = mel_features if mel_features is not None else scaled
+            gout    = gate.run(None, {gname: gate_in.astype(np.float32).reshape(1, -1)})[0][0]
+            p_none = float(gout[0])   # probabilitas "bukan mesin"
+            if "not an engine" in classes:
+                idx_ne = classes.index("not an engine")
+                others = probs_stage2.copy()
+                others[idx_ne] = 0.0
+                if others.sum() > 0:
+                    others = others / others.sum()
+                if p_none > (1.0 - config.GATE_THRESHOLD):
+                    # Gate yakin BUKAN mesin → paksa kelas 'not an engine'
+                    probs = others * (1.0 - p_none)
+                    probs[idx_ne] = p_none
+                elif probs_stage2[idx_ne] >= config.GATE_THRESHOLD:
+                    # Head sendiri yakin bukan mesin (≥ threshold) → pertahankan
+                    # 'not an engine'. JANGAN dimask: masking saat head yakin
+                    # hanya memaksa fault palsu pada suara non-mesin yang lolos gate.
+                    probs = probs_stage2
+                else:
+                    # Gate lolos & head tidak yakin → mask 'not an engine'
+                    probs = others
+        except Exception as e:
+            logger.warning(f"Gate gagal dijalankan ({e}) — lanjut tanpa gate.")
 
     # Normalisasi ke probabilitas
     if probs.max() > 1.0:

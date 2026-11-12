@@ -1,0 +1,39 @@
+{
+  "model": "engine_fault_detector_v3 (yamnet transfer learning)",
+  "created": "2026-11-11 20:33:24",
+  "classes": [
+    "bad ignition",
+    "dead battery",
+    "knocking",
+    "low oil",
+    "misfire",
+    "normal",
+    "not an engine",
+    "power steering",
+    "serpentine belt"
+  ],
+  "gate": {
+    "file": "engine_gate.onnx",
+    "output": "gate_probabilities",
+    "meaning": [
+      "bukan_mesin",
+      "mesin"
+    ],
+    "threshold": 0.5,
+    "input": "mel 27648 (tidak berubah)"
+  },
+  "head": {
+    "file": "model.onnx",
+    "input": "yamnet_embedding",
+    "dim": 1024,
+    "output": "class_probabilities"
+  },
+  "frontend": {
+    "file": "yamnet.onnx",
+    "input": "waveform",
+    "sr": 16000,
+    "samples": 80000,
+    "output": "embedding 1024 (mean frames)"
+  },
+  "framework": "yamnet (tf-hub) → onnx (opset 17)"
+}

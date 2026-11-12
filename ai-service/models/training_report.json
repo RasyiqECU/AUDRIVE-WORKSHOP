@@ -1,0 +1,17 @@
+{
+  "created": "2026-11-11 20:33:24",
+  "stage2_fault_accuracy": 0.5,
+  "classes": [
+    "bad ignition",
+    "dead battery",
+    "knocking",
+    "low oil",
+    "misfire",
+    "normal",
+    "not an engine",
+    "power steering",
+    "serpentine belt"
+  ],
+  "stage2_yamnet_accuracy": 0.869,
+  "pipeline": "waveform16k \u2192 yamnet.onnx \u2192 embedding 1024 \u2192 model.onnx (head) ; gate tetap mel 27648"
+}

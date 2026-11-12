@@ -26,6 +26,9 @@ PYTORCH_FILE     = CORE_DIR / "model.pth"
 KERAS_FILE       = CORE_DIR / "model.keras"
 XGB_FILE         = CORE_DIR / "xgb_model.joblib"       # XGBoost/XGBClassifier joblib
 ONNX_FILE        = UNIVERSAL_DIR / "model.onnx"
+GATE_FILE        = UNIVERSAL_DIR / "engine_gate.onnx"   # gate "mesin / bukan mesin" (2 tahap)
+YAMNET_FILE      = UNIVERSAL_DIR / "yamnet.onnx"        # frontend embedding YAMNet (opsional)
+TFHUB_YAMNET_DIR = MODELS_DIR / "yamnet_tfhub"          # fallback runtime TF-Hub (tanpa internet)
 TFLITE_FILE      = EDGE_DIR / "model.tflite"
 
 # ─── Backend Engine: "xgboost" | "onnx" | "pytorch" | "keras" | "dummy" ─────
@@ -68,6 +71,11 @@ URGENCY_MAP = {
 # ─── Ambang Batas Confidence untuk Auto Manual Review ────────────────────────
 CONFIDENCE_THRESHOLD   = 0.60   # Di bawah ini → status manual_review
 QUALITY_THRESHOLD      = 0.40   # Di bawah ini → minta ulang rekaman
+
+# ─── Ambang Gate "mesin / bukan mesin" (model 2 tahap) ───────────────────────
+# Probabilitas "mesin" di bawah nilai ini → hasil 'not an engine'.
+# Turunkan (mis. 0.30) jika rekaman asli sering salah dilabel 'bukan mesin'.
+GATE_THRESHOLD = float(os.getenv("GATE_THRESHOLD", "0.50"))
 
 # ─── Parameter Ekstraksi Audio ────────────────────────────────────────────────
 SAMPLE_RATE   = 22050

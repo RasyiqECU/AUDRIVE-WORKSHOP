@@ -200,10 +200,18 @@ def preprocess_audio(audio_bytes: bytes) -> dict:
 
     spectral = extract_spectral_features(y, sr)
 
+    # Waveform 16 kHz × 5 detik (80000 sampel) — input frontend YAMNet
+    # (y sudah 22050 Hz mono hasil load_audio; resample ke 16000)
+    import librosa as _lb
+    y16 = _lb.resample(y, orig_sr=config.SAMPLE_RATE, target_sr=16000)
+    y16 = y16[:16000 * config.DURATION] if len(y16) > 16000 * config.DURATION \
+        else np.pad(y16, (0, 16000 * config.DURATION - len(y16)))
+
     return {
         "mfcc":             extract_mfcc(y, sr),
         "mel_spectrogram":  extract_mel_spectrogram(y, sr),
         "mel_3d":           extract_mel_spectrogram(y, sr)[np.newaxis, ...],
+        "waveform_16k":     y16.astype(np.float32),
         "spectral":         spectral,
         "spectrogram_path": save_spectrogram_image(y, sr),
         "duration_sec":     len(y) / sr,
