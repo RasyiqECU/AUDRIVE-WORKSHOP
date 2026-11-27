@@ -234,6 +234,8 @@ class DemoDataSeeder extends Seeder
             ['Ferrari', '488 Pista', 2020, 6_900_000_000, 'ferrari f8 tributo.jpg', '2025-06-11', 3],
             ['BMW', 'M5 CS', 2023, 3_100_000_000, 'bmwm8_c.jpg', '2025-12-03', 4],
             ['Audi', 'RS e-tron GT', 2024, 2_900_000_000, 'audi r8 v10 plus.jpg', '2026-05-22', 0],
+            ['Lamborghini', 'Aventador S', 2021, 7_900_000_000, 'lamborghini huracan evo.jpg', '2026-11-09', 2],
+            ['Porsche', '911 GT3', 2023, 4_300_000_000, 'porsche 911 turbo s.jpg', '2026-11-21', 4],
         ];
         foreach ($dealer as [$brand, $model, $year, $price, $image, $date, $buyer]) {
             $at = Carbon::parse($date)->setTime(13, 0);
