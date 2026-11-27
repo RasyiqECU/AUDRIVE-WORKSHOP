@@ -39,7 +39,8 @@ class SalesOrderItem extends Model
 
     public function carUnit(): BelongsTo
     {
-        return $this->belongsTo(CarUnit::class);
+        // Riwayat penjualan tetap menampilkan unit yang sudah diarsipkan
+        return $this->belongsTo(CarUnit::class)->withTrashed();
     }
 
     public function sparePart(): BelongsTo

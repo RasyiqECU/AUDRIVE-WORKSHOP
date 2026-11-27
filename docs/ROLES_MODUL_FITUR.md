@@ -40,8 +40,9 @@ Terdapat **8 role**. Role disimpan di kolom `role` pada tabel `users`, dan juga 
 | `mechanic` | Internal | Mekanik. Akses **Work Order** (update status, item servis/parts, selesaikan), **review hasil AI Scan suara mesin**, lihat katalog suku cadang & booking servis. Tidak akses penjualan/finance. |
 | `customer` | Pelanggan | Pelanggan via portal publik: marketplace (test drive, offer/negosiasi, jual mobil ke dealer), booking servis & tracking, AI Scan, e-commerce suku cadang, kendaraan, tiket, loyalitas, voucher, invoice, review. |
 
-Akun demo (setelah `db:seed`, password: `password`):
-`admin@audrive.local`, `owner@audrive.local`, `manager@audrive.local`, `sales@audrive.local`, `mechanic@audrive.local`, `cashier@audrive.local`, `inventory@audrive.local`, `customer@audrive.local`.
+Akun demo (password: `password`), dibuat lewat `php artisan demo:reset` (menghapus semua akun dan transaksi, katalog mobil dan spare part disimpan):
+`superadmin@gmail.com`, `manager@gmail.com`, `owner@gmail.com`, `mekanik1@gmail.com`, `mekanik2@gmail.com`, `sales@gmail.com`, `kasir@gmail.com`, `inventory@gmail.com`, `customer1@gmail.com` s/d `customer5@gmail.com`.
+Staf login di `/internal/login`, customer di `/login`.
 
 ---
 

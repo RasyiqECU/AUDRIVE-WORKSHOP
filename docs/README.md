@@ -50,10 +50,9 @@ php artisan serve          # (terminal 2)
 php artisan queue:work     # (terminal 3) wajib untuk AI scan & job lain
 ```
 
-Akun demo (setelah `db:seed`, password: `password`):
-`admin@audrive.local`, `manager@audrive.local`, `sales@audrive.local`,
-`mechanic@audrive.local`, `cashier@audrive.local`, `inventory@audrive.local`,
-`customer@audrive.local`.
+Akun demo (password: `password`), dibuat lewat `php artisan demo:reset` (menghapus semua akun dan transaksi, katalog mobil dan spare part disimpan):
+`superadmin@gmail.com`, `manager@gmail.com`, `owner@gmail.com`, `mekanik1@gmail.com`, `mekanik2@gmail.com`, `sales@gmail.com`, `kasir@gmail.com`, `inventory@gmail.com`, `customer1@gmail.com` s/d `customer5@gmail.com`.
+Staf login di `/internal/login`, customer di `/login`.
 
 ## Menjalankan AI Service (Python)
 
