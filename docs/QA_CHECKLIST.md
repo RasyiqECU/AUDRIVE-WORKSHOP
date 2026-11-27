@@ -1,83 +1,53 @@
-# AUDrive QA & Hardening Checklist
+# AUDrive — QA Checklist
 
-> Status faktual per **8 November 2026**. Item ✅ = terverifikasi ada/bekerja di
-> repo; item ⬜ = **belum diimplementasikan** (roadmap), tidak bisa ditandai selesai.
+Status per **28 November 2026**. ✔ = terverifikasi, ☐ = belum ada atau belum dilakukan.
 
-## Ringkasan Test Suite (Pest)
+## Test suite
 
-- **83 test** • **80 passed** • **3 skipped** • **242 assertions** (hasil `composer test`)
-- Database test: **MySQL khusus `audrive_test`** — terpisah dari database aplikasi
-  `audrive`, setiap run di-refresh (`RefreshDatabase` → `migrate:fresh`).
+- **256 test: 253 lulus, 3 dilewati, 2.324 assertion.**
+- Perintah: `php -d memory_limit=1G vendor/bin/pest --compact`
+- Database `audrive_test` (MySQL), dikosongkan tiap dijalankan. Jangan memakai
+  database ini untuk keperluan lain saat test berjalan.
 
-### 1. Route Validation ✅
-- [x] Route admin dilindungi middleware auth + role
-- [x] Route customer dilindungi middleware auth
-- [x] Route API menggunakan prefix /api/v1
-- [x] Health check endpoint tersedia
+## Sudah tercakup
 
-### 2. Form Request Validation ✅
-- [x] Validasi lengkap per-area (StoreCarUnit, StoreOffer, StoreTestDrive,
-      StoreServiceBooking, StoreAiScan, StoreCartItem, Checkout, StoreVehicle, dst.)
+- ✔ Akses route per role dan menu sidebar tidak menuju halaman terlarang
+- ✔ Panduan hak akses sama dengan jumlah menu sidebar
+- ✔ Login terpisah, rate limit, CSRF, validasi dan keamanan unggahan
+- ✔ Pembayaran transfer, stok terkunci, pesanan kedaluwarsa
+- ✔ Servis, konfirmasi part, klaim garansi, titip jual, booking mobil
+- ✔ Approval diskon, refund sebagian dan penuh
+- ✔ Aturan omzet, rekap per Sales, Laporan Shift, angka dashboard Owner
 
-### 3. Policy Authorization ✅
-- [x] AiScanPolicy, CarUnitPolicy, OfferPolicy, AppointmentPolicy, WorkOrderPolicy,
-      SparePartPolicy, SalesOrderPolicy, PurchaseOrderPolicy, dst. terdaftar
-      di `AppServiceProvider`
+## Masalah yang diketahui
 
-### 4. Eager Loading & N+1 Prevention ✅ (tercover test)
+- ☐ **Email notifikasi tidak terkirim:** kelas di `app/Mail/` belum dibuat.
+  Notifikasi di dalam aplikasi berjalan.
+- ☐ **`composer audit`:** 15 advisory pada 7 package (Laravel & Symfony); belum
+  diperbarui.
+- ☐ **Nomor WhatsApp berbeda** di halaman mobil, spare part, dan kontak.
+- ☐ **`demo:reset` gagal pada database tanpa katalog** mobil dan spare part,
+  setelah tabel terlanjur dikosongkan.
+- ☐ Refund penuh tidak mengembalikan stok, poin loyalitas, atau status mobil.
+- ☐ Kode yang tidak dipakai: `FinanceService`/`FinanceController` (belum mengikuti
+  aturan omzet) dan driver payment gateway.
+- ☐ Tampilan dan interaksi di browser belum diuji otomatis.
+- ☐ `APP_DEBUG=true` di contoh environment; wajib `false` di production.
 
-### 5. Input Validation Consistency ✅
-- [x] Price integer IDR, tanggal `Y-m-d`, jam `H:i`, backed enum
+## Belum ada
 
-### 6. CSRF Protection ✅ (tercover test forms)
+- ☐ CI/CD, PHPStan, laporan coverage
+- ☐ Dokumentasi API (OpenAPI) dan skema database
+- ☐ Test untuk AI service
+- ☐ Docker
 
-### 7. Rate Limiting ✅ (login & API — tercover test)
+## Sebelum deploy
 
-### 8. File Upload Security ✅ (tercover test tipe & ukuran file)
-
-### 9–12. Authorization & Security Hardening ✅ (tercover QAHardeningTest)
-
-### 13. Testing Coverage ✅
-- [x] AuthTest, ApiTest, MarketplaceTest, WorkshopTest, SparePart/InvoiceRevamp,
-      SupportServicesTest, QAHardeningTest, WorkshopTest
-
-### 14. CI/CD Pipeline ⬜ **belum ada**
-- [ ] GitHub Actions workflow
-- [ ] Code style check Pint otomatis
-- [ ] Static analysis PHPStan (tidak ter-install)
-- [ ] Security audit (`composer audit`) otomatis
-- [ ] Coverage reporting
-- [ ] Staging/production deployment
-
-### 15. Documentation ✅ / ⬜
-- [x] README dengan setup instructions (`docs/README.md`)
-- [x] Struktur & konteks project (`docs/STRUCTURE.md`, `docs/AUDrive_Context.md`)
-- [x] Environment variables kunci didokumentasikan
-- [ ] API documentation (.openapi/blueprint — belum ada)
-- [ ] Database schema documentation terpusat (tersedia `php artisan db:table`, belum ada doc)
-- [ ] Deployment guide
-
-## 🐛 Known Issues (faktual)
-
-- CI/CD, PHPStan, Horizon monitoring: **belum ada** di project.
-- `docker/` masih placeholder kosong.
-- Test suite memerlukan MySQL XAMPP berjalan (test DB `audrive_test`).
-
-## 📊 Test Coverage
-
-- Hasil terukur: 83 test / 242 assertions (80 pass, 3 skip)
-- Target coverage 80% + laporan coverage: **belum disetel** (Xdebug/PCOV + codecov belum ada)
-
-## 🚀 Deployment Checklist
-
-- [ ] Environment variables production tersusun
-- [ ] Database migration + seeder production
-- [ ] Queue workers berjalan (`php artisan queue:work` / supervisor)
-- [ ] `php artisan storage:link` dijalankan
-- [ ] SSL & domain terkonfigurasi
-- [ ] Monitoring & backup strategy
-- [ ] (Opsional masa depan) Horizon + Redis queue
-
----
-
-Last updated: 2026-11-08 — dikoreksi agar mencerminkan kondisi repo sebenarnya.
+- ☐ `APP_ENV=production`, `APP_DEBUG=false`, HTTPS
+- ☐ Perbarui dependency (`composer audit` bersih)
+- ☐ `php artisan migrate --force` (jangan jalankan seeder demo)
+- ☐ `php artisan storage:link`
+- ☐ Cron `schedule:run` dan supervisor untuk `queue:work`
+- ☐ Rekening tujuan asli di Konfigurasi Sistem
+- ☐ Ganti semua password akun demo
+- ☐ Backup database dan `storage/app`
