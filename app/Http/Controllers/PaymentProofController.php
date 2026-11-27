@@ -43,7 +43,7 @@ class PaymentProofController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('parts.orders.show', $order)
+        return redirect()->to($order->customerUrl())
             ->with('success', 'Bukti transfer terkirim. Kasir akan memverifikasi.');
     }
 

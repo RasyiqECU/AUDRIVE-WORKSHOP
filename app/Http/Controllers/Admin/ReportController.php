@@ -102,7 +102,7 @@ class ReportController extends Controller
 
         $workshopRevenue = (int) (clone $salesQuery)->where('type', SalesOrderType::Service)->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])->sum('total_idr');
         $completedWorkOrders = (clone $woQuery)->where('status', WorkOrderStatus::Completed)->count();
-        $activeWorkOrders = (clone $woQuery)->whereIn('status', [WorkOrderStatus::Queued, WorkOrderStatus::InProgress])->count();
+        $activeWorkOrders = (clone $woQuery)->whereIn('status', [WorkOrderStatus::Queued, WorkOrderStatus::InProgress, WorkOrderStatus::WaitingPartConfirmation])->count();
 
         $sparePartRevenue = (int) (clone $salesQuery)->whereIn('type', [SalesOrderType::SparePart, SalesOrderType::Pos])->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])->sum('total_idr');
 
@@ -243,7 +243,7 @@ class ReportController extends Controller
 
         // Workshop Analytics for filtered dataset
         $completedRepairs = (clone $query)->where('status', WorkOrderStatus::Completed)->count();
-        $activeRepairs = (clone $query)->whereIn('status', [WorkOrderStatus::Queued, WorkOrderStatus::InProgress])->count();
+        $activeRepairs = (clone $query)->whereIn('status', [WorkOrderStatus::Queued, WorkOrderStatus::InProgress, WorkOrderStatus::WaitingPartConfirmation])->count();
         $totalWorkshopRevenue = (int) (clone $query)->where('status', WorkOrderStatus::Completed)->sum('total_idr');
         $totalJasaRevenue = (int) (clone $query)->where('status', WorkOrderStatus::Completed)->sum('total_jasa_idr');
         $totalPartRevenue = (int) (clone $query)->where('status', WorkOrderStatus::Completed)->sum('total_part_idr');

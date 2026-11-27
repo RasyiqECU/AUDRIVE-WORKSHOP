@@ -45,6 +45,7 @@
                     @if(! $item->inventory_checked_at && in_array($role, ['super-admin', 'inventory'], true))
                         <form method="POST" action="{{ route('admin.part-requests.check', $item) }}">
                             @csrf
+                            <input type="number" name="install_fee_idr" min="0" placeholder="Jasa pasang bila bawa sendiri" class="bg-nero border border-gunmetal px-2 py-1.5 text-silver-bright">
                             <button type="submit" class="px-3 py-1.5 bg-giallo text-nero font-heading font-bold text-[10px] uppercase rounded">Stok &amp; Harga Sudah Dicek</button>
                         </form>
                     @endif

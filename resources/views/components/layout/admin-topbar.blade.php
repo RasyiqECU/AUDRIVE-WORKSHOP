@@ -45,13 +45,13 @@
         try {
             if ($topbarRole === 'mechanic') {
                 $stat1Label = 'WO Saya';
-                $stat1Value = \App\Models\WorkOrder::whereIn('status', ['queued', 'in_progress'])
+                $stat1Value = \App\Models\WorkOrder::whereIn('status', ['queued', 'in_progress', 'waiting_part_confirmation'])
                     ->where('assigned_mechanic_id', $topbarUser->id)
                     ->count();
                 $stat1Link = route('admin.work-orders.index');
 
                 $stat2Label = 'Antrean Bengkel';
-                $stat2Value = \App\Models\WorkOrder::whereIn('status', ['queued', 'in_progress'])->count();
+                $stat2Value = \App\Models\WorkOrder::whereIn('status', ['queued', 'in_progress', 'waiting_part_confirmation'])->count();
                 $stat2Color = 'text-giallo';
                 $stat2Link = route('admin.work-orders.index');
             } elseif ($topbarRole === 'sales') {
@@ -115,7 +115,7 @@
             } else {
                 // Super Admin
                 $stat1Label = 'WO Active';
-                $stat1Value = \App\Models\WorkOrder::whereIn('status', ['queued', 'in_progress'])->count();
+                $stat1Value = \App\Models\WorkOrder::whereIn('status', ['queued', 'in_progress', 'waiting_part_confirmation'])->count();
                 $stat1Color = 'text-giallo';
                 $stat1Link = route('admin.work-orders.index');
 

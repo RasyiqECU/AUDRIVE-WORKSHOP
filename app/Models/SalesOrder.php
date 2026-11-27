@@ -124,6 +124,14 @@ class SalesOrder extends Model
         return $this->total_idr - $this->paid_idr;
     }
 
+    /** Halaman tempat customer memantau pesanan ini. */
+    public function customerUrl(): string
+    {
+        return $this->work_order_id
+            ? route('workshop.tracking.show', $this->work_order_id)
+            : route('parts.orders.show', $this->id);
+    }
+
     public function isOnlineTransfer(): bool
     {
         return $this->payment_channel === 'online_transfer';

@@ -70,7 +70,7 @@
         @endif
 
         <div class="text-center pt-3 border-t border-gunmetal/40">
-            <a href="{{ route('parts.orders.show', $salesOrder) }}" class="text-giallo underline">Detail pesanan</a>
+            <a href="{{ $salesOrder->customerUrl() }}" class="text-giallo underline">Detail pesanan</a>
         </div>
     </div>
 </section>

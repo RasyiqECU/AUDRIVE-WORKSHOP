@@ -88,6 +88,7 @@ class FinanceService
             WorkOrderStatus::Booking,
             WorkOrderStatus::Queued,
             WorkOrderStatus::InProgress,
+            WorkOrderStatus::WaitingPartConfirmation,
         ])->count();
 
         $bookingsToday = ServiceBooking::whereDate('preferred_date', today())

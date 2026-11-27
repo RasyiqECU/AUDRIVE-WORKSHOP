@@ -78,7 +78,7 @@ test('flow penuh: check-in → WO → usul part → cek gudang → konfirmasi �
 
     // Selama menunggu konfirmasi, tidak bisa masuk QC
     $this->actingAs($mechanic)->patch(route('admin.work-orders.status', $workOrder), ['status' => 'quality_control']);
-    expect($workOrder->fresh()->status)->toBe(WorkOrderStatus::InProgress);
+    expect($workOrder->fresh()->status)->toBe(WorkOrderStatus::WaitingPartConfirmation);
 
     // 4. Sales tidak bisa mencatat sebelum gudang mengecek
     $this->actingAs($sales)->post(route('admin.part-requests.decide', $item), ['decision' => 'buy'])->assertSessionHas('error');
