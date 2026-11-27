@@ -128,6 +128,7 @@ class DemoDataSeeder extends Seeder
         }
 
         $this->alignDocumentDates();
+        $this->call(DemoSupportDataSeeder::class);
     }
 
     /** Ribuan notifikasi lama tidak berguna dan mengotori log. */
