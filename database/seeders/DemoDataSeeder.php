@@ -41,6 +41,9 @@ use Illuminate\Support\Str;
  */
 class DemoDataSeeder extends Seeder
 {
+    /** Penanda unit arsip buatan seeder, supaya reset berikutnya bisa menghapusnya. */
+    public const ARCHIVE_NOTE = 'Unit arsip penjualan (data demo).';
+
     /** Foto asli di public/images untuk tiap unit katalog (id => file). */
     private const CAR_IMAGES = [
         1 => ['636266983p.jpg', 'images.jpg'],
@@ -114,6 +117,7 @@ class DemoDataSeeder extends Seeder
 
         $this->carHistory();
         $this->monthlyHistory();
+        $this->crossMonthPayment();
         $this->currentWork();
 
         Carbon::setTestNow();
@@ -252,7 +256,7 @@ class DemoDataSeeder extends Seeder
                 'price_sell_idr' => $price,
                 'status' => CarUnitStatus::Available,
                 'condition' => 'used',
-                'description' => 'Unit arsip penjualan (data demo).',
+                'description' => self::ARCHIVE_NOTE,
             ]);
             $this->attachPhotos($car->id, [$this->copyImage($image, "cars/{$car->id}")]);
 
@@ -317,7 +321,9 @@ class DemoDataSeeder extends Seeder
         $this->actAs('kasir');
         app(PosService::class)->payCarSalesOrder($order, 0, 'transfer', $this->staff['kasir']->id);
 
-        DB::table('sales_orders')->where('id', $order->id)->update(['handed_over_at' => $at->copy()->addDay()]);
+        // Sales yang melakukan serah terima
+        DB::table('sales_orders')->where('id', $order->id)
+            ->update(['handed_over_at' => $at->copy()->addDay(), 'sales_id' => $this->staff['sales']->id]);
     }
 
     // ── Servis & spare part bulanan ──
@@ -511,6 +517,23 @@ class DemoDataSeeder extends Seeder
             [['spare_part_id' => $this->consumables[mt_rand(0, count($this->consumables) - 1)], 'qty' => mt_rand(1, 4)]],
             $customer, 0, 'cash', $this->staff['kasir']->id
         );
+    }
+
+    /** Dipesan akhir Oktober, lunas awal November: omzetnya masuk November. */
+    private function crossMonthPayment(): void
+    {
+        $customer = $this->customers[1];
+        $order = $this->checkout($customer, Carbon::create(2026, 10, 31, 20), 'online_transfer');
+        Carbon::setTestNow(Carbon::create(2026, 10, 31, 21));
+        $proof = $this->uploadProof($order, $customer);
+
+        Carbon::setTestNow(Carbon::create(2026, 11, 2, 9));
+        $this->actAs('kasir');
+        app(PaymentVerificationService::class)->approve($proof, $this->staff['kasir']);
+        DB::table('sales_orders')->where('id', $order->id)->update([
+            'prepared_at' => Carbon::create(2026, 11, 2, 13),
+            'handed_over_at' => Carbon::create(2026, 11, 3, 10),
+        ]);
     }
 
     // ── Pekerjaan yang masih berjalan (untuk pengetesan) ──

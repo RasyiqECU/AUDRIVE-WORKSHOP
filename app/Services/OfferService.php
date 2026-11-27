@@ -13,6 +13,7 @@ use App\Models\Customer;
 use App\Models\Offer;
 use App\Models\SalesOrder;
 use App\Models\SalesOrderItem;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class OfferService
@@ -148,6 +149,7 @@ class OfferService
             'payment_status' => 'pending',
             'notes' => "Dibuat dari offer #{$offer->id}",
             'created_by' => $offer->reviewed_by,
+            'sales_id' => User::where('role', 'sales')->whereKey($offer->reviewed_by)->value('id'),
         ]);
 
         // Buat sales order item

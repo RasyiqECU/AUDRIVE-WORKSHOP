@@ -302,3 +302,12 @@ Konfigurasi Sistem → Pembayaran & Pengiriman: rekening tujuan, ongkir, batas b
 - Fitur AI Scan aktif lewat route di `admin.php` (`/admin/ai-scans`) dan `customer.php` (`/customer/ai-scan`).
 - Notifikasi in-app tersedia di kedua portal (list, tandai satu baca, tandai semua baca).
 - Semua route modular dipisah per file di folder `routes/` dan dimuat dari `routes/web.php`.
+
+---
+
+## 8a. Aturan Omzet (28 November 2026)
+
+- Periode laporan mengikuti tanggal lunas (`sales_orders.paid_at`), bukan tanggal pesanan.
+- Omzet (`revenue_idr`) = nilai transaksi. Khusus mobil titip jual: komisi + biaya servis (+ towing bila ada), bukan harga mobil.
+- `sales_id` = Sales yang menangani: penerima penawaran, yang check-in, lalu yang melakukan serah terima. Spare part tanpa Sales masuk "Penjualan Mandiri / Online"; mobil/servis yang belum ditangani masuk "Belum Ditangani Sales".
+- Kolom diisi otomatis oleh model `SalesOrder`; jangan mengubah status lunas lewat query builder.

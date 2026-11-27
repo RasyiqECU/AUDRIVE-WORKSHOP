@@ -81,9 +81,7 @@
                 $stat1Link = route('admin.pos.index');
 
                 $stat2Label = 'Trx Hari Ini';
-                $stat2Value = \App\Models\SalesOrder::where('status', 'paid')
-                    ->whereDate('created_at', today())
-                    ->count();
+                $stat2Value = \App\Models\SalesOrder::earnedBetween(today(), now()->endOfDay())->count();
                 $stat2Color = 'text-verde';
                 $stat2Link = route('admin.pos.index');
             } elseif ($topbarRole === 'manager') {
@@ -98,17 +96,14 @@
                 $stat2Link = route('admin.warranty-claims.index');
             } elseif ($topbarRole === 'owner') {
                 $stat1Label = 'Omzet Bulan Ini';
-                $ownerMonthRev = (int) \App\Models\SalesOrder::whereIn('status', [\App\Enums\SalesOrderStatus::Paid, \App\Enums\SalesOrderStatus::Completed])
-                    ->where('created_at', '>=', now()->startOfMonth())
-                    ->sum('total_idr');
+                $ownerMonthRev = (int) \App\Models\SalesOrder::earnedBetween(now()->startOfMonth(), now()->endOfMonth())->sum('revenue_idr');
                 $stat1Value = 'Rp ' . number_format($ownerMonthRev / 1000000, 1, ',', '.') . ' Jt';
                 $stat1Color = 'text-giallo';
                 $stat1Link = route('admin.dashboard');
 
                 $stat2Label = 'Mobil Terjual Bulan Ini';
-                $stat2Value = \App\Models\SalesOrder::where('type', \App\Enums\SalesOrderType::CarSales)
-                    ->whereIn('status', [\App\Enums\SalesOrderStatus::Paid, \App\Enums\SalesOrderStatus::Completed])
-                    ->where('created_at', '>=', now()->startOfMonth())
+                $stat2Value = \App\Models\SalesOrder::earnedBetween(now()->startOfMonth(), now()->endOfMonth())
+                    ->where('type', \App\Enums\SalesOrderType::CarSales)
                     ->count() . ' Unit';
                 $stat2Color = 'text-verde';
                 $stat2Link = route('admin.dashboard');

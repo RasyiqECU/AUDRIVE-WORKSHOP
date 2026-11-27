@@ -224,7 +224,7 @@
                                 </span>
                             </td>
                             <td class="py-3.5 px-4 font-mono text-silver-dim">
-                                {{ $trx->created_at->format('d/m/Y H:i') }}
+                                {{ ($trx->paid_at ?? $trx->created_at)->format('d/m/Y H:i') }}
                             </td>
                             <td class="py-3.5 px-4 font-mono text-silver-bright uppercase font-bold text-[11px]">
                                 {{ $pm?->method ?? ($trx->payments?->first()?->method ?? '-') }}
@@ -240,6 +240,9 @@
                             </td>
                             <td class="py-3.5 px-4 font-mono font-bold text-giallo text-right">
                                 Rp {{ number_format($trx->total_idr, 0, ',', '.') }}
+                                @if($trx->paid_at && $trx->revenue_idr !== $trx->total_idr)
+                                    <p class="text-[10px] text-verde">Omzet: Rp {{ number_format($trx->revenue_idr, 0, ',', '.') }}</p>
+                                @endif
                             </td>
                             <td class="py-3.5 px-4 text-center">
                                 @if($isPaid)

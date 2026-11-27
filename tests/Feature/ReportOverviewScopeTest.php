@@ -14,6 +14,7 @@ function paidOrder(User $creator, SalesOrderType $type, int $total): void
         'status' => SalesOrderStatus::Paid,
         'total_idr' => $total,
         'created_by' => $creator->id,
+        'sales_id' => $creator->role === 'sales' ? $creator->id : null,
     ]);
 }
 

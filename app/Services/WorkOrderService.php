@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Enums\StockMovementType;
 use App\Enums\WorkOrderStatus;
+use App\Models\SalesOrder;
 use App\Models\SparePart;
 use App\Models\StockMovement;
 use App\Models\WorkOrder;
@@ -374,6 +375,10 @@ class WorkOrderService
 
         $this->updateStatus($workOrder, WorkOrderStatus::Delivered);
         $workOrder->update(['delivered_at' => now()]);
+
+        // Sales yang menyerahkan kendaraan menjadi penanggung jawab omzetnya
+        SalesOrder::where('work_order_id', $workOrder->id)->get()
+            ->each(fn (SalesOrder $order) => $order->assignSales(auth()->user()));
 
         return $workOrder;
     }
