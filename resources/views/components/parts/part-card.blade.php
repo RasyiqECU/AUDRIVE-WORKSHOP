@@ -22,7 +22,7 @@
                 <div class="absolute top-2 right-2">
                     <x-ui.badge type="warning">Stok Terbatas</x-ui.badge>
                 </div>
-            @elseif($part->stock <= 0)
+            @elseif($part->available_stock <= 0)
                 <div class="absolute top-2 right-2">
                     <x-ui.badge type="danger">Habis</x-ui.badge>
                 </div>
@@ -69,8 +69,8 @@
                 </span>
             </div>
             <div class="text-right">
-                <span class="font-mono text-[10px] block {{ $part->stock > 0 ? 'text-verde' : 'text-danger' }}">
-                    {{ $part->stock > 0 ? 'Stok: ' . $part->stock : 'Stok Kosong' }}
+                <span class="font-mono text-[10px] block {{ $part->available_stock > 0 ? 'text-verde' : 'text-danger' }}">
+                    {{ $part->available_stock > 0 ? 'Stok: ' . $part->available_stock : 'Stok Kosong' }}
                 </span>
                 <a href="{{ route('parts.show', $part->slug) }}" class="inline-block mt-1 font-heading text-[10px] text-giallo hover:text-arancio uppercase tracking-wider font-semibold">
                     Detail →

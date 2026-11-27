@@ -27,27 +27,27 @@ class SettingController extends Controller
         }
 
         $settings = [
-            'app_name'             => SettingService::getName(),
-            'app_tagline'          => SettingService::getTagline(),
-            'app_description'      => SettingService::getDescription(),
-            'app_logo'             => SettingService::getLogo(),
-            'login_bg'             => SettingService::getLoginBackground(),
-            'hero_bg'              => SettingService::getHeroBackground(),
-            'dashboard_bg'         => SettingService::getDashboardBackground(),
-            'workshop_bg'          => SettingService::getWorkshopBackground(),
-            'marketplace_bg'       => SettingService::getMarketplaceBackground(),
-            'sparepart_bg'         => SettingService::getSparepartBackground(),
-            'about_bg'             => SettingService::getAboutBackground(),
-            'contact_bg'           => SettingService::getContactBackground(),
-            'custom_logo'          => SettingService::get('app_logo'),
-            'custom_login_bg'      => SettingService::get('login_bg'),
-            'custom_hero_bg'       => SettingService::get('hero_bg'),
-            'custom_dashboard_bg'  => SettingService::get('dashboard_bg'),
-            'custom_workshop_bg'   => SettingService::get('workshop_bg'),
-            'custom_marketplace_bg'=> SettingService::get('marketplace_bg'),
-            'custom_sparepart_bg'  => SettingService::get('sparepart_bg'),
-            'custom_about_bg'      => SettingService::get('about_bg'),
-            'custom_contact_bg'    => SettingService::get('contact_bg'),
+            'app_name' => SettingService::getName(),
+            'app_tagline' => SettingService::getTagline(),
+            'app_description' => SettingService::getDescription(),
+            'app_logo' => SettingService::getLogo(),
+            'login_bg' => SettingService::getLoginBackground(),
+            'hero_bg' => SettingService::getHeroBackground(),
+            'dashboard_bg' => SettingService::getDashboardBackground(),
+            'workshop_bg' => SettingService::getWorkshopBackground(),
+            'marketplace_bg' => SettingService::getMarketplaceBackground(),
+            'sparepart_bg' => SettingService::getSparepartBackground(),
+            'about_bg' => SettingService::getAboutBackground(),
+            'contact_bg' => SettingService::getContactBackground(),
+            'custom_logo' => SettingService::get('app_logo'),
+            'custom_login_bg' => SettingService::get('login_bg'),
+            'custom_hero_bg' => SettingService::get('hero_bg'),
+            'custom_dashboard_bg' => SettingService::get('dashboard_bg'),
+            'custom_workshop_bg' => SettingService::get('workshop_bg'),
+            'custom_marketplace_bg' => SettingService::get('marketplace_bg'),
+            'custom_sparepart_bg' => SettingService::get('sparepart_bg'),
+            'custom_about_bg' => SettingService::get('about_bg'),
+            'custom_contact_bg' => SettingService::get('contact_bg'),
         ];
 
         return view('admin.settings.index', compact('settings'));
@@ -63,38 +63,38 @@ class SettingController extends Controller
         }
 
         $validated = $request->validate([
-            'app_name'           => ['nullable', 'string', 'max:100'],
-            'app_tagline'        => ['nullable', 'string', 'max:200'],
-            'app_description'    => ['nullable', 'string', 'max:500'],
-            'logo_file'          => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,svg,gif', 'max:8192'],
-            'login_bg_file'      => ['nullable', 'file', 'mimes:gif,jpg,jpeg,png,webp,mp4', 'max:30720'],
-            'hero_bg_file'       => ['nullable', 'file', 'mimes:gif,jpg,jpeg,png,webp,mp4', 'max:30720'],
-            'dashboard_bg_file'  => ['nullable', 'file', 'mimes:gif,jpg,jpeg,png,webp,mp4', 'max:30720'],
-            'workshop_bg_file'   => ['nullable', 'file', 'mimes:gif,jpg,jpeg,png,webp,mp4', 'max:30720'],
-            'marketplace_bg_file'=> ['nullable', 'file', 'mimes:gif,jpg,jpeg,png,webp,mp4', 'max:30720'],
-            'sparepart_bg_file'  => ['nullable', 'file', 'mimes:gif,jpg,jpeg,png,webp,mp4', 'max:30720'],
-            'about_bg_file'      => ['nullable', 'file', 'mimes:gif,jpg,jpeg,png,webp,mp4', 'max:30720'],
-            'contact_bg_file'    => ['nullable', 'file', 'mimes:gif,jpg,jpeg,png,webp,mp4', 'max:30720'],
-            'sync_hero_bg'       => ['nullable', 'boolean'],
+            'app_name' => ['nullable', 'string', 'max:100'],
+            'app_tagline' => ['nullable', 'string', 'max:200'],
+            'app_description' => ['nullable', 'string', 'max:500'],
+            'logo_file' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,svg,gif', 'max:8192'],
+            'login_bg_file' => ['nullable', 'file', 'mimes:gif,jpg,jpeg,png,webp,mp4', 'max:30720'],
+            'hero_bg_file' => ['nullable', 'file', 'mimes:gif,jpg,jpeg,png,webp,mp4', 'max:30720'],
+            'dashboard_bg_file' => ['nullable', 'file', 'mimes:gif,jpg,jpeg,png,webp,mp4', 'max:30720'],
+            'workshop_bg_file' => ['nullable', 'file', 'mimes:gif,jpg,jpeg,png,webp,mp4', 'max:30720'],
+            'marketplace_bg_file' => ['nullable', 'file', 'mimes:gif,jpg,jpeg,png,webp,mp4', 'max:30720'],
+            'sparepart_bg_file' => ['nullable', 'file', 'mimes:gif,jpg,jpeg,png,webp,mp4', 'max:30720'],
+            'about_bg_file' => ['nullable', 'file', 'mimes:gif,jpg,jpeg,png,webp,mp4', 'max:30720'],
+            'contact_bg_file' => ['nullable', 'file', 'mimes:gif,jpg,jpeg,png,webp,mp4', 'max:30720'],
+            'sync_hero_bg' => ['nullable', 'boolean'],
         ], [
-            'logo_file.mimes'           => 'Logo harus berformat PNG, JPG, JPEG, WEBP, SVG, atau GIF.',
-            'logo_file.max'             => 'Ukuran file logo maksimal 8 MB.',
-            'login_bg_file.mimes'       => 'Background login harus berupa file GIF, JPG, JPEG, PNG, WEBP, atau MP4.',
-            'login_bg_file.max'         => 'Ukuran file background login maksimal 30 MB.',
-            'hero_bg_file.mimes'        => 'Hero background harus berupa file GIF, JPG, JPEG, PNG, WEBP, atau MP4.',
-            'hero_bg_file.max'          => 'Ukuran file hero background maksimal 30 MB.',
-            'dashboard_bg_file.mimes'   => 'Background dashboard harus berupa file GIF, JPG, JPEG, PNG, WEBP, atau MP4.',
-            'dashboard_bg_file.max'     => 'Ukuran file background dashboard maksimal 30 MB.',
-            'workshop_bg_file.mimes'    => 'Background bengkel harus berupa file GIF, JPG, JPEG, PNG, WEBP, atau MP4.',
-            'workshop_bg_file.max'      => 'Ukuran file background bengkel maksimal 30 MB.',
+            'logo_file.mimes' => 'Logo harus berformat PNG, JPG, JPEG, WEBP, SVG, atau GIF.',
+            'logo_file.max' => 'Ukuran file logo maksimal 8 MB.',
+            'login_bg_file.mimes' => 'Background login harus berupa file GIF, JPG, JPEG, PNG, WEBP, atau MP4.',
+            'login_bg_file.max' => 'Ukuran file background login maksimal 30 MB.',
+            'hero_bg_file.mimes' => 'Hero background harus berupa file GIF, JPG, JPEG, PNG, WEBP, atau MP4.',
+            'hero_bg_file.max' => 'Ukuran file hero background maksimal 30 MB.',
+            'dashboard_bg_file.mimes' => 'Background dashboard harus berupa file GIF, JPG, JPEG, PNG, WEBP, atau MP4.',
+            'dashboard_bg_file.max' => 'Ukuran file background dashboard maksimal 30 MB.',
+            'workshop_bg_file.mimes' => 'Background bengkel harus berupa file GIF, JPG, JPEG, PNG, WEBP, atau MP4.',
+            'workshop_bg_file.max' => 'Ukuran file background bengkel maksimal 30 MB.',
             'marketplace_bg_file.mimes' => 'Background marketplace harus berupa file GIF, JPG, JPEG, PNG, WEBP, atau MP4.',
-            'marketplace_bg_file.max'   => 'Ukuran file background marketplace maksimal 30 MB.',
-            'sparepart_bg_file.mimes'   => 'Background sparepart harus berupa file GIF, JPG, JPEG, PNG, WEBP, atau MP4.',
-            'sparepart_bg_file.max'     => 'Ukuran file background sparepart maksimal 30 MB.',
-            'about_bg_file.mimes'       => 'Background tentang kami harus berupa file GIF, JPG, JPEG, PNG, WEBP, atau MP4.',
-            'about_bg_file.max'         => 'Ukuran file background tentang kami maksimal 30 MB.',
-            'contact_bg_file.mimes'     => 'Background kontak harus berupa file GIF, JPG, JPEG, PNG, WEBP, atau MP4.',
-            'contact_bg_file.max'       => 'Ukuran file background kontak maksimal 30 MB.',
+            'marketplace_bg_file.max' => 'Ukuran file background marketplace maksimal 30 MB.',
+            'sparepart_bg_file.mimes' => 'Background sparepart harus berupa file GIF, JPG, JPEG, PNG, WEBP, atau MP4.',
+            'sparepart_bg_file.max' => 'Ukuran file background sparepart maksimal 30 MB.',
+            'about_bg_file.mimes' => 'Background tentang kami harus berupa file GIF, JPG, JPEG, PNG, WEBP, atau MP4.',
+            'about_bg_file.max' => 'Ukuran file background tentang kami maksimal 30 MB.',
+            'contact_bg_file.mimes' => 'Background kontak harus berupa file GIF, JPG, JPEG, PNG, WEBP, atau MP4.',
+            'contact_bg_file.max' => 'Ukuran file background kontak maksimal 30 MB.',
         ]);
 
         $textUpdates = [];
@@ -108,7 +108,7 @@ class SettingController extends Controller
             $textUpdates['app_description'] = trim($validated['app_description']);
         }
 
-        if (!empty($textUpdates)) {
+        if (! empty($textUpdates)) {
             SettingService::setMany($textUpdates);
         }
 
@@ -177,6 +177,30 @@ class SettingController extends Controller
             ->with('success', 'Tampilan dan media background aplikasi berhasil diperbarui! Perubahan langsung aktif di seluruh halaman.');
     }
 
+    /** Rekening tujuan transfer, ongkir, dan batas waktu bayar. */
+    public function updatePayment(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()?->role === 'super-admin', 403);
+
+        $data = $request->validate([
+            'bank_accounts' => ['required', 'string', 'max:1000', function (string $attribute, mixed $value, \Closure $fail) {
+                foreach (preg_split('/\R/', trim((string) $value)) as $line) {
+                    if (count(array_filter(array_map('trim', explode('|', $line)))) !== 3) {
+                        $fail('Setiap baris rekening harus berformat: Bank | Nomor | Atas Nama.');
+
+                        return;
+                    }
+                }
+            }],
+            'shipping_fee_idr' => ['required', 'integer', 'min:0'],
+            'payment_deadline_hours' => ['required', 'integer', 'min:1', 'max:168'],
+        ]);
+
+        SettingService::setMany($data);
+
+        return redirect()->route('admin.settings.index')->with('success', 'Pengaturan pembayaran disimpan.');
+    }
+
     /**
      * Reset item tertentu kembali ke pengaturan default bawaan.
      */
@@ -189,18 +213,18 @@ class SettingController extends Controller
         $item = $request->input('item');
 
         match ($item) {
-            'logo'           => SettingService::resetItem('app_logo'),
-            'login_bg'       => SettingService::resetItem('login_bg'),
-            'hero_bg'        => SettingService::resetItem('hero_bg'),
-            'dashboard_bg'   => SettingService::resetItem('dashboard_bg'),
-            'workshop_bg'    => SettingService::resetItem('workshop_bg'),
+            'logo' => SettingService::resetItem('app_logo'),
+            'login_bg' => SettingService::resetItem('login_bg'),
+            'hero_bg' => SettingService::resetItem('hero_bg'),
+            'dashboard_bg' => SettingService::resetItem('dashboard_bg'),
+            'workshop_bg' => SettingService::resetItem('workshop_bg'),
             'marketplace_bg' => SettingService::resetItem('marketplace_bg'),
-            'sparepart_bg'   => SettingService::resetItem('sparepart_bg'),
-            'about_bg'       => SettingService::resetItem('about_bg'),
-            'contact_bg'     => SettingService::resetItem('contact_bg'),
-            'name'           => SettingService::set('app_name', SettingService::DEFAULT_APP_NAME),
-            'tagline'        => SettingService::set('app_tagline', SettingService::DEFAULT_TAGLINE),
-            'all'            => (function () {
+            'sparepart_bg' => SettingService::resetItem('sparepart_bg'),
+            'about_bg' => SettingService::resetItem('about_bg'),
+            'contact_bg' => SettingService::resetItem('contact_bg'),
+            'name' => SettingService::set('app_name', SettingService::DEFAULT_APP_NAME),
+            'tagline' => SettingService::set('app_tagline', SettingService::DEFAULT_TAGLINE),
+            'all' => (function () {
                 SettingService::resetItem('app_logo');
                 SettingService::resetItem('login_bg');
                 SettingService::resetItem('hero_bg');
@@ -214,7 +238,7 @@ class SettingController extends Controller
                 SettingService::set('app_tagline', SettingService::DEFAULT_TAGLINE);
                 SettingService::set('app_description', SettingService::DEFAULT_DESCRIPTION);
             })(),
-            default          => null,
+            default => null,
         };
 
         return redirect()

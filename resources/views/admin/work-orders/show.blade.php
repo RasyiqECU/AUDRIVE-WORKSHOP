@@ -264,7 +264,7 @@
                                         @if(isset($spareParts))
                                             @foreach($spareParts as $part)
                                                 <option value="{{ $part->id }}">
-                                                    {{ $part->name }} (Rp {{ number_format($part->price_idr, 0, ',', '.') }}) — Stok: {{ $part->stock }}
+                                                    {{ $part->name }} (Rp {{ number_format($part->price_idr, 0, ',', '.') }}) — Stok: {{ $part->available_stock }}
                                                 </option>
                                             @endforeach
                                         @endif

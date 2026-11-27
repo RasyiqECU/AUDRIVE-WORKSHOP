@@ -68,15 +68,7 @@
             transfer: {
                 icon: '🏦',
                 title: 'Transfer Bank',
-                lines: [
-                    'Bank: BCA',
-                    'No. Rekening: 1234567890',
-                    'Atas Nama: AUDRIVE AUTO SERVICE',
-                    '---',
-                    'Bank: Mandiri',
-                    'No. Rekening: 0987654321',
-                    'Atas Nama: AUDRIVE AUTO SERVICE',
-                ]
+                lines: {{ Js::from(collect(\App\Services\PaymentSettings::accounts())->map(fn ($a) => "{$a['bank']}: {$a['number']} a.n. {$a['holder']}")->all()) }}
             },
             ewallet: {
                 icon: '📱',
@@ -322,7 +314,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[550px] overflow-y-auto p-1">
                     @forelse($parts as $part)
                         <div x-show="!partsSearch || '{{ strtolower($part->name . ' ' . $part->sku) }}'.includes(partsSearch.toLowerCase())"
-                             @click="addToCart({{ json_encode($part) }})"
+                             @click="addToCart({{ json_encode(array_merge($part->toArray(), ['stock' => $part->available_stock])) }})"
                              class="panel border border-gunmetal/60 bg-carbon hover:border-giallo/60 p-4 flex flex-col justify-between transition-all cursor-pointer">
                             <div>
                                 <span class="text-[10px] font-mono text-silver-dim block">{{ $part->sku }}</span>
@@ -331,8 +323,8 @@
                             </div>
                             <div class="mt-3 pt-2 border-t border-gunmetal/40 flex items-center justify-between">
                                 <span class="font-mono text-xs text-giallo font-bold">Rp {{ number_format($part->price_idr, 0, ',', '.') }}</span>
-                                <span class="text-[10px] px-1.5 py-0.5 rounded {{ $part->stock > 0 ? 'bg-emerald-950/60 text-emerald-400' : 'bg-red-950/60 text-red-400' }}">
-                                    Stok: {{ $part->stock }}
+                                <span class="text-[10px] px-1.5 py-0.5 rounded {{ $part->available_stock > 0 ? 'bg-emerald-950/60 text-emerald-400' : 'bg-red-950/60 text-red-400' }}">
+                                    Stok: {{ $part->available_stock }}
                                 </span>
                             </div>
                         </div>

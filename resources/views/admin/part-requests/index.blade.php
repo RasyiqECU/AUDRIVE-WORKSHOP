@@ -37,7 +37,7 @@
                     <div class="flex flex-wrap justify-between gap-2">
                         <span class="text-silver-bright">{{ $item->description }} x{{ $item->qty }}</span>
                         <span class="font-mono text-silver-dim">
-                            Rp {{ number_format($item->subtotal_idr, 0, ',', '.') }} &bull; Stok: {{ $item->sparePart?->stock ?? 0 }}
+                            Rp {{ number_format($item->subtotal_idr, 0, ',', '.') }} &bull; Stok: {{ $item->sparePart?->available_stock ?? 0 }}
                             &bull; {{ $item->inventory_checked_at ? 'Sudah dicek gudang' : 'Menunggu cek gudang' }}
                         </span>
                     </div>

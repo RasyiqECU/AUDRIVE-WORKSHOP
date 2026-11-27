@@ -62,8 +62,22 @@
                     </div>
                 </div>
 
+                {{-- Metode Pembayaran --}}
+                <div class="lg:col-span-7 lg:row-start-2 bg-carbon border border-gunmetal p-6 rounded shadow-xl space-y-3 text-xs">
+                    <h2 class="font-display text-sm font-bold text-silver-bright uppercase tracking-wider border-b border-gunmetal/40 pb-2">3. Metode Pembayaran</h2>
+                    <label class="flex items-start gap-3 p-4 bg-nero border border-gunmetal/60 rounded cursor-pointer">
+                        <input type="radio" name="payment_channel" value="online_transfer" @checked(old('payment_channel', 'online_transfer') === 'online_transfer') class="mt-1">
+                        <span><span class="block font-heading uppercase text-silver-bright">Transfer Online</span><span class="text-silver-dim">Unggah bukti transfer, diverifikasi Kasir.</span></span>
+                    </label>
+                    <label class="flex items-start gap-3 p-4 bg-nero border border-gunmetal/60 rounded cursor-pointer">
+                        <input type="radio" name="payment_channel" value="cashier" @checked(old('payment_channel') === 'cashier') class="mt-1">
+                        <span><span class="block font-heading uppercase text-silver-bright">Bayar di Kasir</span><span class="text-silver-dim">Tunai atau EDC di bengkel.</span></span>
+                    </label>
+                    <p class="text-silver-dim">Stok dikunci untuk Anda selama {{ \App\Services\PaymentSettings::deadlineHours() }} jam. Ongkir pengiriman Rp {{ number_format(\App\Services\PaymentSettings::shippingFee(), 0, ',', '.') }} (ambil sendiri gratis).</p>
+                </div>
+
                 {{-- Right: Order Review & Submit (5 cols) --}}
-                <div class="lg:col-span-5">
+                <div class="lg:col-span-5 lg:row-span-2 lg:row-start-1 lg:col-start-8">
                     <div class="bg-carbon border border-gunmetal p-6 rounded shadow-xl sticky top-24">
                         <h2 class="font-display text-sm font-bold text-silver-bright uppercase tracking-wider mb-4 border-b border-gunmetal/40 pb-2">
                             Daftar Barang ({{ $cart->items->count() }})
@@ -101,7 +115,7 @@
                                 <span class="font-mono text-silver-bright">Rp {{ number_format($tax, 0, ',', '.') }}</span>
                             </div>
                             <div class="pt-3 border-t border-gunmetal/40 flex justify-between items-end">
-                                <span class="font-heading font-semibold text-silver-bright uppercase">Total Tagihan</span>
+                                <span class="font-heading font-semibold text-silver-bright uppercase">Total (belum ongkir)</span>
                                 <span class="font-mono text-lg font-bold text-giallo">Rp {{ number_format($grandTotal, 0, ',', '.') }}</span>
                             </div>
                         </div>
