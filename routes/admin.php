@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AppointmentController;
 use App\Http\Controllers\Admin\ApprovalController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\CarController;
+use App\Http\Controllers\Admin\CarHandoverController;
 use App\Http\Controllers\Admin\ConsignmentController;
 use App\Http\Controllers\Admin\ContactMessageController;
 use App\Http\Controllers\Admin\CustomerController;
@@ -53,8 +54,6 @@ Route::middleware('role:super-admin|sales')->group(function () {
     Route::patch('cars/{car}/status', [CarController::class, 'updateStatus'])->name('cars.status');
     Route::get('cars/{car}/inspection', [CarController::class, 'inspection'])->name('cars.inspection');
     Route::post('cars/{car}/inspection', [CarController::class, 'storeInspection'])->name('cars.inspection.store');
-    Route::post('cars/{car}/consignment/approve', [ConsignmentController::class, 'approve'])->name('consignments.approve');
-    Route::post('cars/{car}/consignment/reject', [ConsignmentController::class, 'reject'])->name('consignments.reject');
     Route::post('cars/{car}/featured', [CarController::class, 'setFeatured'])->name('cars.featured');
     Route::delete('cars/{car}/featured', [CarController::class, 'removeFeatured'])->name('cars.featured.remove');
     Route::post('cars/{car}/photos', [CarController::class, 'uploadPhotos'])->name('cars.photos.store');
@@ -89,6 +88,7 @@ Route::middleware('role:super-admin|cashier')->group(function () {
     Route::post('pos', [PosController::class, 'store'])->name('pos.store');
     Route::post('pos/work-orders/{workOrder}/pay', [PosController::class, 'payWorkOrder'])->name('pos.work-orders.pay');
     Route::post('pos/car-sales/{salesOrder}/pay', [PosController::class, 'payCarSales'])->name('pos.car-sales.pay');
+    Route::post('pos/car-sales/{salesOrder}/deposit', [PosController::class, 'takeDeposit'])->name('pos.car-sales.deposit');
     Route::post('pos/part-orders/{salesOrder}/pay', [PosController::class, 'payPartOrder'])->name('pos.part-orders.pay');
     Route::post('pos/consignments/{car}/payout', [ConsignmentController::class, 'payout'])->name('pos.consignments.payout');
     Route::get('pos/search', [PosController::class, 'search'])->name('pos.search');
@@ -152,6 +152,25 @@ Route::middleware('role:super-admin|cashier|mechanic')->group(function () {
     Route::post('work-orders/{workOrder}/service-items', [AdminWorkOrderController::class, 'addServiceItem'])->name('work-orders.service-items.store');
     Route::post('work-orders/{workOrder}/part-items', [AdminWorkOrderController::class, 'addPartItem'])->name('work-orders.part-items.store');
     Route::delete('work-order-items/{item}', [AdminWorkOrderController::class, 'removeItem'])->name('work-orders.items.destroy');
+});
+
+// ── Titip Jual: Kepala Mekanik inspeksi → Manager setujui → Sales pasarkan ──
+Route::middleware('role:super-admin|mechanic|manager|sales')->group(function () {
+    Route::get('consignments', [ConsignmentController::class, 'index'])->name('consignments.index');
+    Route::get('consignments/{car}', [ConsignmentController::class, 'show'])->name('consignments.show');
+});
+Route::post('consignments/{car}/inspect', [ConsignmentController::class, 'inspect'])
+    ->name('consignments.inspect')
+    ->middleware('role:super-admin|mechanic');
+Route::middleware('role:super-admin|manager')->group(function () {
+    Route::post('consignments/{car}/approve', [ConsignmentController::class, 'approve'])->name('consignments.approve');
+    Route::post('consignments/{car}/reject', [ConsignmentController::class, 'reject'])->name('consignments.reject');
+});
+
+// ── Serah terima mobil lunas (Super Admin & Sales) ──
+Route::middleware('role:super-admin|sales')->group(function () {
+    Route::get('car-handovers', [CarHandoverController::class, 'index'])->name('car-handovers.index');
+    Route::post('car-handovers/{order}', [CarHandoverController::class, 'store'])->name('car-handovers.store');
 });
 
 // ── Verifikasi Pembayaran Online (Super Admin & Kasir) ──

@@ -5,20 +5,25 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\CarUnitStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\SalesOrderStatus;
 use App\Enums\SalesOrderType;
 use App\Enums\WorkOrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\CarUnit;
 use App\Models\Customer;
+use App\Models\Payment;
 use App\Models\SalesOrder;
 use App\Models\SparePart;
 use App\Models\WorkOrder;
+use App\Services\CarBookingService;
 use App\Services\CheckoutService;
 use App\Services\PosService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class PosController extends Controller
@@ -202,6 +207,39 @@ class PosController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    /** Terima booking fee mobil di kasir; unit langsung terkunci. */
+    public function takeDeposit(Request $request, SalesOrder $salesOrder, CarBookingService $bookings): RedirectResponse
+    {
+        $validated = $request->validate(['payment_method' => 'required|in:cash,card,transfer,ewallet']);
+
+        try {
+            DB::transaction(function () use ($salesOrder, $validated, $bookings) {
+                $order = SalesOrder::whereKey($salesOrder->id)->lockForUpdate()->firstOrFail();
+
+                if ($order->status !== SalesOrderStatus::Pending || $order->deposit_idr <= 0 || $order->paid_idr > 0) {
+                    throw new \InvalidArgumentException('Pesanan ini tidak menunggu booking fee.');
+                }
+
+                Payment::create([
+                    'paymentable_type' => SalesOrder::class,
+                    'paymentable_id' => $order->id,
+                    'method' => $validated['payment_method'],
+                    'purpose' => 'booking_fee',
+                    'status' => PaymentStatus::Success,
+                    'amount_idr' => $order->deposit_idr,
+                    'reference' => 'DP-'.strtoupper(Str::random(10)),
+                    'paid_at' => now(),
+                ]);
+                $order->increment('paid_idr', $order->deposit_idr);
+                $bookings->recordDeposit($order);
+            });
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Booking fee diterima. Unit terkunci.');
     }
 
     /** Diskon khusus wajib disetujui Manager; hanya Super Admin yang bisa mengisi langsung. */

@@ -181,6 +181,28 @@ $groups = [
         ],
     ],
     [
+        'label' => 'Titip Jual — lihat (Super Admin, Kepala Mekanik, Manager, Sales)',
+        'roles' => ['super-admin', 'mechanic', 'manager', 'sales'],
+        'gets' => [
+            ['admin.consignments.index'],
+        ],
+    ],
+    [
+        'label' => 'Titip Jual — persetujuan (Super Admin & Manager)',
+        'roles' => ['super-admin', 'manager'],
+        'gets' => [],
+        'mutations' => [
+            ['post', 'admin.consignments.approve', fn () => CarUnit::factory()->create()],
+        ],
+    ],
+    [
+        'label' => 'Serah Terima Mobil (Super Admin & Sales)',
+        'roles' => ['super-admin', 'sales'],
+        'gets' => [
+            ['admin.car-handovers.index'],
+        ],
+    ],
+    [
         'label' => 'Verifikasi Pembayaran Online (Super Admin & Kasir)',
         'roles' => ['super-admin', 'cashier'],
         'gets' => [

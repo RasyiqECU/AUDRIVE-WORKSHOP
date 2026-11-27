@@ -45,10 +45,10 @@ test('customer can directly order available car without entering custom price an
         'note' => 'Pembayaran tunai via transfer BCA',
     ]);
 
-    // Unit status becomes Reserved immediately
+    // Unit baru dikunci setelah disetujui atau booking fee diterima
     $this->assertDatabaseHas('car_units', [
         'id' => $this->car->id,
-        'status' => CarUnitStatus::Reserved->value,
+        'status' => CarUnitStatus::Available->value,
     ]);
 });
 

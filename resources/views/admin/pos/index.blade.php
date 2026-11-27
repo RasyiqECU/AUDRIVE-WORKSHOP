@@ -343,6 +343,22 @@
 
             {{-- 3. TAB: CAR SALES ORDERS --}}
             <div x-show="activeTab === 'cars'" class="space-y-4">
+                @foreach($pendingCarOrders->filter(fn ($o) => $o->deposit_idr > 0 && $o->paid_idr <= 0) as $booking)
+                    <form action="{{ route('admin.pos.car-sales.deposit', $booking) }}" method="POST"
+                          class="panel border border-giallo/40 bg-carbon flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-xs">
+                        @csrf
+                        <span class="text-silver-bright">{{ $booking->code }} — {{ $booking->customer?->user?->name }} — Booking fee Rp {{ number_format($booking->deposit_idr, 0, ',', '.') }}</span>
+                        <span class="flex gap-2">
+                            <select name="payment_method" class="bg-nero border border-gunmetal px-2 py-1.5 text-silver-bright">
+                                <option value="cash">Tunai</option>
+                                <option value="card">Kartu / EDC</option>
+                                <option value="transfer">Transfer</option>
+                            </select>
+                            <button type="submit" class="px-3 py-1.5 bg-giallo text-nero font-heading font-bold uppercase rounded">Terima Booking Fee</button>
+                        </span>
+                    </form>
+                @endforeach
+
                 @if($consignmentPayouts->isNotEmpty())
                     <div class="panel border border-gunmetal/80 bg-carbon overflow-hidden">
                         <div class="bg-steel/30 px-5 py-3.5 border-b border-gunmetal">
@@ -355,7 +371,7 @@
                                 @csrf
                                 <div>
                                     <p class="text-silver-bright font-bold">{{ $unit->full_name }}</p>
-                                    <p class="text-silver-dim">Penjual: {{ $unit->seller?->user?->name }} ({{ $unit->seller?->user?->phone }}) &bull; Komisi Rp {{ number_format($unit->commission_idr, 0, ',', '.') }}</p>
+                                    <p class="text-silver-dim">Penjual: {{ $unit->seller?->user?->name }} ({{ $unit->seller?->user?->phone }}) &bull; Komisi Rp {{ number_format($unit->commission_idr, 0, ',', '.') }} &bull; Biaya servis Rp {{ number_format($unit->repair_cost_idr, 0, ',', '.') }}</p>
                                 </div>
                                 <button type="submit" class="px-3 py-2 bg-giallo text-nero font-heading font-bold text-[10px] uppercase rounded">Sudah Dibayar</button>
                             </form>

@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\CarUnitStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\SalesOrderStatus;
 use App\Enums\SalesOrderType;
 use App\Models\Cart;
+use App\Models\CarUnit;
 use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\SalesOrder;
@@ -170,6 +172,23 @@ class CheckoutService
                     'reference_type' => SalesOrder::class,
                     'reference_id' => $order->id,
                     'description' => "Poin dari pembelian spare part #{$order->code}",
+                ]);
+            }
+        }
+
+        if ($order->type === SalesOrderType::CarSales) {
+            $carIds = $order->items()->whereNotNull('car_unit_id')->pluck('car_unit_id');
+            CarUnit::whereIn('id', $carIds)->update(['status' => CarUnitStatus::Sold]);
+
+            $points = (int) ($order->total_idr / 50000);
+            if ($customer && $points > 0) {
+                $customer->increment('loyalty_points', $points);
+                $customer->loyaltyTransactions()->create([
+                    'type' => 'earning',
+                    'points' => $points,
+                    'reference_type' => SalesOrder::class,
+                    'reference_id' => $order->id,
+                    'description' => "Poin dari transaksi pembelian mobil #{$order->code}",
                 ]);
             }
         }

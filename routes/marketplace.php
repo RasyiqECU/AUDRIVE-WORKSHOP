@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Marketplace\CarBookingController;
 use App\Http\Controllers\Marketplace\CarListingController;
 use App\Http\Controllers\Marketplace\InspectionController;
 use App\Http\Controllers\Marketplace\OfferController;
@@ -33,6 +34,7 @@ Route::middleware('auth')->group(function () {
         ->name('marketplace.test-drive.store');
 
     // Offers / Negotiation
+    Route::post('/marketplace/{car:slug}/booking', [CarBookingController::class, 'store'])->name('marketplace.booking.store');
     Route::post('/marketplace/{car:slug}/offer', [OfferController::class, 'store'])
         ->name('marketplace.offer.store');
     Route::patch('/marketplace/offers/{offer}', [OfferController::class, 'update'])

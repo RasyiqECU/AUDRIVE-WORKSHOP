@@ -58,6 +58,9 @@ class CarUnit extends Model
         'seller_payout_idr',
         'seller_paid_at',
         'seller_paid_by',
+        'price_approved_by',
+        'price_approved_at',
+        'repair_cost_idr',
     ];
 
     protected $attributes = [
@@ -80,7 +83,22 @@ class CarUnit extends Model
             'commission_idr' => 'integer',
             'seller_payout_idr' => 'integer',
             'seller_paid_at' => 'datetime',
+            'price_approved_at' => 'datetime',
+            'repair_cost_idr' => 'integer',
         ];
+    }
+
+    /** Lepas status Dipesan bila tidak ada pesanan yang mengklaim unit ini. */
+    public function releaseIfUnclaimed(): void
+    {
+        $claimed = $this->salesOrderItems()
+            ->whereHas('salesOrder', fn ($q) => $q->where('status', 'paid')
+                ->orWhere(fn ($pending) => $pending->where('status', 'pending')->where(fn ($p) => $p->where('deposit_idr', 0)->orWhere('paid_idr', '>', 0))))
+            ->exists();
+
+        if ($this->status === CarUnitStatus::Reserved && ! $claimed) {
+            $this->update(['status' => CarUnitStatus::Available]);
+        }
     }
 
     public function seller(): BelongsTo

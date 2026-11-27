@@ -194,6 +194,9 @@ class SettingController extends Controller
             }],
             'shipping_fee_idr' => ['required', 'integer', 'min:0'],
             'payment_deadline_hours' => ['required', 'integer', 'min:1', 'max:168'],
+            'booking_fee_idr' => ['sometimes', 'required', 'integer', 'min:0'],
+            'settlement_days' => ['sometimes', 'required', 'integer', 'min:1', 'max:90'],
+            'towing_fee_idr' => ['sometimes', 'required', 'integer', 'min:0'],
         ]);
 
         SettingService::setMany($data);

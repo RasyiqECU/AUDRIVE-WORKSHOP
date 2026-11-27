@@ -13,7 +13,10 @@
     <div class="max-w-2xl mx-auto bg-carbon border border-gunmetal rounded-lg p-6 md:p-8 space-y-6 text-xs">
         <div class="text-center space-y-1">
             <h1 class="font-display text-xl font-bold text-silver-bright">PEMBAYARAN #{{ $salesOrder->code }}</h1>
-            <p class="font-mono text-3xl font-bold text-giallo">Rp {{ number_format($salesOrder->total_idr, 0, ',', '.') }}</p>
+            <p class="font-mono text-3xl font-bold text-giallo">Rp {{ number_format($salesOrder->amountDue(), 0, ',', '.') }}</p>
+            @if($salesOrder->deposit_idr > 0)
+                <p class="text-silver-dim">{{ $salesOrder->paid_idr > 0 ? 'Pelunasan' : 'Booking fee' }} — total harga Rp {{ number_format($salesOrder->total_idr, 0, ',', '.') }}</p>
+            @endif
             <p class="text-silver-dim">Status: <span class="text-silver-bright">{{ $salesOrder->progressLabel() }}</span></p>
             @if($salesOrder->reserved_until && $salesOrder->status->value === 'pending')
                 <p class="text-giallo">Bayar sebelum {{ $salesOrder->reserved_until->format('d M Y H:i') }}, setelah itu pesanan dibatalkan.</p>
@@ -53,7 +56,7 @@
                         @endforeach
                     </select>
                 </label>
-                <label class="block">Nominal yang ditransfer<input type="number" name="amount_idr" required min="1" value="{{ old('amount_idr', $salesOrder->total_idr) }}" class="{{ $field }}"></label>
+                <label class="block">Nominal yang ditransfer<input type="number" name="amount_idr" required min="1" value="{{ old('amount_idr', $salesOrder->amountDue()) }}" class="{{ $field }}"></label>
                 <label class="block">Foto bukti (JPG/PNG/WEBP, maks. 2 MB)<input type="file" name="proof" required accept="image/jpeg,image/png,image/webp" class="{{ $field }}"></label>
                 <button type="submit" class="w-full py-3 bg-giallo text-nero font-heading font-bold uppercase rounded">Kirim Bukti Transfer</button>
             </form>
