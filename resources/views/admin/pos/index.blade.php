@@ -15,6 +15,7 @@
         'total_jasa' => $selectedWorkOrder->total_jasa_idr,
         'total_part' => $selectedWorkOrder->total_part_idr,
         'subtotal' => $selectedWorkOrder->total_idr,
+        'discount' => (int) $selectedWorkOrder->salesOrder?->discount_idr,
         'items' => $selectedWorkOrder->items->map(fn($item) => [
             'type' => $item->type,
             'desc' => $item->description ?: ($item->sparePart?->name ?? 'Item'),
@@ -30,10 +31,15 @@
         'customer_phone' => $selectedCarOrder->customer?->phone ?? $selectedCarOrder->customer?->user?->phone ?? '-',
         'car_title' => $selectedCarOrder->items->first()?->description ?? 'Unit Mobil',
         'subtotal' => $selectedCarOrder->subtotal_idr,
+        'discount' => $selectedCarOrder->discount_idr,
         'total' => $selectedCarOrder->total_idr,
         'notes' => $selectedCarOrder->notes,
     ]) : 'null' }},
     discountWo: 0,
+    init() {
+        this.discountWo = this.selectedWo?.discount || 0;
+        this.discountCar = this.selectedCar?.discount || 0;
+    },
     discountCar: 0,
     paymentMethodWo: 'cash',
     paymentMethodParts: 'cash',
@@ -45,7 +51,7 @@
 
     selectCar(car) {
         this.selectedCar = car;
-        this.discountCar = 0;
+        this.discountCar = car.discount || 0;
     },
 
     get carTotal() {
@@ -85,19 +91,17 @@
 
     selectWorkOrder(wo) {
         this.selectedWo = wo;
-        this.discountWo = 0;
+        this.discountWo = wo.discount || 0;
     },
 
     get woTax() {
         if (!this.selectedWo) return 0;
-        let discounted = Math.max(0, this.selectedWo.subtotal - this.discountWo);
-        return Math.round(discounted * 0.11);
+        return Math.floor(this.selectedWo.subtotal * 0.11);
     },
 
     get woTotal() {
         if (!this.selectedWo) return 0;
-        let discounted = Math.max(0, this.selectedWo.subtotal - this.discountWo);
-        return discounted + this.woTax;
+        return Math.max(0, this.selectedWo.subtotal + this.woTax - this.discountWo);
     },
 
     addToCart(part) {
@@ -220,6 +224,7 @@
                                             'total_jasa' => $wo->total_jasa_idr,
                                             'total_part' => $wo->total_part_idr,
                                             'subtotal' => $wo->total_idr,
+                                            'discount' => (int) $wo->salesOrder?->discount_idr,
                                             'items' => $wo->items->map(fn($it) => [
                                                 'type' => $it->type,
                                                 'desc' => $it->description ?: ($it->sparePart?->name ?? 'Item'),
@@ -389,6 +394,7 @@
                                             'customer_phone' => $carOrder->customer?->phone ?? $carOrder->customer?->user?->phone ?? '-',
                                             'car_title'      => $carOrder->items->first()?->description ?? 'Unit Mobil',
                                             'subtotal'       => $carOrder->subtotal_idr,
+                                            'discount'       => $carOrder->discount_idr,
                                             'total'          => $carOrder->total_idr,
                                             'notes'          => $carOrder->notes,
                                         ];
@@ -487,17 +493,11 @@
                             </template>
                         </div>
 
-                        {{-- Discount Input --}}
-                        <div>
-                            <label class="block text-[11px] uppercase text-silver-dim mb-1 font-heading">Diskon Khusus (IDR)</label>
-                            <input type="number"
-                                   name="discount_idr"
-                                   x-model.number="discountWo"
-                                   min="0"
-                                   :max="selectedWo.subtotal"
-                                   placeholder="0"
-                                   class="w-full bg-steel/60 border border-gunmetal text-silver-bright text-xs rounded p-2.5 font-mono focus:border-giallo focus:outline-none">
-                        </div>
+                        {{-- Diskon hanya lewat persetujuan Manager --}}
+                        <p class="text-[11px] text-silver-dim">
+                            Diskon disetujui: <span class="font-mono text-verde" x-text="'Rp ' + Number(discountWo).toLocaleString('id-ID')"></span>.
+                            <a href="{{ route('admin.approvals.create') }}" class="text-giallo underline">Ajukan diskon</a>
+                        </p>
 
                         {{-- Payment Method --}}
                         <div>
@@ -728,17 +728,11 @@
                             </template>
                         </div>
 
-                        {{-- Discount Input --}}
-                        <div>
-                            <label class="block text-[11px] uppercase text-silver-dim mb-1 font-heading">Diskon (IDR)</label>
-                            <input type="number"
-                                   name="discount_idr"
-                                   x-model.number="discountCar"
-                                   min="0"
-                                   :max="selectedCar.subtotal"
-                                   placeholder="0"
-                                   class="w-full bg-steel/60 border border-gunmetal text-silver-bright text-xs rounded p-2.5 font-mono focus:border-giallo focus:outline-none">
-                        </div>
+                        {{-- Diskon hanya lewat persetujuan Manager --}}
+                        <p class="text-[11px] text-silver-dim">
+                            Diskon disetujui: <span class="font-mono text-verde" x-text="'Rp ' + Number(discountCar).toLocaleString('id-ID')"></span>.
+                            <a href="{{ route('admin.approvals.create') }}" class="text-giallo underline">Ajukan diskon</a>
+                        </p>
 
                         {{-- Payment Method --}}
                         <div>

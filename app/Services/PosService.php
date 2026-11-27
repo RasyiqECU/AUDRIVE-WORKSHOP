@@ -279,7 +279,7 @@ class PosService
             }
 
             $subtotal = $salesOrder->subtotal_idr;
-            $discount = min($discountIdr, $subtotal);
+            $discount = min(max($discountIdr, (int) $salesOrder->discount_idr), $subtotal);
             $total = max(0, $subtotal - $discount);
 
             $salesOrder->update([

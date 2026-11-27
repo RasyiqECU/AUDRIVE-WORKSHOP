@@ -194,6 +194,10 @@ class ApprovalService
             throw new \Exception('Nominal diskon tidak valid.');
         }
 
+        if ($order->status !== SalesOrderStatus::Pending) {
+            throw new \Exception("Diskon hanya untuk pesanan yang belum lunas (#{$order->code}).");
+        }
+
         if ($amount > $order->total_idr) {
             throw new \Exception("Nominal diskon melebihi total nilai pesanan #{$order->code}.");
         }
