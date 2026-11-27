@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Enums\AiScanStatus;
 use App\Enums\CarUnitStatus;
+use App\Enums\PurchaseOrderStatus;
 use App\Enums\SalesOrderStatus;
 use App\Enums\SalesOrderType;
 use App\Enums\ServiceBookingStatus;
@@ -14,7 +15,7 @@ use App\Models\AiScan;
 use App\Models\ApprovalRequest;
 use App\Models\CarUnit;
 use App\Models\Customer;
-use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderItem;
 use App\Models\SalesOrder;
 use App\Models\ServiceBooking;
 use App\Models\SparePart;
@@ -226,7 +227,7 @@ class DashboardService
         $workshopRevenue = (int) $workshopOrders->sum('total_idr');
         $workshopOrdersCount = $workshopOrders->count();
 
-        $partOrders = $paidOrders->where('type', SalesOrderType::SparePart);
+        $partOrders = $paidOrders->whereIn('type', [SalesOrderType::SparePart, SalesOrderType::Pos]);
         $partRevenue = (int) $partOrders->sum('total_idr');
         $partOrdersCount = $partOrders->count();
 
@@ -245,8 +246,11 @@ class DashboardService
             : ($totalRevenue > 0 ? 100.0 : 0.0);
 
         // Expense / Purchase Orders in period
-        $purchasesQuery = PurchaseOrder::whereBetween('created_at', [$startDate, $endDate]);
-        $totalPurchases = (int) (clone $purchasesQuery)->sum('total_idr');
+        // Hanya barang yang sudah diterima: draft, dikirim, dan batal belum menjadi pengeluaran
+        $totalPurchases = (int) PurchaseOrderItem::whereHas('purchaseOrder', fn ($q) => $q
+            ->whereIn('status', [PurchaseOrderStatus::Received, PurchaseOrderStatus::PartiallyReceived])
+            ->whereBetween(DB::raw('COALESCE(received_at, created_at)'), [$startDate, $endDate]))
+            ->sum(DB::raw('received_qty * cost_idr'));
         $netInflow = $totalRevenue - $totalPurchases;
 
         // Workshop Operations
@@ -437,7 +441,7 @@ class DashboardService
                     'full_date' => $cursor->translatedFormat('d F Y'),
                     'car_rev' => (int) $ordersInDay->where('type', SalesOrderType::CarSales)->sum('total_idr'),
                     'workshop_rev' => (int) $ordersInDay->where('type', SalesOrderType::Service)->sum('total_idr'),
-                    'part_rev' => (int) $ordersInDay->where('type', SalesOrderType::SparePart)->sum('total_idr'),
+                    'part_rev' => (int) $ordersInDay->whereIn('type', [SalesOrderType::SparePart, SalesOrderType::Pos])->sum('total_idr'),
                     'total_rev' => (int) $ordersInDay->sum('total_idr'),
                 ];
                 $cursor->addDay();
@@ -453,7 +457,7 @@ class DashboardService
                     'full_date' => $cursor->translatedFormat('F Y'),
                     'car_rev' => (int) $ordersInMonth->where('type', SalesOrderType::CarSales)->sum('total_idr'),
                     'workshop_rev' => (int) $ordersInMonth->where('type', SalesOrderType::Service)->sum('total_idr'),
-                    'part_rev' => (int) $ordersInMonth->where('type', SalesOrderType::SparePart)->sum('total_idr'),
+                    'part_rev' => (int) $ordersInMonth->whereIn('type', [SalesOrderType::SparePart, SalesOrderType::Pos])->sum('total_idr'),
                     'total_rev' => (int) $ordersInMonth->sum('total_idr'),
                 ];
                 $cursor->addMonth();
