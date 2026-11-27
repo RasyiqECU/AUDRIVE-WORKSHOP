@@ -52,7 +52,6 @@ Route::middleware('role:super-admin|sales')->group(function () {
     Route::get('cars/{car}/edit', [CarController::class, 'edit'])->name('cars.edit');
     Route::match(['put', 'patch'], 'cars/{car}', [CarController::class, 'update'])->name('cars.update');
     Route::patch('cars/{car}/status', [CarController::class, 'updateStatus'])->name('cars.status');
-    Route::get('cars/{car}/inspection', [CarController::class, 'inspection'])->name('cars.inspection');
     Route::post('cars/{car}/inspection', [CarController::class, 'storeInspection'])->name('cars.inspection.store');
     Route::post('cars/{car}/featured', [CarController::class, 'setFeatured'])->name('cars.featured');
     Route::delete('cars/{car}/featured', [CarController::class, 'removeFeatured'])->name('cars.featured.remove');

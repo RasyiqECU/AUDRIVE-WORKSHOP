@@ -134,6 +134,11 @@ class SalesOrder extends Model
             : max(0, $this->total_idr - $this->paid_idr);
     }
 
+    public function shippingLabel(): string
+    {
+        return $this->type === SalesOrderType::CarSales ? 'Biaya Towing' : 'Ongkos Kirim';
+    }
+
     /** Halaman tempat customer memantau pesanan ini. */
     public function customerUrl(): string
     {

@@ -72,9 +72,14 @@ class WarrantyClaimService
 
         $order = $transaction['order'];
 
-        return $order->status === SalesOrderStatus::Paid
-            ? ($order->payments()->min('paid_at') ? now()->parse($order->payments()->min('paid_at')) : $order->updated_at)
-            : null;
+        if ($order->status !== SalesOrderStatus::Paid) {
+            return null;
+        }
+
+        // Sejak serah terima; data tanpa tanggal serah terima memakai tanggal pelunasan (bukan booking fee)
+        $settledAt = $order->payments()->max('paid_at');
+
+        return $order->handed_over_at ?? ($settledAt ? now()->parse($settledAt) : $order->updated_at);
     }
 
     public function create(array $transaction, array $data, User $sales): WarrantyClaim

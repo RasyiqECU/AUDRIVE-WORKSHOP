@@ -19,7 +19,7 @@ class CheckoutController extends Controller
         protected CheckoutService $checkoutService
     ) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
         $cart = $this->cartService->getOrCreateCart($request->user()?->customer);
         $cart->load('items.sparePart');

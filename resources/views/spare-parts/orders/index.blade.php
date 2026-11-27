@@ -10,7 +10,7 @@
                 <h1 class="font-display text-2xl md:text-3xl font-bold text-silver-bright">
                     RIWAYAT <span class="text-giallo">PESANAN</span>
                 </h1>
-                <p class="font-body text-xs text-silver-dim mt-1">Daftar transaksi dan status pengiriman suku cadang Anda.</p>
+                <p class="font-body text-xs text-silver-dim mt-1">Pesanan suku cadang, tagihan servis, dan pembelian mobil Anda.</p>
             </div>
             <a href="{{ route('parts.index') }}" class="font-heading text-xs text-giallo hover:text-arancio uppercase tracking-wider">
                 + Beli Part Lainnya
@@ -27,8 +27,8 @@
                                 <span class="font-mono text-xs text-silver-dim">{{ $order->created_at->format('d M Y, H:i') }}</span>
                             </div>
                             <div class="flex items-center gap-2">
-                                <span class="px-2 py-0.5 text-[10px] font-mono rounded uppercase {{ $order->status->value === 'completed' ? 'bg-verde/20 text-verde' : 'bg-warning/20 text-warning' }}">
-                                    {{ strtoupper($order->status->value ?? 'PENDING') }}
+                                <span class="px-2 py-0.5 text-[10px] font-mono rounded uppercase {{ $order->status->value === 'paid' ? 'bg-verde/20 text-verde' : 'bg-warning/20 text-warning' }}">
+                                    {{ $order->progressLabel() }}
                                 </span>
                             </div>
                         </div>
@@ -51,9 +51,12 @@
                                 <a href="{{ route('parts.orders.show', $order) }}" class="px-3 py-1.5 bg-steel/30 hover:bg-steel/50 border border-gunmetal text-silver-bright font-heading text-xs uppercase rounded transition">
                                     Detail Pesanan
                                 </a>
+                                @if($order->work_order_id)
+                                    <a href="{{ $order->customerUrl() }}" class="px-3 py-1.5 border border-gunmetal text-silver-bright font-heading text-xs uppercase rounded">Lihat Servis</a>
+                                @endif
                                 @if($order->status->value === 'pending')
                                     <a href="{{ route('parts.checkout.payment', $order) }}" class="px-3 py-1.5 bg-giallo text-nero font-heading text-xs uppercase font-semibold rounded transition">
-                                        Bayar Sekarang
+                                        {{ $order->awaitsProof() ? 'Unggah Bukti Transfer' : 'Cara Bayar' }}
                                     </a>
                                 @endif
                             </div>

@@ -150,6 +150,7 @@ class PaymentVerificationService
                     app(CarBookingService::class)->releaseExpired($order);
                 }
                 $order->update(['status' => SalesOrderStatus::Expired, 'payment_status' => PaymentStatus::Expired]);
+                $order->invoice()->update(['status' => 'cancelled']);
                 $this->notifyCustomer($order, "Pesanan Kedaluwarsa: #{$order->code}", 'Batas waktu pembayaran terlewati sehingga pesanan dibatalkan.');
                 $expired++;
             });

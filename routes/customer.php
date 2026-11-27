@@ -33,7 +33,7 @@ Route::get('warranty', [WarrantyClaimController::class, 'index'])->name('warrant
 Route::resource('vehicles', VehicleController::class);
 
 // Support Tickets
-Route::resource('tickets', TicketController::class);
+Route::resource('tickets', TicketController::class)->only(['index', 'create', 'store', 'show']);
 Route::post('tickets/{ticket}/reply', [TicketController::class, 'reply'])->name('tickets.reply');
 
 // Loyalty Program

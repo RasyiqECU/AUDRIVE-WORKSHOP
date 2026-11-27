@@ -102,6 +102,12 @@
                 <td class="text-right">Rp {{ number_format($salesOrder->tax_idr, 0, ',', '.') }}</td>
             </tr>
         @endif
+        @if($salesOrder->shipping_fee_idr > 0)
+            <tr>
+                <td class="text-left">{{ $salesOrder->shippingLabel() }}</td>
+                <td class="text-right">Rp {{ number_format($salesOrder->shipping_fee_idr, 0, ',', '.') }}</td>
+            </tr>
+        @endif
         <tr style="font-weight: bold; font-size: 12px;">
             <td class="text-left" style="padding-top: 4px; border-top: 1px dashed #000;">TOTAL:</td>
             <td class="text-right" style="padding-top: 4px; border-top: 1px dashed #000;">Rp {{ number_format($salesOrder->total_idr, 0, ',', '.') }}</td>

@@ -139,7 +139,7 @@
                                     </span>
                                 @else
                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase bg-amber-500/15 text-amber-400 border border-amber-500/40">
-                                        Menunggu
+                                        {{ ($inv->status->value ?? '') === 'cancelled' ? 'Dibatalkan' : 'Menunggu' }}
                                     </span>
                                 @endif
                             </td>
