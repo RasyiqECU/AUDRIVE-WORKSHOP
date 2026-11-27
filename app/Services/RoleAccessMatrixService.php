@@ -239,6 +239,13 @@ class RoleAccessMatrixService
             'summary' => 'Hanya memberi persetujuan dan membaca laporan. Tidak mengerjakan operasional showroom, bengkel, gudang, maupun kasir.',
             'menus' => [
                 [
+                    'name' => 'Titip Jual (Persetujuan)',
+                    'icon' => '🤝',
+                    'route_hint' => 'admin.consignments.index|show|approve|reject',
+                    'access_level' => 'Approve / Reject',
+                    'description' => 'Menetapkan harga, komisi, dan potongan biaya servis setelah inspeksi.',
+                ],
+                [
                     'name' => 'Dashboard (Dashboard Manager)',
                     'icon' => '⬡',
                     'route_hint' => 'admin.dashboard',
@@ -292,6 +299,13 @@ class RoleAccessMatrixService
             'icon' => '🏎',
             'summary' => 'Penjualan unit supercar (termasuk titip jual) sekaligus frontliner bengkel: booking walk-in, check-in, konfirmasi suku cadang ke customer, klaim garansi, dan serah terima. Tidak ada akses kasir, gudang, maupun Database Pelanggan.',
             'menus' => [
+                [
+                    'name' => 'Titip Jual & Serah Terima Mobil',
+                    'icon' => '🔑',
+                    'route_hint' => 'admin.consignments.index|show, admin.car-handovers.*',
+                    'access_level' => 'Pemasaran & Serah Terima',
+                    'description' => 'Memasarkan unit titip jual dan mencatat serah terima mobil yang sudah lunas.',
+                ],
                 [
                     'name' => 'Booking Servis & Work Order (Workshop & Servis)',
                     'icon' => '📅',
@@ -385,7 +399,7 @@ class RoleAccessMatrixService
                 'Membalas pesan konsultasi pelanggan dari website secara langsung',
                 'Mengajukan permohonan diskon ke Manager melalui Pusat Approval',
                 'Booking walk-in, check-in, konfirmasi suku cadang, buat klaim garansi, dan serah terima kendaraan',
-                'Menyetujui atau menolak pengajuan titip jual',
+                'Memasarkan unit titip jual yang disetujui Manager',
             ],
             'restricted_actions' => [
                 'Dilarang menghapus unit mobil dari sistem (Super Admin Only)',
@@ -406,6 +420,13 @@ class RoleAccessMatrixService
             'icon' => '💳',
             'summary' => 'Pemegang kas dengan 7 menu sidebar: Dashboard, Booking Servis, Work Order & Antrean, POS Kasir, Invoice & Bukti Bayar, Ajukan Approval, dan Laporan Shift. Tidak menyentuh teknis pengerjaan, showroom, maupun gudang.',
             'menus' => [
+                [
+                    'name' => 'Verifikasi Pembayaran Online',
+                    'icon' => '🔎',
+                    'route_hint' => 'admin.payment-verifications.*',
+                    'access_level' => 'Approve / Reject',
+                    'description' => 'Memeriksa bukti transfer, mencocokkan mutasi bank, lalu menyetujui atau menolak dengan alasan.',
+                ],
                 [
                     'name' => 'Dashboard (Dashboard Cashier)',
                     'icon' => '⬡',
@@ -459,6 +480,7 @@ class RoleAccessMatrixService
             'allowed_actions' => [
                 'Mengoperasikan modul Point of Sale (POS) untuk semua transaksi pembayaran',
                 'Menerima pembayaran tunai, transfer bank, kartu kredit/debit (EDC), dan QRIS',
+                'Memverifikasi bukti transfer online (approve / reject)',
                 'Mengonfirmasi booking servis dan menyerahkan kendaraan setelah tagihan lunas',
                 'Melunasi pesanan spare part online dan mencatat pembayaran ke penjual titip jual',
                 'Mencetak struk kasir thermal dan menerbitkan invoice resmi',
@@ -466,6 +488,7 @@ class RoleAccessMatrixService
             ],
             'restricted_actions' => [
                 'Dilarang melakukan void/refund secara mandiri tanpa Approval Manager',
+                'Dilarang memberi diskon tanpa persetujuan Manager',
                 'Dilarang membuat WO, mengubah status pengerjaan, menambah item jasa & part, dan melakukan QC',
                 'Dilarang menugaskan teknisi (assign mechanic) ke Work Order (kewenangan Kepala Mekanik)',
                 'Dilarang mengakses modul showroom penjualan mobil (unit, pesanan, test drive, voucher) maupun AI Sound Scan',
@@ -482,6 +505,13 @@ class RoleAccessMatrixService
             'icon' => '📦',
             'summary' => 'Pengelola tunggal gudang dengan 6 menu sidebar: Dashboard, Katalog Spare Part, Stok & Movement, Purchase Order, Ajukan Approval, dan Laporan Inventori. Tidak ada akses showroom, workshop, kasir, maupun CRM.',
             'menus' => [
+                [
+                    'name' => 'Siapkan Pesanan',
+                    'icon' => '📮',
+                    'route_hint' => 'admin.fulfilments.*',
+                    'access_level' => 'Siapkan & Serahkan',
+                    'description' => 'Menyiapkan pesanan spare part yang sudah lunas, lalu mencatat diambil atau dikirim.',
+                ],
                 [
                     'name' => 'Usulan Part Bengkel & Klaim Garansi',
                     'icon' => '🧩',
@@ -557,6 +587,13 @@ class RoleAccessMatrixService
             'icon' => '🔧',
             'summary' => 'Fokus murni perbaikan fisik dengan 4 menu sidebar: Dashboard, Work Order Saya, AI Sound Scan, dan Katalog Spare Part (lihat stok saja). Perbaikan bengkel saja — tanpa kasir, showroom, gudang CRUD, maupun laporan.',
             'menus' => [
+                [
+                    'name' => 'Titip Jual (Inspeksi)',
+                    'icon' => '🤝',
+                    'route_hint' => 'admin.consignments.index|show|inspect',
+                    'access_level' => 'Inspeksi',
+                    'description' => 'Memeriksa kelayakan mobil titip jual dan memperkirakan biaya perbaikan.',
+                ],
                 [
                     'name' => 'Booking Servis (Workshop & Servis)',
                     'icon' => '📅',

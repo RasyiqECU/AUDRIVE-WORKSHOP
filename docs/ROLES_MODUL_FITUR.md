@@ -272,7 +272,31 @@ Offer kedaluwarsa dikembalikan otomatis tiap jam — butuh `php artisan schedule
 
 ---
 
-## 7. Catatan Teknis Lain
+## 7. Pembayaran Online, Stok Booking, dan Titip Jual (27 November 2026)
+
+### 7.1 Pembayaran transfer (tanpa payment gateway)
+
+Customer unggah bukti (JPG/PNG/WEBP, maks 2 MB, disimpan privat di `storage/app/payment-proofs`) → status `waiting_verification` → Cashier **Approve** (lunas, invoice, potong stok) atau **Reject** dengan alasan (unggah ulang). Berlaku untuk pesanan spare part, tagihan servis, dan booking/pelunasan mobil. Satu tabel `payments` polimorfik ke `sales_orders`.
+
+### 7.2 Stok
+
+`spare_parts.stock` = stok fisik, `booked_stock` = dikunci pesanan, tersedia = selisihnya. Pesanan yang lewat batas bayar kedaluwarsa dan stoknya kembali (jadwal `orders:expire` tiap 5 menit — butuh `php artisan schedule:work`).
+
+### 7.3 Mobil
+
+Booking fee mengunci unit (`reserved`) → pelunasan dalam batas hari → serah terima oleh Sales (ambil sendiri / towing). Titip jual: inspeksi Kepala Mekanik → persetujuan harga, komisi, biaya servis oleh Manager → dipasarkan Sales → Cashier membayar penjual (harga − komisi − biaya servis).
+
+### 7.4 Pengaturan
+
+Konfigurasi Sistem → Pembayaran & Pengiriman: rekening tujuan, ongkir, batas bayar, booking fee, batas pelunasan, towing.
+
+### 7.5 API customer
+
+`POST /api/v1/checkout` (`payment_channel`), `GET /api/v1/orders/{id}`, `POST /api/v1/orders/{id}/payment-proof`, `POST /api/v1/work-order-items/{id}/decision`.
+
+---
+
+## 8. Catatan Teknis Lain
 
 - Fitur AI Scan aktif lewat route di `admin.php` (`/admin/ai-scans`) dan `customer.php` (`/customer/ai-scan`).
 - Notifikasi in-app tersedia di kedua portal (list, tandai satu baca, tandai semua baca).
