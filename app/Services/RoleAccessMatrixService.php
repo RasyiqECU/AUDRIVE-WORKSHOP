@@ -29,8 +29,50 @@ class RoleAccessMatrixService
             'category' => 'Sistem & Core Authority',
             'badge_class' => 'bg-giallo/20 border-giallo text-giallo',
             'icon' => '👑',
-            'summary' => 'Pemegang otoritas tertinggi sistem dengan akses penuh ke seluruh 22 menu sidebar: semua modul showroom, workshop, kasir, gudang, CRM, tata kelola, manajemen pengguna, dan konfigurasi sistem.',
+            'summary' => 'Pemegang otoritas tertinggi sistem dengan akses penuh ke seluruh 28 menu sidebar: semua modul showroom, workshop, kasir, gudang, CRM, tata kelola, manajemen pengguna, dan konfigurasi sistem.',
             'menus' => [
+                [
+                    'name' => 'Titip Jual (Showroom & Penjualan)',
+                    'icon' => '🤝',
+                    'route_hint' => 'admin.consignments.*',
+                    'access_level' => 'Full Control',
+                    'description' => 'Inspeksi, persetujuan harga dan komisi, serta pemasaran unit titipan customer.',
+                ],
+                [
+                    'name' => 'Serah Terima Mobil (Showroom & Penjualan)',
+                    'icon' => '🔑',
+                    'route_hint' => 'admin.car-handovers.*',
+                    'access_level' => 'Full Control',
+                    'description' => 'Mencatat serah terima mobil yang sudah lunas.',
+                ],
+                [
+                    'name' => 'Konfirmasi Part (Workshop & Servis)',
+                    'icon' => '🧩',
+                    'route_hint' => 'admin.part-requests.*',
+                    'access_level' => 'Full Control',
+                    'description' => 'Cek usulan suku cadang dan mencatat keputusan customer.',
+                ],
+                [
+                    'name' => 'Klaim Garansi (Workshop & Servis)',
+                    'icon' => '🛡',
+                    'route_hint' => 'admin.warranty-claims.*',
+                    'access_level' => 'Full Control',
+                    'description' => 'Membuat, mendiagnosa, memutuskan klaim, dan mengeluarkan part garansi.',
+                ],
+                [
+                    'name' => 'Verifikasi Pembayaran (Point of Sale)',
+                    'icon' => '🔎',
+                    'route_hint' => 'admin.payment-verifications.*',
+                    'access_level' => 'Approve / Reject',
+                    'description' => 'Memeriksa bukti transfer online.',
+                ],
+                [
+                    'name' => 'Siapkan Pesanan (Gudang & Inventori)',
+                    'icon' => '📮',
+                    'route_hint' => 'admin.fulfilments.*',
+                    'access_level' => 'Full Control',
+                    'description' => 'Menyiapkan dan menyerahkan pesanan spare part yang sudah lunas.',
+                ],
                 [
                     'name' => 'Dashboard (Dashboard Executive)',
                     'icon' => '⬡',
@@ -42,8 +84,8 @@ class RoleAccessMatrixService
                     'name' => 'Unit Supercar (Showroom & Penjualan)',
                     'icon' => '🏎',
                     'route_hint' => 'admin.cars.*',
-                    'access_level' => 'CRUD + Hapus Permanen',
-                    'description' => 'Tambah, edit, unggah foto, set featured, inspeksi fisik, sampai menghapus permanen unit mobil.',
+                    'access_level' => 'CRUD + Hapus',
+                    'description' => 'Tambah, edit, unggah foto, set featured, inspeksi fisik, sampai menghapus unit mobil (soft delete, data tetap tersimpan).',
                 ],
                 [
                     'name' => 'Pesanan Masuk (Showroom & Penjualan)',
@@ -188,7 +230,7 @@ class RoleAccessMatrixService
             ],
             'allowed_actions' => [
                 'Bypass seluruh otorisasi sistem via Master Gate (Gate::before)',
-                'Membuat, memperbarui, dan menghapus permanen unit supercar dan spare part',
+                'Membuat, memperbarui, dan menghapus (soft delete) unit supercar dan spare part',
                 'Mengelola akun semua pengguna portal dan menetapkan role hak akses',
                 'Mengubah pengaturan dan variabel lingkungan portal AUDrive',
                 'Menyetujui (Approve) atau menolak (Reject) semua pengajuan approval dan mengeksekusi efeknya',
@@ -205,17 +247,18 @@ class RoleAccessMatrixService
             'category' => 'Eksekutif & Pemilik Usaha',
             'badge_class' => 'bg-amber-400/20 border-amber-400 text-amber-400',
             'icon' => '👔',
-            'summary' => 'Pemilik usaha dengan hak akses hanya 1 menu: Executive Dashboard. Seluruh pelaporan finansial, omzet, margin, dan performa divisi tampil di dalam halaman dashboard eksekutif ini — tidak ada menu Laporan maupun menu operasional lain di sidebar.',
+            'summary' => 'Pemilik usaha dengan hak akses hanya 1 menu: Executive Dashboard. Pelaporan finansial, omzet, margin, dan performa divisi tampil di dashboard eksekutif. Tidak ada menu Laporan di sidebar, tetapi halaman Laporan tetap bisa dibuka lewat alamat /admin/reports.',
             'menus' => [
                 [
                     'name' => 'Executive Dashboard',
                     'icon' => '⬡',
                     'route_hint' => 'admin.dashboard',
                     'access_level' => 'Monitoring Real-Time (Menu Tunggal)',
-                    'description' => 'Satu-satunya halaman Owner: grafik omzet bersih, margin laba, rasio showroom vs bengkel vs ritel part, filter periode (Hari Ini/Bulan/Tahun/Custom), dan daftar acara terkini. Data pelaporan yang dibutuhkan sudah diintegrasikan di sini.',
+                    'description' => 'Satu-satunya menu Owner: grafik omzet bersih, margin laba, rasio showroom vs bengkel vs ritel part, filter periode (Hari Ini/Bulan/Tahun/Custom), dan daftar acara terkini. Data pelaporan yang dibutuhkan sudah diintegrasikan di sini.',
                 ],
             ],
             'allowed_actions' => [
+                'Membuka laporan Penjualan, Workshop, Inventori, dan Finansial lewat /admin/reports (tanpa menu di sidebar)',
                 'Melihat metrik finansial, omzet harian/bulanan/tahunan, dan rasio laba usaha',
                 'Menggunakan filter tanggal dinamis (Hari Ini, Minggu Ini, Bulan Ini, Tahun Ini, Custom Periode)',
                 'Menerima notifikasi khusus via ikon 🔔 di topbar bila ada tipe notifikasi yang menyasar owner',
@@ -223,10 +266,8 @@ class RoleAccessMatrixService
             'restricted_actions' => [
                 'Dilarang menambah, mengedit, atau menghapus data transaksi maupun katalog apapun',
                 'TIDAK ada menu operasional apapun di sidebar Owner (satu-satunya menu adalah Executive Dashboard)',
-                'TIDAK ada menu Laporan di sidebar — pelaporan telah terangkum di dalam Executive Dashboard',
                 'Dilarang mengakses mesin kasir (POS), Work Order, Database Pelanggan, Unit Supercar, maupun Gudang',
                 'Dilarang mengakses menu Manajemen Pengguna, Konfigurasi Sistem, dan Pusat Approval',
-                'Notifikasi hanya via ikon 🔔 topbar (tidak ada halaman operasional lain yang bisa dibuka)',
             ],
         ],
 
@@ -300,18 +341,32 @@ class RoleAccessMatrixService
             'summary' => 'Penjualan unit supercar (termasuk titip jual) sekaligus frontliner bengkel: booking walk-in, check-in, konfirmasi suku cadang ke customer, klaim garansi, dan serah terima. Tidak ada akses kasir, gudang, maupun Database Pelanggan.',
             'menus' => [
                 [
-                    'name' => 'Titip Jual & Serah Terima Mobil',
-                    'icon' => '🔑',
-                    'route_hint' => 'admin.consignments.index|show, admin.car-handovers.*',
-                    'access_level' => 'Pemasaran & Serah Terima',
-                    'description' => 'Memasarkan unit titip jual dan mencatat serah terima mobil yang sudah lunas.',
+                    'name' => 'Titip Jual (Showroom & Penjualan)',
+                    'icon' => '🤝',
+                    'route_hint' => 'admin.consignments.index|show',
+                    'access_level' => 'Pemasaran',
+                    'description' => 'Memasarkan unit titip jual yang sudah disetujui Manager.',
                 ],
                 [
-                    'name' => 'Booking Servis & Work Order (Workshop & Servis)',
+                    'name' => 'Serah Terima Mobil (Showroom & Penjualan)',
+                    'icon' => '🔑',
+                    'route_hint' => 'admin.car-handovers.*',
+                    'access_level' => 'Serah Terima',
+                    'description' => 'Mencatat serah terima mobil yang sudah lunas.',
+                ],
+                [
+                    'name' => 'Booking Servis (Workshop & Servis)',
                     'icon' => '📅',
-                    'route_hint' => 'admin.service-bookings.*, admin.work-orders.index|show|deliver',
-                    'access_level' => 'Walk-in, Check-in, Serah Terima',
-                    'description' => 'Menginput customer walk-in, mencatat km/kondisi bodi/barang saat check-in, dan menyerahkan mobil yang sudah lunas.',
+                    'route_hint' => 'admin.service-bookings.*',
+                    'access_level' => 'Walk-in, Check-in, Status',
+                    'description' => 'Menginput customer walk-in, mencatat km, kondisi bodi, dan barang saat check-in, serta mengonfirmasi atau membatalkan booking.',
+                ],
+                [
+                    'name' => 'Work Order & Antrean (Workshop & Servis)',
+                    'icon' => '🔧',
+                    'route_hint' => 'admin.work-orders.index|show|deliver',
+                    'access_level' => 'Pantau & Serah Terima',
+                    'description' => 'Memantau pengerjaan dan menyerahkan mobil yang sudah lunas.',
                 ],
                 [
                     'name' => 'Konfirmasi Part (Workshop & Servis)',
@@ -360,7 +415,7 @@ class RoleAccessMatrixService
                     'icon' => '🎟️',
                     'route_hint' => 'admin.vouchers.index|show, admin.promotions.index|show',
                     'access_level' => 'View Only',
-                    'description' => 'Melihat daftar voucher/promo aktif untuk didampingkan ke customer (penggunaan voucher tetap dilakukan di POS).',
+                    'description' => 'Melihat daftar voucher/promo aktif untuk diinformasikan ke customer.',
                 ],
                 [
                     'name' => 'Pesan Customer (CRM & Komunikasi)',
@@ -392,6 +447,10 @@ class RoleAccessMatrixService
                 ],
             ],
             'allowed_actions' => [
+                'Melihat dan mencetak invoice penjualan mobil (tanpa menu di sidebar)',
+                'Mengonfirmasi atau membatalkan booking servis yang belum punya Work Order',
+                'Melihat saldo dan riwayat poin loyalitas lewat /admin/loyalty (tanpa menu di sidebar)',
+                'Halaman ringkasan Laporan juga menampilkan omzet total seluruh divisi',
                 'Menginput unit supercar baru ke etalase portal dan mengunggah foto kualitas tinggi',
                 'Mengubah detail harga, kilometer, deskripsi, dan catatan inspeksi unit mobil',
                 'Menerima (Accept) pesanan masuk untuk konversi menjadi Sales Order resmi',
@@ -418,7 +477,7 @@ class RoleAccessMatrixService
             'category' => 'Keuangan & Frontdesk Operasional',
             'badge_class' => 'bg-purple-400/20 border-purple-400 text-purple-400',
             'icon' => '💳',
-            'summary' => 'Pemegang kas dengan 7 menu sidebar: Dashboard, Booking Servis, Work Order & Antrean, POS Kasir, Invoice & Bukti Bayar, Ajukan Approval, dan Laporan Shift. Tidak menyentuh teknis pengerjaan, showroom, maupun gudang.',
+            'summary' => 'Pemegang kas dengan 8 menu sidebar: Dashboard, Booking Servis, Work Order & Antrean, POS Kasir, Verifikasi Pembayaran, Invoice & Bukti Bayar, Ajukan Approval, dan Laporan Shift. Tidak menyentuh teknis pengerjaan, showroom, maupun gudang.',
             'menus' => [
                 [
                     'name' => 'Verifikasi Pembayaran Online',
@@ -453,7 +512,7 @@ class RoleAccessMatrixService
                     'icon' => '💳',
                     'route_hint' => 'admin.pos.*',
                     'access_level' => 'Operator Utama POS',
-                    'description' => 'Pembayaran servis (WO), pelunasan pembelian mobil, penjualan part ritel; otomatis memberi poin loyalitas, menerapkan voucher, dan cetak struk thermal. WO hanya bisa dibayar setelah lolos QC; serah terima dicatat terpisah. Termasuk pelunasan pesanan online dan pembayaran ke penjual titip jual.',
+                    'description' => 'Pembayaran servis (WO), pelunasan pembelian mobil, penjualan part ritel; otomatis memberi poin loyalitas, dan cetak struk thermal. WO hanya bisa dibayar setelah lolos QC; serah terima dicatat terpisah. Termasuk pelunasan pesanan online dan pembayaran ke penjual titip jual.',
                 ],
                 [
                     'name' => 'Invoice & Bukti Bayar (Point of Sale)',
@@ -478,6 +537,8 @@ class RoleAccessMatrixService
                 ],
             ],
             'allowed_actions' => [
+                'Melihat Database Pelanggan dan Loyalitas lewat /admin/customers dan /admin/loyalty (tanpa menu di sidebar)',
+                'Halaman ringkasan Laporan juga menampilkan omzet total seluruh divisi',
                 'Mengoperasikan modul Point of Sale (POS) untuk semua transaksi pembayaran',
                 'Menerima pembayaran tunai, transfer bank, kartu kredit/debit (EDC), dan QRIS',
                 'Memverifikasi bukti transfer online (approve / reject)',
@@ -503,8 +564,15 @@ class RoleAccessMatrixService
             'category' => 'Logistik & Pengelolaan Suku Cadang',
             'badge_class' => 'bg-amber-500/20 border-amber-500 text-amber-500',
             'icon' => '📦',
-            'summary' => 'Pengelola tunggal gudang dengan 6 menu sidebar: Dashboard, Katalog Spare Part, Stok & Movement, Purchase Order, Ajukan Approval, dan Laporan Inventori. Tidak ada akses showroom, workshop, kasir, maupun CRM.',
+            'summary' => 'Pengelola tunggal gudang dengan 9 menu sidebar: Dashboard, Katalog Spare Part, Siapkan Pesanan, Klaim Garansi, Usulan Part Bengkel, Stok & Movement, Purchase Order, Ajukan Approval, dan Laporan Inventori. Tidak ada akses showroom, workshop, kasir, maupun CRM.',
             'menus' => [
+                [
+                    'name' => 'Klaim Garansi',
+                    'icon' => '🛡',
+                    'route_hint' => 'admin.warranty-claims.index|show|parts',
+                    'access_level' => 'Keluarkan Part',
+                    'description' => 'Mengeluarkan suku cadang pengganti untuk klaim garansi yang disetujui.',
+                ],
                 [
                     'name' => 'Siapkan Pesanan',
                     'icon' => '📮',
@@ -513,11 +581,11 @@ class RoleAccessMatrixService
                     'description' => 'Menyiapkan pesanan spare part yang sudah lunas, lalu mencatat diambil atau dikirim.',
                 ],
                 [
-                    'name' => 'Usulan Part Bengkel & Klaim Garansi',
+                    'name' => 'Usulan Part Bengkel',
                     'icon' => '🧩',
-                    'route_hint' => 'admin.part-requests.index|check, admin.warranty-claims.index|show|parts',
-                    'access_level' => 'Cek Stok & Keluarkan Part',
-                    'description' => 'Mengecek stok/harga usulan kepala mekanik dan mengeluarkan suku cadang pengganti untuk klaim garansi.',
+                    'route_hint' => 'admin.part-requests.index|check',
+                    'access_level' => 'Cek Stok & Harga',
+                    'description' => 'Mengecek stok dan harga suku cadang yang diusulkan Kepala Mekanik.',
                 ],
                 [
                     'name' => 'Dashboard (Dashboard Inventory)',
@@ -563,7 +631,7 @@ class RoleAccessMatrixService
                 ],
             ],
             'allowed_actions' => [
-                'Menambah, mengedit, dan menonaktifkan master data katalog suku cadang (soft delete)',
+                'Menambah, mengedit, dan menghapus katalog suku cadang (soft delete, tetapi foto part ikut terhapus)',
                 'Mengatur batas peringatan stok minimum (low stock threshold) per SKU',
                 'Melakukan penyesuaian stok (Stock Adjustment) saat ditemukan selisih fisik opname kecil',
                 'Membuat draft Purchase Order (PO), mengirim ke vendor, dan mencatat barang yang diterima',
@@ -571,10 +639,9 @@ class RoleAccessMatrixService
             ],
             'restricted_actions' => [
                 'Dilarang menyetujui (Approve) pengajuan buatannya sendiri — pembuat pengajuan ≠ penyetuju (kewenangan Manager)',
-                'Dilarang menghapus suku cadang secara permanen (Super Admin Only)',
                 'Dilarang mengakses modul showroom mobil, Booking Servis, Work Order, AI Sound Scan, dan kasir POS',
                 'Dilarang mengakses CRM: Database Pelanggan, Pesan Customer, Tiket Layanan, dan Loyalitas',
-                'Dilarang melihat laporan finansial/laporan divisi lain dan membalas pesan customer',
+                'Dilarang membuka laporan detail penjualan, workshop, dan finansial (ringkasan Laporan masih menampilkan omzet total) serta membalas pesan customer',
                 'Tidak ada aktivitas jual-beli untuk diri sendiri — PO hanya untuk pengadaan cabang',
             ],
         ],
@@ -585,7 +652,7 @@ class RoleAccessMatrixService
             'category' => 'Teknis & Pengerjaan Servis',
             'badge_class' => 'bg-orange-400/20 border-orange-400 text-orange-400',
             'icon' => '🔧',
-            'summary' => 'Fokus murni perbaikan fisik dengan 4 menu sidebar: Dashboard, Work Order Saya, AI Sound Scan, dan Katalog Spare Part (lihat stok saja). Perbaikan bengkel saja — tanpa kasir, showroom, gudang CRUD, maupun laporan.',
+            'summary' => 'Fokus murni perbaikan fisik dengan 7 menu sidebar: Dashboard, Titip Jual, Booking Servis, Work Order Saya, Klaim Garansi, AI Sound Scan, dan Katalog Spare Part (lihat stok saja). Perbaikan bengkel saja — tanpa kasir, showroom, gudang CRUD, maupun laporan.',
             'menus' => [
                 [
                     'name' => 'Titip Jual (Inspeksi)',
@@ -613,7 +680,7 @@ class RoleAccessMatrixService
                     'icon' => '🔧',
                     'route_hint' => 'admin.work-orders.index|show|status|service-items|part-items',
                     'access_level' => 'Eksekusi Work Order Miliknya',
-                    'description' => 'Melihat WO miliknya, memulai servis, menambah jasa, mengusulkan suku cadang, melakukan QC, dan menugaskan ulang. Tidak melihat WO kepala mekanik lain.',
+                    'description' => 'Melihat WO miliknya, memulai servis, menambah jasa, mengusulkan suku cadang, melakukan QC, dan menugaskan ulang. Melihat WO miliknya dan yang belum ditugaskan, bukan WO Kepala Mekanik lain.',
                 ],
                 [
                     'name' => 'Klaim Garansi (Workshop & Servis)',
@@ -643,7 +710,7 @@ class RoleAccessMatrixService
                 'Mencatat rincian jasa pengerjaan dan mengusulkan suku cadang (menunggu konfirmasi customer)',
                 'Mengajukan perbaikan ke tahap Quality Control (QC) setelah pekerjaan fisik selesai',
                 'Mendiagnosa klaim garansi',
-                'Merekam & mereview isi pemindaian suara mesin di modul AI Sound Scan',
+                'Mereview hasil pemindaian suara mesin di modul AI Sound Scan',
             ],
             'restricted_actions' => [
                 'Dilarang melihat Work Order milik teknisi/kepala mekanik lain',
@@ -665,6 +732,34 @@ class RoleAccessMatrixService
             'summary' => 'Pengguna portal publik dan member area: melihat katalog supercar, melakukan booking servis mandiri, memantau riwayat mobil di garasi, dan menerima pengingat perawatan. Seluruh menu berada di portal /customer — bukan dashboard administrator.',
             'menus' => [
                 [
+                    'name' => 'Marketplace & Belanja Spare Part',
+                    'icon' => '🛒',
+                    'route_hint' => 'marketplace.index, parts.index',
+                    'access_level' => 'Beli Online',
+                    'description' => 'Melihat dan membeli mobil serta suku cadang.',
+                ],
+                [
+                    'name' => 'Pesanan & Pembayaran',
+                    'icon' => '💰',
+                    'route_hint' => 'parts.orders.index',
+                    'access_level' => 'Pesanan Sendiri',
+                    'description' => 'Memantau pesanan suku cadang, servis, dan mobil, serta mengunggah bukti transfer.',
+                ],
+                [
+                    'name' => 'Jual Mobil Saya (Titip Jual)',
+                    'icon' => '🤝',
+                    'route_hint' => 'marketplace.sell.create',
+                    'access_level' => 'Pengajuan',
+                    'description' => 'Mengajukan mobil bekas untuk dititipjualkan.',
+                ],
+                [
+                    'name' => 'Klaim Garansi',
+                    'icon' => '🛡',
+                    'route_hint' => 'customer.warranty.index',
+                    'access_level' => 'Pantau Status',
+                    'description' => 'Memantau status klaim garansi miliknya.',
+                ],
+                [
                     'name' => 'Portal Pelanggan & Notifikasi',
                     'icon' => '📱',
                     'route_hint' => 'customer.dashboard, customer.notifications.*',
@@ -681,7 +776,7 @@ class RoleAccessMatrixService
                 [
                     'name' => 'Booking Servis Mandiri',
                     'icon' => '📅',
-                    'route_hint' => 'customer.service-bookings.*',
+                    'route_hint' => 'workshop.booking.*',
                     'access_level' => 'Pemesanan Jadwal Online',
                     'description' => 'Memilih tanggal, waktu, dan jenis paket servis berkala dari perangkat pribadi, serta memantau statusnya.',
                 ],
