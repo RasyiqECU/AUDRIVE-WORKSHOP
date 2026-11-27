@@ -41,6 +41,7 @@
                     {{ $car->full_name }}
                 </h3>
                 <p class="font-mono text-[10px] text-silver-dim">{{ $car->code }}</p>
+                <span class="inline-block mt-1 px-2 py-0.5 border border-giallo/40 text-giallo font-heading text-[9px] uppercase tracking-wider">{{ $car->condition_label }}</span>
             </div>
         </div>
 

@@ -43,7 +43,7 @@
                         <option value="sales" {{ old('role') === 'sales' ? 'selected' : '' }}>Sales</option>
                         <option value="cashier" {{ old('role') === 'cashier' ? 'selected' : '' }}>Cashier</option>
                         <option value="inventory" {{ old('role') === 'inventory' ? 'selected' : '' }}>Inventory</option>
-                        <option value="mechanic" {{ old('role') === 'mechanic' ? 'selected' : '' }}>Mechanic</option>
+                        <option value="mechanic" {{ old('role') === 'mechanic' ? 'selected' : '' }}>Kepala Mekanik</option>
                         <option value="customer" {{ old('role') === 'customer' ? 'selected' : '' }}>Customer</option>
                         <option value="super-admin" {{ old('role') === 'super-admin' ? 'selected' : '' }}>Super Admin</option>
                     </select>

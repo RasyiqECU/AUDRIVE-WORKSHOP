@@ -17,7 +17,7 @@
 
     <div class="grid grid-cols-2 gap-2 mb-3">
         <div class="bg-steel/20 p-2 border border-gunmetal/30">
-            <p class="font-heading text-[9px] uppercase tracking-wider text-silver-dim">Mekanik</p>
+            <p class="font-heading text-[9px] uppercase tracking-wider text-silver-dim">Kepala Mekanik</p>
             <p class="font-heading text-xs text-silver-bright">{{ $workOrder->mechanic->name ?? 'Belum ditugaskan' }}</p>
         </div>
         <div class="bg-steel/20 p-2 border border-gunmetal/30">

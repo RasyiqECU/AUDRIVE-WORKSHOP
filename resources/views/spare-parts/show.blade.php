@@ -44,9 +44,9 @@
 
                     @if($sparePart->isLowStock())
                         <div class="absolute top-4 right-4">
-                            <x-ui.badge type="warning">Stok Terbatas (Tersisa {{ $sparePart->stock }})</x-ui.badge>
+                            <x-ui.badge type="warning">Stok Terbatas (Tersisa {{ $sparePart->available_stock }})</x-ui.badge>
                         </div>
-                    @elseif($sparePart->stock <= 0)
+                    @elseif($sparePart->available_stock <= 0)
                         <div class="absolute top-4 right-4">
                             <x-ui.badge type="danger">Stok Habis</x-ui.badge>
                         </div>
@@ -108,14 +108,14 @@
                     </div>
                     <div class="text-right">
                         <span class="font-mono text-xs block text-silver-dim">Ketersediaan Gudang:</span>
-                        <span class="font-mono text-sm font-bold {{ $sparePart->stock > 0 ? 'text-verde' : 'text-danger' }}">
-                            {{ $sparePart->stock > 0 ? $sparePart->stock . ' Unit Siap Kirim' : 'Habis (Pre-Order via Konsultan)' }}
+                        <span class="font-mono text-sm font-bold {{ $sparePart->available_stock > 0 ? 'text-verde' : 'text-danger' }}">
+                            {{ $sparePart->available_stock > 0 ? $sparePart->available_stock . ' Unit Siap Kirim' : 'Habis (Pre-Order via Konsultan)' }}
                         </span>
                     </div>
                 </div>
 
                 {{-- Order Form / Add to Cart --}}
-                @if($sparePart->stock > 0)
+                @if($sparePart->available_stock > 0)
                     <form action="{{ route('parts.cart.store') }}" method="POST" class="space-y-4">
                         @csrf
                         <input type="hidden" name="spare_part_id" value="{{ $sparePart->id }}">
@@ -125,9 +125,9 @@
                                 <label class="block font-heading text-[10px] uppercase tracking-wider text-silver-dim mb-1 font-semibold">Jumlah (Qty)</label>
                                 <div class="flex items-center border border-gunmetal rounded bg-nero">
                                     <button type="button" onclick="const q = document.getElementById('qty'); if(q.value > 1) q.value--;" class="px-3 py-2 text-silver hover:text-giallo focus:outline-none">-</button>
-                                    <input type="number" id="qty" name="qty" value="1" min="1" max="{{ $sparePart->stock }}"
+                                    <input type="number" id="qty" name="qty" value="1" min="1" max="{{ $sparePart->available_stock }}"
                                            class="w-full bg-transparent text-center text-xs text-silver-bright font-mono focus:outline-none py-2" />
-                                    <button type="button" onclick="const q = document.getElementById('qty'); if(q.value < {{ $sparePart->stock }}) q.value++;" class="px-3 py-2 text-silver hover:text-giallo focus:outline-none">+</button>
+                                    <button type="button" onclick="const q = document.getElementById('qty'); if(q.value < {{ $sparePart->available_stock }}) q.value++;" class="px-3 py-2 text-silver hover:text-giallo focus:outline-none">+</button>
                                 </div>
                             </div>
 

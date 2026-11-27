@@ -21,7 +21,7 @@ class NotificationService implements NotificationServiceContract
      * Matriks relevansi notifikasi per tipe.
      *
      * Setiap tipe hanya boleh dikirim ke role yang memang berkepentingan.
-     * Role di luar daftar (mis. mekanik menerima notifikasi invoice/pembayaran
+     * Role di luar daftar (mis. kepala mekanik menerima notifikasi invoice/pembayaran
      * customer) akan difilter otomatis oleh notifyRoles() dan dicatat sebagai
      * warning.
      *
@@ -32,31 +32,37 @@ class NotificationService implements NotificationServiceContract
      */
     protected array $roleAudienceMatrix = [
         // ── Bengkel / Workshop ──
-        'service_booking_created' => ['mechanic', 'manager', 'cashier', 'super-admin'],
-        'service_booking_confirmed' => ['mechanic', 'manager', 'cashier', 'sales', 'super-admin'],
-        'booking_created' => ['mechanic', 'manager', 'cashier', 'super-admin'],
-        'booking_confirmed' => ['mechanic', 'manager', 'cashier', 'super-admin'],
-        'work_order_status_changed' => ['mechanic', 'cashier', 'manager', 'super-admin'],
-        'repair_completed' => ['mechanic', 'cashier', 'manager', 'super-admin'],
-        'work_order_delivered' => ['mechanic', 'cashier', 'manager', 'super-admin'],
-        'ai_scan_completed' => ['mechanic', 'manager', 'super-admin'],
+        'service_booking_created' => ['mechanic', 'cashier', 'sales', 'super-admin'],
+        'part_request' => ['mechanic', 'inventory', 'sales', 'super-admin'],
+        'warranty_claim' => ['mechanic', 'inventory', 'sales', 'manager', 'super-admin'],
+        'payment_verification' => ['cashier', 'super-admin'],
+        'order_fulfilment' => ['inventory', 'super-admin'],
+        'consignment' => ['sales', 'mechanic', 'manager', 'super-admin'],
+        'booking_expired' => ['manager', 'sales', 'super-admin'],
+        'service_booking_confirmed' => ['mechanic', 'cashier', 'sales', 'super-admin'],
+        'booking_created' => ['mechanic', 'cashier', 'super-admin'],
+        'booking_confirmed' => ['mechanic', 'cashier', 'super-admin'],
+        'work_order_status_changed' => ['mechanic', 'cashier', 'super-admin'],
+        'repair_completed' => ['mechanic', 'cashier', 'super-admin'],
+        'work_order_delivered' => ['mechanic', 'cashier', 'super-admin'],
+        'ai_scan_completed' => ['mechanic', 'super-admin'],
 
         // ── Showroom / Marketplace ──
-        'test_drive_requested' => ['sales', 'manager', 'super-admin'],
-        'test_drive_confirmed' => ['sales', 'manager', 'super-admin'],
-        'test_drive_completed' => ['sales', 'manager', 'super-admin'],
-        'offer_submitted' => ['sales', 'manager', 'super-admin'],
-        'offer_accepted' => ['sales', 'manager', 'super-admin'],
-        'offer_rejected' => ['sales', 'manager', 'super-admin'],
+        'test_drive_requested' => ['sales', 'super-admin'],
+        'test_drive_confirmed' => ['sales', 'super-admin'],
+        'test_drive_completed' => ['sales', 'super-admin'],
+        'offer_submitted' => ['sales', 'super-admin'],
+        'offer_accepted' => ['sales', 'super-admin'],
+        'offer_rejected' => ['sales', 'super-admin'],
 
         // ── Transaksi, Pembayaran & Inventori ──
-        'order_created' => ['cashier', 'inventory', 'manager', 'super-admin'],
-        'payment_success' => ['cashier', 'sales', 'manager', 'super-admin'],
-        'payment_failed' => ['cashier', 'manager', 'super-admin'],
-        'low_stock_alert' => ['inventory', 'manager', 'super-admin'],
+        'order_created' => ['cashier', 'inventory', 'super-admin'],
+        'payment_success' => ['cashier', 'sales', 'super-admin'],
+        'payment_failed' => ['cashier', 'super-admin'],
+        'low_stock_alert' => ['inventory', 'super-admin'],
 
         // ── Tata Kelola ──
-        'contact_message' => ['mechanic', 'sales', 'manager', 'super-admin'],
+        'contact_message' => ['mechanic', 'sales', 'super-admin'],
         'approval_requested' => ['manager', 'super-admin'],
         'approval_resolved' => ['manager', 'super-admin'],
 

@@ -15,8 +15,9 @@
         'total_jasa' => $selectedWorkOrder->total_jasa_idr,
         'total_part' => $selectedWorkOrder->total_part_idr,
         'subtotal' => $selectedWorkOrder->total_idr,
+        'discount' => (int) $selectedWorkOrder->salesOrder?->discount_idr,
         'items' => $selectedWorkOrder->items->map(fn($item) => [
-            'type' => $item->item_type ?? 'service',
+            'type' => $item->type,
             'desc' => $item->description ?: ($item->sparePart?->name ?? 'Item'),
             'qty' => $item->qty,
             'price' => $item->unit_price_idr,
@@ -30,10 +31,15 @@
         'customer_phone' => $selectedCarOrder->customer?->phone ?? $selectedCarOrder->customer?->user?->phone ?? '-',
         'car_title' => $selectedCarOrder->items->first()?->description ?? 'Unit Mobil',
         'subtotal' => $selectedCarOrder->subtotal_idr,
+        'discount' => $selectedCarOrder->discount_idr,
         'total' => $selectedCarOrder->total_idr,
         'notes' => $selectedCarOrder->notes,
     ]) : 'null' }},
     discountWo: 0,
+    init() {
+        this.discountWo = this.selectedWo?.discount || 0;
+        this.discountCar = this.selectedCar?.discount || 0;
+    },
     discountCar: 0,
     paymentMethodWo: 'cash',
     paymentMethodParts: 'cash',
@@ -45,7 +51,7 @@
 
     selectCar(car) {
         this.selectedCar = car;
-        this.discountCar = 0;
+        this.discountCar = car.discount || 0;
     },
 
     get carTotal() {
@@ -68,15 +74,7 @@
             transfer: {
                 icon: '🏦',
                 title: 'Transfer Bank',
-                lines: [
-                    'Bank: BCA',
-                    'No. Rekening: 1234567890',
-                    'Atas Nama: AUDRIVE AUTO SERVICE',
-                    '---',
-                    'Bank: Mandiri',
-                    'No. Rekening: 0987654321',
-                    'Atas Nama: AUDRIVE AUTO SERVICE',
-                ]
+                lines: {{ Js::from(collect(\App\Services\PaymentSettings::accounts())->map(fn ($a) => "{$a['bank']}: {$a['number']} a.n. {$a['holder']}")->all()) }}
             },
             ewallet: {
                 icon: '📱',
@@ -93,19 +91,17 @@
 
     selectWorkOrder(wo) {
         this.selectedWo = wo;
-        this.discountWo = 0;
+        this.discountWo = wo.discount || 0;
     },
 
     get woTax() {
         if (!this.selectedWo) return 0;
-        let discounted = Math.max(0, this.selectedWo.subtotal - this.discountWo);
-        return Math.round(discounted * 0.11);
+        return Math.floor(this.selectedWo.subtotal * 0.11);
     },
 
     get woTotal() {
         if (!this.selectedWo) return 0;
-        let discounted = Math.max(0, this.selectedWo.subtotal - this.discountWo);
-        return discounted + this.woTax;
+        return Math.max(0, this.selectedWo.subtotal + this.woTax - this.discountWo);
     },
 
     addToCart(part) {
@@ -210,7 +206,7 @@
                                 <tr class="border-b border-gunmetal bg-steel/20 text-[10px] font-heading uppercase tracking-wider text-silver-dim">
                                     <th class="py-3 px-4">Work Order</th>
                                     <th class="py-3 px-4">Customer & Mobil</th>
-                                    <th class="py-3 px-4">Mekanik</th>
+                                    <th class="py-3 px-4">Kepala Mekanik</th>
                                     <th class="py-3 px-4">Status</th>
                                     <th class="py-3 px-4 text-right">Total Biaya</th>
                                     <th class="py-3 px-4 text-right">Aksi</th>
@@ -228,8 +224,9 @@
                                             'total_jasa' => $wo->total_jasa_idr,
                                             'total_part' => $wo->total_part_idr,
                                             'subtotal' => $wo->total_idr,
+                                            'discount' => (int) $wo->salesOrder?->discount_idr,
                                             'items' => $wo->items->map(fn($it) => [
-                                                'type' => $it->item_type ?? 'service',
+                                                'type' => $it->type,
                                                 'desc' => $it->description ?: ($it->sparePart?->name ?? 'Item'),
                                                 'qty' => $it->qty,
                                                 'price' => $it->unit_price_idr,
@@ -279,6 +276,39 @@
 
             {{-- 2. TAB: SPARE PARTS CATALOG --}}
             <div x-show="activeTab === 'parts'" class="space-y-4">
+                @if($pendingPartOrders->isNotEmpty())
+                    <div class="panel border border-gunmetal/80 bg-carbon overflow-hidden">
+                        <div class="bg-steel/30 px-5 py-3.5 border-b border-gunmetal">
+                            <h3 class="font-heading text-xs uppercase tracking-wider text-silver-bright">
+                                Pesanan Online Menunggu Pembayaran ({{ $pendingPartOrders->count() }})
+                            </h3>
+                        </div>
+                        <div class="divide-y divide-gunmetal/30">
+                            @foreach($pendingPartOrders as $partOrder)
+                                <form action="{{ route('admin.pos.part-orders.pay', $partOrder) }}" method="POST"
+                                      onsubmit="return confirm('Konfirmasi pembayaran pesanan {{ $partOrder->code }}?')"
+                                      class="flex flex-wrap items-center gap-3 px-5 py-3 text-xs">
+                                    @csrf
+                                    <div class="flex-1">
+                                        <p class="font-mono font-bold text-giallo">{{ $partOrder->code }}</p>
+                                        <p class="text-silver-dim">{{ $partOrder->customer?->user?->name ?? 'Customer' }} &bull; {{ $partOrder->items->sum('qty') }} item</p>
+                                    </div>
+                                    <span class="font-mono font-bold text-silver-bright">Rp {{ number_format($partOrder->total_idr, 0, ',', '.') }}</span>
+                                    <select name="payment_method" required class="bg-steel/60 border border-gunmetal text-silver-bright text-xs rounded p-2">
+                                        <option value="transfer">Bank Transfer</option>
+                                        <option value="cash">Tunai</option>
+                                        <option value="card">Kartu</option>
+                                        <option value="ewallet">QRIS / E-Wallet</option>
+                                    </select>
+                                    <button type="submit" class="px-3 py-2 bg-giallo text-nero font-heading font-bold text-[10px] uppercase rounded hover:bg-arancio">
+                                        Tandai Lunas
+                                    </button>
+                                </form>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 <div class="panel border border-gunmetal/70 bg-carbon p-4">
                     <input type="text"
                            x-model="partsSearch"
@@ -289,7 +319,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[550px] overflow-y-auto p-1">
                     @forelse($parts as $part)
                         <div x-show="!partsSearch || '{{ strtolower($part->name . ' ' . $part->sku) }}'.includes(partsSearch.toLowerCase())"
-                             @click="addToCart({{ json_encode($part) }})"
+                             @click="addToCart({{ json_encode(array_merge($part->toArray(), ['stock' => $part->available_stock])) }})"
                              class="panel border border-gunmetal/60 bg-carbon hover:border-giallo/60 p-4 flex flex-col justify-between transition-all cursor-pointer">
                             <div>
                                 <span class="text-[10px] font-mono text-silver-dim block">{{ $part->sku }}</span>
@@ -298,8 +328,8 @@
                             </div>
                             <div class="mt-3 pt-2 border-t border-gunmetal/40 flex items-center justify-between">
                                 <span class="font-mono text-xs text-giallo font-bold">Rp {{ number_format($part->price_idr, 0, ',', '.') }}</span>
-                                <span class="text-[10px] px-1.5 py-0.5 rounded {{ $part->stock > 0 ? 'bg-emerald-950/60 text-emerald-400' : 'bg-red-950/60 text-red-400' }}">
-                                    Stok: {{ $part->stock }}
+                                <span class="text-[10px] px-1.5 py-0.5 rounded {{ $part->available_stock > 0 ? 'bg-emerald-950/60 text-emerald-400' : 'bg-red-950/60 text-red-400' }}">
+                                    Stok: {{ $part->available_stock }}
                                 </span>
                             </div>
                         </div>
@@ -313,6 +343,42 @@
 
             {{-- 3. TAB: CAR SALES ORDERS --}}
             <div x-show="activeTab === 'cars'" class="space-y-4">
+                @foreach($pendingCarOrders->filter(fn ($o) => $o->deposit_idr > 0 && $o->paid_idr <= 0) as $booking)
+                    <form action="{{ route('admin.pos.car-sales.deposit', $booking) }}" method="POST"
+                          class="panel border border-giallo/40 bg-carbon flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-xs">
+                        @csrf
+                        <span class="text-silver-bright">{{ $booking->code }} — {{ $booking->customer?->user?->name }} — Booking fee Rp {{ number_format($booking->deposit_idr, 0, ',', '.') }}</span>
+                        <span class="flex gap-2">
+                            <select name="payment_method" class="bg-nero border border-gunmetal px-2 py-1.5 text-silver-bright">
+                                <option value="cash">Tunai</option>
+                                <option value="card">Kartu / EDC</option>
+                                <option value="transfer">Transfer</option>
+                            </select>
+                            <button type="submit" class="px-3 py-1.5 bg-giallo text-nero font-heading font-bold uppercase rounded">Terima Booking Fee</button>
+                        </span>
+                    </form>
+                @endforeach
+
+                @if($consignmentPayouts->isNotEmpty())
+                    <div class="panel border border-gunmetal/80 bg-carbon overflow-hidden">
+                        <div class="bg-steel/30 px-5 py-3.5 border-b border-gunmetal">
+                            <h3 class="font-heading text-xs uppercase tracking-wider text-silver-bright">Pembayaran ke Penjual Titip Jual</h3>
+                        </div>
+                        @foreach($consignmentPayouts as $unit)
+                            <form action="{{ route('admin.pos.consignments.payout', $unit) }}" method="POST"
+                                  onsubmit="return confirm('Catat bahwa penjual sudah dibayar?')"
+                                  class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-xs border-b border-gunmetal/30">
+                                @csrf
+                                <div>
+                                    <p class="text-silver-bright font-bold">{{ $unit->full_name }}</p>
+                                    <p class="text-silver-dim">Penjual: {{ $unit->seller?->user?->name }} ({{ $unit->seller?->user?->phone }}) &bull; Komisi Rp {{ number_format($unit->commission_idr, 0, ',', '.') }} &bull; Biaya servis Rp {{ number_format($unit->repair_cost_idr, 0, ',', '.') }}</p>
+                                </div>
+                                <button type="submit" class="px-3 py-2 bg-giallo text-nero font-heading font-bold text-[10px] uppercase rounded">Sudah Dibayar</button>
+                            </form>
+                        @endforeach
+                    </div>
+                @endif
+
                 <div class="panel border border-gunmetal/80 bg-carbon overflow-hidden">
                     <div class="bg-steel/30 px-5 py-3.5 border-b border-gunmetal flex items-center justify-between">
                         <h3 class="font-heading text-xs uppercase tracking-wider text-silver-bright flex items-center gap-2">
@@ -344,6 +410,7 @@
                                             'customer_phone' => $carOrder->customer?->phone ?? $carOrder->customer?->user?->phone ?? '-',
                                             'car_title'      => $carOrder->items->first()?->description ?? 'Unit Mobil',
                                             'subtotal'       => $carOrder->subtotal_idr,
+                                            'discount'       => $carOrder->discount_idr,
                                             'total'          => $carOrder->total_idr,
                                             'notes'          => $carOrder->notes,
                                         ];
@@ -442,17 +509,11 @@
                             </template>
                         </div>
 
-                        {{-- Discount Input --}}
-                        <div>
-                            <label class="block text-[11px] uppercase text-silver-dim mb-1 font-heading">Diskon Khusus (IDR)</label>
-                            <input type="number"
-                                   name="discount_idr"
-                                   x-model.number="discountWo"
-                                   min="0"
-                                   :max="selectedWo.subtotal"
-                                   placeholder="0"
-                                   class="w-full bg-steel/60 border border-gunmetal text-silver-bright text-xs rounded p-2.5 font-mono focus:border-giallo focus:outline-none">
-                        </div>
+                        {{-- Diskon hanya lewat persetujuan Manager --}}
+                        <p class="text-[11px] text-silver-dim">
+                            Diskon disetujui: <span class="font-mono text-verde" x-text="'Rp ' + Number(discountWo).toLocaleString('id-ID')"></span>.
+                            <a href="{{ route('admin.approvals.create') }}" class="text-giallo underline">Ajukan diskon</a>
+                        </p>
 
                         {{-- Payment Method --}}
                         <div>
@@ -683,17 +744,11 @@
                             </template>
                         </div>
 
-                        {{-- Discount Input --}}
-                        <div>
-                            <label class="block text-[11px] uppercase text-silver-dim mb-1 font-heading">Diskon (IDR)</label>
-                            <input type="number"
-                                   name="discount_idr"
-                                   x-model.number="discountCar"
-                                   min="0"
-                                   :max="selectedCar.subtotal"
-                                   placeholder="0"
-                                   class="w-full bg-steel/60 border border-gunmetal text-silver-bright text-xs rounded p-2.5 font-mono focus:border-giallo focus:outline-none">
-                        </div>
+                        {{-- Diskon hanya lewat persetujuan Manager --}}
+                        <p class="text-[11px] text-silver-dim">
+                            Diskon disetujui: <span class="font-mono text-verde" x-text="'Rp ' + Number(discountCar).toLocaleString('id-ID')"></span>.
+                            <a href="{{ route('admin.approvals.create') }}" class="text-giallo underline">Ajukan diskon</a>
+                        </p>
 
                         {{-- Payment Method --}}
                         <div>

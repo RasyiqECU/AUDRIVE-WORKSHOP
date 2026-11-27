@@ -1,12 +1,9 @@
 <?php
 
-
 namespace App\Http\Resources;
-
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-
 
 class SparePartResource extends JsonResource
 {
@@ -20,7 +17,7 @@ class SparePartResource extends JsonResource
             'category_id' => $this->category_id,
             'brand' => $this->brand,
             'price_idr' => $this->price_idr,
-            'stock' => $this->stock,
+            'stock' => $this->available_stock,
             'low_stock_threshold' => $this->low_stock_threshold,
             'status' => $this->status,
             'description' => $this->description,
@@ -32,6 +29,3 @@ class SparePartResource extends JsonResource
         ];
     }
 }
-
-
-

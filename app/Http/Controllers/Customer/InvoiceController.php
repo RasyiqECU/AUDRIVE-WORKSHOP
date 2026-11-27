@@ -41,7 +41,7 @@ class InvoiceController extends Controller
             ->sum('total_idr');
 
         $totalPending = Invoice::where('invoiceable_type', SalesOrder::class)
-            ->where('status', '!=', 'paid')
+            ->whereNotIn('status', ['paid', 'cancelled'])
             ->whereHasMorph('invoiceable', [SalesOrder::class], fn ($q) => $q->where('customer_id', $customer->id))
             ->sum('total_idr');
 

@@ -1,4 +1,5 @@
-@extends(auth()->check() && auth()->user()->role === 'customer' ? 'layouts.customer' : (isset($bookings) && auth()->check() ? 'layouts.app' : 'layouts.public'))
+{{-- Halaman info bengkel selalu publik; hanya daftar booking yang memakai layout dashboard --}}
+@extends(isset($bookings) ? (auth()->user()->role === 'customer' ? 'layouts.customer' : 'layouts.app') : 'layouts.public')
 
 @section('title', 'Layanan Bengkel & Service Center — AUDrive')
 @section('meta_description', 'Layanan bengkel mobil premium AUDrive dengan teknisi profesional bersertifikat, garansi pengerjaan, dan diagnosis AI.')
@@ -50,6 +51,11 @@
                         <a href="{{ route('workshop.ai-scan.create') }}" class="inline-flex items-center justify-center px-6 py-3 backdrop-blur-md bg-carbon/80 border border-giallo/40 hover:border-giallo text-silver-bright font-heading font-semibold text-xs uppercase tracking-wider rounded transition-all">
                             🔊 Scan Suara Mesin (AI)
                         </a>
+                        @if(auth()->user()->role === 'customer')
+                            <a href="{{ route('workshop.booking.index') }}" class="inline-flex items-center justify-center px-6 py-3 backdrop-blur-md bg-carbon/80 border border-white/20 hover:border-giallo/50 text-silver-bright font-heading font-semibold text-xs uppercase tracking-wider rounded transition-all">
+                                📋 Booking Saya
+                            </a>
+                        @endif
                     @else
                         <a href="{{ route('login') }}" class="inline-flex items-center justify-center px-6 py-3 bg-giallo hover:bg-giallo/90 text-nero font-heading font-bold text-xs uppercase tracking-wider rounded transition-all shadow-xl shadow-giallo/20">
                             🔑 Login untuk Booking Servis
@@ -164,12 +170,12 @@
                                     </span>
                                 @else
                                     <span class="px-2 py-0.5 text-[10px] font-semibold rounded uppercase tracking-wider bg-giallo/20 text-giallo border border-giallo/30">
-                                        {{ $booking->status->value ?? $booking->status }}
+                                        {{ $booking->status->label() }}
                                     </span>
                                 @endif
                             </div>
                             <p class="text-xs text-silver-dim mt-1">
-                                Kendaraan: <span class="text-silver-bright">{{ $booking->vehicle?->license_plate ?? 'N/A' }}</span> — {{ $booking->vehicle?->brand }} {{ $booking->vehicle?->model }}
+                                Kendaraan: <span class="text-silver-bright">{{ $booking->vehicle?->plate_number ?? 'N/A' }}</span> — {{ $booking->vehicle?->brand }} {{ $booking->vehicle?->model }}
                             </p>
                             <p class="text-xs text-silver-dim">
                                 Jadwal: {{ $booking->preferred_date?->format('d M Y') }} pk {{ $booking->preferred_time }}

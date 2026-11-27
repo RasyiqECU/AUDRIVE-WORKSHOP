@@ -100,7 +100,7 @@
         </table>
         @if($approval->type === 'discount' && isset($approval->payload['sales_order_id']))
             @php $detailOrder = \App\Models\SalesOrder::with('invoice')->find($approval->payload['sales_order_id']); @endphp
-            @if($detailOrder?->invoice)
+            @if($detailOrder?->invoice && auth()->user()->role !== 'manager')
                 <a href="{{ route('admin.invoices.show', $detailOrder->invoice->id) }}" class="inline-block font-heading text-[10px] uppercase tracking-wider text-giallo hover:text-arancio">
                     Lihat Invoice Terkait &rarr;
                 </a>

@@ -1,10 +1,11 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Marketplace\CarBookingController;
 use App\Http\Controllers\Marketplace\CarListingController;
-use App\Http\Controllers\Marketplace\TestDriveController;
-use App\Http\Controllers\Marketplace\OfferController;
 use App\Http\Controllers\Marketplace\InspectionController;
+use App\Http\Controllers\Marketplace\OfferController;
+use App\Http\Controllers\Marketplace\TestDriveController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,6 +34,7 @@ Route::middleware('auth')->group(function () {
         ->name('marketplace.test-drive.store');
 
     // Offers / Negotiation
+    Route::post('/marketplace/{car:slug}/booking', [CarBookingController::class, 'store'])->name('marketplace.booking.store');
     Route::post('/marketplace/{car:slug}/offer', [OfferController::class, 'store'])
         ->name('marketplace.offer.store');
     Route::patch('/marketplace/offers/{offer}', [OfferController::class, 'update'])
@@ -43,4 +45,5 @@ Route::middleware('auth')->group(function () {
     // Sell car to dealer
     Route::get('/sell', [CarListingController::class, 'sellCreate'])->name('marketplace.sell.create');
     Route::post('/sell', [CarListingController::class, 'sellStore'])->name('marketplace.sell.store');
+    Route::post('/sell/{car:slug}/withdraw', [CarListingController::class, 'sellWithdraw'])->name('marketplace.sell.withdraw');
 });

@@ -194,6 +194,10 @@ class ApprovalService
             throw new \Exception('Nominal diskon tidak valid.');
         }
 
+        if ($order->status !== SalesOrderStatus::Pending) {
+            throw new \Exception("Diskon hanya untuk pesanan yang belum lunas (#{$order->code}).");
+        }
+
         if ($amount > $order->total_idr) {
             throw new \Exception("Nominal diskon melebihi total nilai pesanan #{$order->code}.");
         }
@@ -247,12 +251,21 @@ class ApprovalService
         // Sesuaikan saldo terbayar pada pesanan
         if ($payment->paymentable instanceof SalesOrder) {
             $order = $payment->paymentable;
-            $order->decrement('paid_idr', $amount);
-            $order->refresh();
+            $order->paid_idr = max(0, $order->paid_idr - $amount);
 
-            if (! $order->isFullyPaid()) {
-                $order->update(['status' => SalesOrderStatus::Pending]);
+            // Pesanan lunas: refund sebagian mengurangi omzet, refund penuh menutup pesanan.
+            // Pesanan yang belum lunas / kedaluwarsa tidak berubah statusnya.
+            if (in_array($order->status, [SalesOrderStatus::Paid, SalesOrderStatus::Completed], true)) {
+                $order->refunded_idr += $amount;
+
+                if ($order->refunded_idr >= $order->total_idr) {
+                    $order->status = SalesOrderStatus::Refunded;
+                    $order->payment_status = PaymentStatus::Refunded->value;
+                    $order->invoice()->update(['status' => 'cancelled']);
+                }
             }
+
+            $order->save();
         }
 
         Log::info('Approval refund processed', [

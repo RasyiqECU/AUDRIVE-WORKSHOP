@@ -1,18 +1,13 @@
 <?php
 
-
 declare(strict_types=1);
-
 
 namespace App\Http\Controllers\Customer;
 
-
 use App\Http\Controllers\Controller;
-use App\Models\Customer;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
-
 
 class DashboardController extends Controller
 {
@@ -24,6 +19,7 @@ class DashboardController extends Controller
             if ($user->role === 'mechanic') {
                 return redirect()->route('workshop.index');
             }
+
             return redirect()->route('admin.dashboard');
         }
 
@@ -31,20 +27,17 @@ class DashboardController extends Controller
 
         $customer->loadCount('vehicles');
 
-
         $activeBookings = $customer->serviceBookings()
-            ->whereIn('status', ['pending', 'confirmed', 'in_progress'])
+            ->whereIn('status', ['pending', 'confirmed', 'checked_in', 'in_progress'])
             ->with(['vehicle', 'workOrder'])
             ->latest()
             ->limit(3)
             ->get();
 
-
         $recentScans = $customer->aiScans()
             ->latest()
             ->limit(3)
             ->get();
-
 
         $notifications = $user
             ->notifications()
@@ -52,14 +45,12 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-
         $activeVouchers = $customer->voucherRedemptions()
             ->with('voucher')
-            ->whereHas('voucher', fn($q) => $q->active())
+            ->whereHas('voucher', fn ($q) => $q->active())
             ->latest()
             ->limit(3)
             ->get();
-
 
         return view('customer.dashboard', compact(
             'customer',
@@ -74,6 +65,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $notifications = $user->notifications()->latest()->paginate(15);
+
         return view('customer.notifications.index', compact('notifications'));
     }
 
@@ -83,15 +75,14 @@ class DashboardController extends Controller
         if ($notification) {
             $notification->markAsRead();
         }
+
         return back()->with('success', 'Notifikasi ditandai sudah dibaca.');
     }
 
     public function markAllRead(Request $request): RedirectResponse
     {
         $request->user()->unreadNotifications->markAsRead();
+
         return back()->with('success', 'Semua notifikasi ditandai sudah dibaca.');
     }
 }
-
-
-

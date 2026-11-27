@@ -98,7 +98,7 @@ test('notifications are isolated between two customers', function () {
 
 test('allowed roles for exposes the relevance matrix', function () {
     expect($this->service->allowedRolesFor('payment_success'))
-        ->toBe(['cashier', 'sales', 'manager', 'super-admin'])
+        ->toBe(['cashier', 'sales', 'super-admin'])
         ->and($this->service->allowedRolesFor('service_reminder'))
         ->toBe([])
         ->and($this->service->allowedRolesFor('unknown_type'))

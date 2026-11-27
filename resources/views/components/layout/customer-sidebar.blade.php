@@ -37,6 +37,11 @@
             <span class="font-heading text-xs font-medium tracking-wide">Loyalty Point</span>
         </a>
 
+        <a href="{{ route('parts.orders.index') }}" class="sidebar-item {{ request()->routeIs('parts.orders.*') ? 'active' : '' }}">
+            <span class="text-sm">📦</span>
+            <span class="font-heading text-xs font-medium tracking-wide">Pesanan & Pembayaran</span>
+        </a>
+
         <a href="{{ route('customer.invoices.index') }}" class="sidebar-item {{ request()->routeIs('customer.invoices.*') ? 'active' : '' }}">
             <span class="text-sm">🧾</span>
             <span class="font-heading text-xs font-medium tracking-wide">Tagihan & Invoice</span>
@@ -54,9 +59,19 @@
             <span class="font-heading text-xs font-medium tracking-wide">Servis & Work Order</span>
         </a>
 
+        <a href="{{ route('customer.warranty.index') }}" class="sidebar-item {{ request()->routeIs('customer.warranty.*') ? 'active' : '' }}">
+            <span class="text-sm">🛡</span>
+            <span class="font-heading text-xs font-medium tracking-wide">Klaim Garansi</span>
+        </a>
+
         <a href="{{ route('marketplace.index') }}" class="sidebar-item {{ request()->routeIs('marketplace.*') ? 'active' : '' }}">
             <span class="text-sm">🏎</span>
             <span class="font-heading text-xs font-medium tracking-wide">Marketplace</span>
+        </a>
+
+        <a href="{{ route('marketplace.sell.create') }}" class="sidebar-item {{ request()->routeIs('marketplace.sell.*') ? 'active' : '' }}">
+            <span class="text-sm">💎</span>
+            <span class="font-heading text-xs font-medium tracking-wide">Jual Mobil Saya</span>
         </a>
 
         <a href="{{ route('parts.index') }}" class="sidebar-item {{ request()->routeIs('parts.*') ? 'active' : '' }}">
@@ -91,7 +106,7 @@
                         {{ substr(auth()->user()->name ?? 'C', 0, 1) }}
                     </span>
                 </div>
-                <span class="font-heading text-[10px] text-silver-dim">{{ auth()->user()->name ?? 'Customer' }}</span>
+                <a href="{{ route('profile.edit') }}" class="font-heading text-[10px] text-silver-dim hover:text-giallo">{{ auth()->user()->name ?? 'Customer' }} &bull; Profil</a>
             </div>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf

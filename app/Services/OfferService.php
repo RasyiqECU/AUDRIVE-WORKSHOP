@@ -13,6 +13,7 @@ use App\Models\Customer;
 use App\Models\Offer;
 use App\Models\SalesOrder;
 use App\Models\SalesOrderItem;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class OfferService
@@ -24,12 +25,13 @@ class OfferService
             throw new \InvalidArgumentException('Unit tidak tersedia untuk dipesan.');
         }
 
+        if ($carUnit->isSoldBy($customer)) {
+            throw new \InvalidArgumentException('Anda tidak bisa memesan mobil titipan Anda sendiri.');
+        }
+
         $amount = $amountIdr ?: $carUnit->price_sell_idr;
 
         return DB::transaction(function () use ($customer, $carUnit, $amount, $note) {
-            // Ketika customer memesan, status unit mobil langsung berubah menjadi Reserved (Dipesan)
-            $carUnit->update(['status' => CarUnitStatus::Reserved]);
-
             return Offer::create([
                 'car_unit_id' => $carUnit->id,
                 'customer_id' => $customer->id,
@@ -41,10 +43,19 @@ class OfferService
         });
     }
 
-    public function accept(Offer $offer, int $reviewedBy): Offer
+    public function accept(Offer $offer, int $reviewedBy, bool $sellerApproved = false): Offer
     {
         if ($offer->status !== OfferStatus::Pending) {
             throw new \InvalidArgumentException('Pesanan tidak dalam status pending.');
+        }
+
+        $car = $offer->carUnit;
+        if ($car?->isConsignment() && $offer->amount_idr < (int) $car->min_price_idr && ! $sellerApproved) {
+            throw new \InvalidArgumentException('Tawaran di bawah harga minimum penjual. Minta persetujuan penjual lewat WhatsApp, lalu centang persetujuan.');
+        }
+
+        if ($car && $car->status !== CarUnitStatus::Available && ! ($car->status === CarUnitStatus::Reserved && $this->reservedOnlyByOffer($car))) {
+            throw new \InvalidArgumentException('Unit sudah dipesan atau terjual.');
         }
 
         return DB::transaction(function () use ($offer, $reviewedBy) {
@@ -78,9 +89,7 @@ class OfferService
             ]);
 
             // Jika pesanan ditolak sales, kembalikan status mobil ke Available (Tersedia)
-            if ($offer->carUnit && $offer->carUnit->status === CarUnitStatus::Reserved) {
-                $offer->carUnit->update(['status' => CarUnitStatus::Available]);
-            }
+            $offer->carUnit?->releaseIfUnclaimed();
 
             return $offer->fresh();
         });
@@ -96,9 +105,7 @@ class OfferService
             $offer->update(['status' => OfferStatus::Cancelled]);
 
             // Jika pesanan dibatalkan, kembalikan status mobil ke Available (Tersedia)
-            if ($offer->carUnit && $offer->carUnit->status === CarUnitStatus::Reserved) {
-                $offer->carUnit->update(['status' => CarUnitStatus::Available]);
-            }
+            $offer->carUnit?->releaseIfUnclaimed();
 
             return $offer->fresh();
         });
@@ -116,11 +123,15 @@ class OfferService
             DB::transaction(function () use ($offer) {
                 $offer->update(['status' => OfferStatus::Expired]);
 
-                if ($offer->carUnit && $offer->carUnit->status === CarUnitStatus::Reserved) {
-                    $offer->carUnit->update(['status' => CarUnitStatus::Available]);
-                }
+                $offer->carUnit?->releaseIfUnclaimed();
             });
         }
+    }
+
+    /** Data lama: unit berstatus Dipesan hanya karena offer, belum ada pesanan. */
+    protected function reservedOnlyByOffer(CarUnit $car): bool
+    {
+        return ! $car->salesOrderItems()->whereHas('salesOrder', fn ($q) => $q->whereIn('status', ['pending', 'paid']))->exists();
     }
 
     protected function createSalesOrderFromOffer(Offer $offer): SalesOrder
@@ -138,6 +149,7 @@ class OfferService
             'payment_status' => 'pending',
             'notes' => "Dibuat dari offer #{$offer->id}",
             'created_by' => $offer->reviewed_by,
+            'sales_id' => User::where('role', 'sales')->whereKey($offer->reviewed_by)->value('id'),
         ]);
 
         // Buat sales order item

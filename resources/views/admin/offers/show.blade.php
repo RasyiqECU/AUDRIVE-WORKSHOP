@@ -182,7 +182,19 @@
 
             <div class="flex flex-wrap items-center gap-3 pt-2">
                 {{-- Accept Form --}}
-                <form action="{{ route('admin.offers.accept', $offer->id) }}" method="POST"
+                @if($offer->carUnit?->isConsignment())
+                    <p class="text-xs text-silver-dim">
+                        Titip jual &bull; Harga minimum penjual: Rp {{ number_format($offer->carUnit->min_price_idr, 0, ',', '.') }}
+                        &bull; Penjual: {{ $offer->carUnit->seller?->user?->name }} ({{ $offer->carUnit->seller?->user?->phone }})
+                    </p>
+                    @if($offer->amount_idr < $offer->carUnit->min_price_idr)
+                        <label class="flex items-center gap-2 text-xs text-giallo">
+                            <input type="checkbox" name="seller_approved" value="1" form="accept-offer-form">
+                            Penjual sudah menyetujui tawaran di bawah harga minimum (via WhatsApp)
+                        </label>
+                    @endif
+                @endif
+                <form id="accept-offer-form" action="{{ route('admin.offers.accept', $offer->id) }}" method="POST"
                       onsubmit="return confirm('Apakah Anda yakin menyetujui pesanan ini seharga Rp {{ number_format($offer->amount_idr, 0, ',', '.') }}? Sales Order akan dibuat.')">
                     @csrf
                     <button type="submit"

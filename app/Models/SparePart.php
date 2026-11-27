@@ -36,6 +36,7 @@ class SparePart extends Model
         return [
             'price_idr' => 'integer',
             'stock' => 'integer',
+            'booked_stock' => 'integer',
             'low_stock_threshold' => 'integer',
             'status' => SparePartStatus::class,
             'weight_kg' => 'decimal:2',
@@ -44,7 +45,13 @@ class SparePart extends Model
 
     public function getImageUrlAttribute(): ?string
     {
-        return $this->image ? asset('storage/' . $this->image) : null;
+        return $this->image ? asset('storage/'.$this->image) : null;
+    }
+
+    /** Stok yang masih bisa dijual: fisik dikurangi yang sedang dikunci order lain. */
+    public function getAvailableStockAttribute(): int
+    {
+        return max(0, (int) $this->stock - (int) $this->booked_stock);
     }
 
     public function category(): BelongsTo
@@ -91,7 +98,7 @@ class SparePart extends Model
 
     public function scopeInStock($query)
     {
-        return $query->where('stock', '>', 0);
+        return $query->whereColumn('stock', '>', 'booked_stock');
     }
 
     public function scopeByCategory($query, int $categoryId)
@@ -103,8 +110,8 @@ class SparePart extends Model
     {
         return $query->where(function ($q) use ($keyword) {
             $q->where('name', 'like', "%{$keyword}%")
-              ->orWhere('sku', 'like', "%{$keyword}%")
-              ->orWhere('brand', 'like', "%{$keyword}%");
+                ->orWhere('sku', 'like', "%{$keyword}%")
+                ->orWhere('brand', 'like', "%{$keyword}%");
         });
     }
 
@@ -117,6 +124,6 @@ class SparePart extends Model
 
     public function getFormattedPriceAttribute(): string
     {
-        return 'Rp ' . number_format($this->price_idr, 0, ',', '.');
+        return 'Rp '.number_format($this->price_idr, 0, ',', '.');
     }
 }

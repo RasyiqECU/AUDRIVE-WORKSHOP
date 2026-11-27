@@ -126,6 +126,7 @@ CLASS_LABELS = {
     "power_steering":     "Masalah Power Steering",
     "serpentine_belt":    "Serpentine Belt Aus / Kendor",
     "worn_out_brakes":    "Lapisan Rem Aus (Worn-out Brakes)",
+    "knocking":           "Suara Ketukan Mesin (Knocking)",
 }
 
 URGENCY_LABELS = {
@@ -153,6 +154,7 @@ WAVE_DESCRIPTIONS = {
     "power_steering":     "Terdeteksi suara whining/dengungan saat kemudi diputar, menandakan pompa power steering bermasalah atau fluida hydraulic-nya rendah.",
     "serpentine_belt":    "Terdeteksi decitan (*squealing*) di latar frekuensi tinggi, khas serpentine belt yang aus, kendur, atau licin.",
     "worn_out_brakes":    "Terdeteksi decitan/derit logam berulang saat rem ditekan, mengindikasikan lapisan brake pad sudah tipis/aus.",
+    "knocking":           "Terdeteksi ketukan berulang dari area mesin, bisa berasal dari pembakaran tidak normal atau komponen internal yang longgar.",
 }
 
 RECOMMENDATIONS_CUSTOMER = {
@@ -242,6 +244,11 @@ RECOMMENDATIONS_CUSTOMER = {
         "Cek satu per satu komponen yang dibawanya (alternator, AC compressor, tensioner, idler).",
         "Ganti belt sesuai interval servis — belt putus bisa membuat mesin berhenti total.",
     ],
+    "knocking": [
+        "Hindari memacu mesin pada RPM tinggi atau membawa beban berat.",
+        "Pastikan bahan bakar sesuai oktan rekomendasi pabrikan dan level oli cukup.",
+        "Segera periksakan ke bengkel — ketukan yang dibiarkan dapat merusak komponen internal mesin.",
+    ],
     "worn_out_brakes": [
         "🚨 Segera periksa brake pad dan rotor — keausan ini sangat berdampak pada keselamatan.",
         "Periksa level minyak rem dan kondisi caliper.",
@@ -266,6 +273,7 @@ MECHANIC_NOTES_TEMPLATE = {
     "not an engine":      "Rekaman tidak mengandung suara mesin — kemungkinan hanya suara lingkungan. Minta customer merekam ulang sesuai panduan untuk dianalisis kembali.",
     "power_steering":     "Indikasi noise pada sistem power steering. Cek level & kondisi fluida hydraulic, selang (bocor/kerut), dan pompa. Lakukan uji suara pompa saat kemudi dipenuh untuk isolasi sumber.",
     "serpentine_belt":    "Indikasi belt aus / tensioner lemah. Inspeksi visual belt (crack, glazing), ukur deflection belt, dan periksa tensioner & bearing idler pulley.",
+    "knocking":           "Indikasi engine knock. Cek oktan bahan bakar, timing pengapian, knock sensor, tekanan oli, dan kompresi untuk membedakan detonasi dari keausan bearing.",
     "worn_out_brakes":    "HIGH PRIORITY (keselamatan). Indikasi lapisan brake pad tipis. Ukur ketebalan pad & rotor (biasanya pad < 3 mm wajib ganti), periksa caliper dan level minyak rem.",
 }
 
@@ -356,13 +364,14 @@ def predict(features_dict: dict, quality_info: dict) -> dict:
     sorted_idx = np.argsort(probs)[::-1][:3]
     top3 = [
         {"class": classes[i] if i < len(classes) else "?",
-         "label": CLASS_LABELS.get(classes[i] if i < len(classes) else "?", classes[i] if i < len(classes) else "?"),
+         "label": CLASS_LABELS.get(config.content_key(classes[i] if i < len(classes) else "?"), classes[i] if i < len(classes) else "?"),
          "probability": round(float(probs[i]), 4)}
         for i in sorted_idx
     ]
 
     # Urgency
-    urgency_level = config.URGENCY_MAP.get(top_class, "monitor")
+    key           = config.content_key(top_class)
+    urgency_level = config.URGENCY_MAP.get(key, "monitor")
     urgency_meta  = URGENCY_LABELS[urgency_level]
 
     # Wave analysis (dari spectral features)
@@ -370,7 +379,7 @@ def predict(features_dict: dict, quality_info: dict) -> dict:
     anomaly  = top_class != "normal"
     wave_analysis = {
         "dominant_frequency_hz": spectral.get("dominant_frequency_hz"),
-        "pattern_description":   WAVE_DESCRIPTIONS.get(top_class, "Pola tidak dikenali."),
+        "pattern_description":   WAVE_DESCRIPTIONS.get(key, "Pola tidak dikenali."),
         "anomaly_detected":      anomaly,
         "anomaly_details":       _build_anomaly_detail(top_class, spectral, confidence) if anomaly else None,
     }
@@ -384,7 +393,7 @@ def predict(features_dict: dict, quality_info: dict) -> dict:
 
     return {
         "predicted_class":    top_class,
-        "class_label":        CLASS_LABELS.get(top_class, top_class),
+        "class_label":        CLASS_LABELS.get(key, top_class),
         "confidence":         round(confidence, 4),
         "top3":               top3,
         "wave_analysis":      wave_analysis,
@@ -394,8 +403,8 @@ def predict(features_dict: dict, quality_info: dict) -> dict:
             "action": urgency_meta["action"],
             "icon":   urgency_meta["icon"],
         },
-        "recommendations":    RECOMMENDATIONS_CUSTOMER.get(top_class, []),
-        "mechanic_notes":     MECHANIC_NOTES_TEMPLATE.get(top_class, "Lakukan pemeriksaan menyeluruh."),
+        "recommendations":    RECOMMENDATIONS_CUSTOMER.get(key, []),
+        "mechanic_notes":     MECHANIC_NOTES_TEMPLATE.get(key, "Lakukan pemeriksaan menyeluruh."),
         "spectrogram_path":   features_dict.get("spectrogram_path"),
         "audio_quality":      quality_info,
         "inference_ms":       inference_ms,

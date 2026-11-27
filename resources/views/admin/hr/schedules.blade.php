@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Jadwal Kerja Mekanik')
+@section('title', 'Jadwal Kerja Kepala Mekanik')
 
 @section('content')
 <div class="space-y-6">
@@ -11,7 +11,7 @@
         </a>
         <p class="font-heading text-xs uppercase tracking-[0.2em] text-giallo">Shift & Stall Roster</p>
         <h1 class="font-display text-2xl md:text-3xl text-silver-bright font-bold tracking-wide mt-1">
-            JADWAL KERJA & SHIFT MEKANIK
+            JADWAL KERJA & SHIFT KEPALA MEKANIK
         </h1>
     </div>
 

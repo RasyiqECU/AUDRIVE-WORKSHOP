@@ -193,6 +193,12 @@
                 <td class="text-right">Rp {{ number_format($salesOrder->tax_idr, 0, ',', '.') }}</td>
             </tr>
         @endif
+        @if($salesOrder->shipping_fee_idr > 0)
+            <tr>
+                <td class="text-left">{{ $salesOrder->shippingLabel() }}</td>
+                <td class="text-right">Rp {{ number_format($salesOrder->shipping_fee_idr, 0, ',', '.') }}</td>
+            </tr>
+        @endif
         <tr class="grand">
             <td class="text-left">TOTAL AKHIR</td>
             <td class="text-right">Rp {{ number_format($salesOrder->total_idr, 0, ',', '.') }}</td>

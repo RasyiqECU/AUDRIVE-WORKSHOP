@@ -45,7 +45,7 @@
         </a>
 
         {{-- User --}}
-        <div class="flex items-center gap-2">
+        <a href="{{ route('profile.edit') }}" title="Profil Saya" class="flex items-center gap-2">
             <div class="w-7 h-7 bg-steel border border-gunmetal clip-hexagon flex items-center justify-center">
                 <span class="font-heading text-[10px] text-giallo font-bold">
                     {{ substr(auth()->user()->name ?? 'C', 0, 1) }}
@@ -54,6 +54,6 @@
             <span class="hidden md:inline font-heading text-xs text-silver-bright">
                 {{ auth()->user()->name ?? 'Customer' }}
             </span>
-        </div>
+        </a>
     </div>
 </header>

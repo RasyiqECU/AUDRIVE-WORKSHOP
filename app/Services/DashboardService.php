@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Enums\AiScanStatus;
 use App\Enums\CarUnitStatus;
+use App\Enums\PurchaseOrderStatus;
 use App\Enums\SalesOrderStatus;
 use App\Enums\SalesOrderType;
 use App\Enums\ServiceBookingStatus;
@@ -14,7 +15,7 @@ use App\Models\AiScan;
 use App\Models\ApprovalRequest;
 use App\Models\CarUnit;
 use App\Models\Customer;
-use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderItem;
 use App\Models\SalesOrder;
 use App\Models\ServiceBooking;
 use App\Models\SparePart;
@@ -48,19 +49,16 @@ class DashboardService
         $currentMonth = Carbon::now()->startOfMonth();
         $lastMonth = Carbon::now()->subMonth()->startOfMonth();
 
-        $currentMonthSales = SalesOrder::where('type', SalesOrderType::CarSales)
-            ->where('status', SalesOrderStatus::Paid)
-            ->where('created_at', '>=', $currentMonth)
-            ->sum('total_idr');
+        $currentMonthSales = (int) SalesOrder::earnedBetween()->where('type', SalesOrderType::CarSales)
+            ->where('paid_at', '>=', $currentMonth)
+            ->sum('revenue_idr');
 
-        $lastMonthSales = SalesOrder::where('type', SalesOrderType::CarSales)
-            ->where('status', SalesOrderStatus::Paid)
-            ->whereBetween('created_at', [$lastMonth, $currentMonth])
-            ->sum('total_idr');
+        $lastMonthSales = (int) SalesOrder::earnedBetween()->where('type', SalesOrderType::CarSales)
+            ->where('paid_at', '>=', $lastMonth)->where('paid_at', '<', $currentMonth)
+            ->sum('revenue_idr');
 
-        $carsSold = SalesOrder::where('type', SalesOrderType::CarSales)
-            ->where('status', SalesOrderStatus::Paid)
-            ->where('created_at', '>=', $currentMonth)
+        $carsSold = SalesOrder::earnedBetween()->where('type', SalesOrderType::CarSales)
+            ->where('paid_at', '>=', $currentMonth)
             ->count();
 
         return [
@@ -81,21 +79,22 @@ class DashboardService
     {
         $currentMonth = Carbon::now()->startOfMonth();
 
-        $workshopRevenue = SalesOrder::where('type', SalesOrderType::Service)
-            ->where('status', SalesOrderStatus::Paid)
-            ->where('created_at', '>=', $currentMonth)
-            ->sum('total_idr');
+        $workshopRevenue = (int) SalesOrder::earnedBetween()->where('type', SalesOrderType::Service)
+            ->where('paid_at', '>=', $currentMonth)
+            ->sum('revenue_idr');
 
         $activeWorkOrders = WorkOrder::whereIn('status', [
             WorkOrderStatus::Booking,
             WorkOrderStatus::Queued,
             WorkOrderStatus::InProgress,
+            WorkOrderStatus::WaitingPartConfirmation,
         ])->count();
 
         $bookingsToday = ServiceBooking::whereDate('preferred_date', today())
             ->whereIn('status', [
                 ServiceBookingStatus::Pending,
                 ServiceBookingStatus::Confirmed,
+                ServiceBookingStatus::CheckedIn,
             ])
             ->count();
 
@@ -134,7 +133,7 @@ class DashboardService
         $currentMonth = Carbon::now()->startOfMonth();
 
         $totalScans = AiScan::where('created_at', '>=', $currentMonth)->count();
-        $completedScans = AiScan::where('status', AiScanStatus::Completed)
+        $completedScans = AiScan::whereIn('status', [AiScanStatus::Completed, AiScanStatus::ManualReview, AiScanStatus::Reviewed])
             ->where('created_at', '>=', $currentMonth)
             ->count();
 
@@ -210,22 +209,22 @@ class DashboardService
         $salesQuery = SalesOrder::whereBetween('created_at', [$startDate, $endDate]);
 
         // Revenue metrics (Paid & Completed)
-        $paidOrders = (clone $salesQuery)->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])->get();
-        $totalRevenue = (int) $paidOrders->sum('total_idr');
+        $paidOrders = SalesOrder::earnedBetween($startDate, $endDate)->get();
+        $totalRevenue = (int) $paidOrders->sum('revenue_idr');
         $totalOrdersCount = $paidOrders->count();
 
         // Breakdown per Division
         $carOrders = $paidOrders->where('type', SalesOrderType::CarSales);
-        $carRevenue = (int) $carOrders->sum('total_idr');
+        $carRevenue = (int) $carOrders->sum('revenue_idr');
         $carsSoldCount = $carOrders->count();
-        $avgCarPrice = $carsSoldCount > 0 ? (int) round($carRevenue / $carsSoldCount) : 0;
+        $avgCarPrice = (int) round((float) $carOrders->avg('total_idr'));
 
         $workshopOrders = $paidOrders->where('type', SalesOrderType::Service);
-        $workshopRevenue = (int) $workshopOrders->sum('total_idr');
+        $workshopRevenue = (int) $workshopOrders->sum('revenue_idr');
         $workshopOrdersCount = $workshopOrders->count();
 
-        $partOrders = $paidOrders->where('type', SalesOrderType::SparePart);
-        $partRevenue = (int) $partOrders->sum('total_idr');
+        $partOrders = $paidOrders->whereIn('type', [SalesOrderType::SparePart, SalesOrderType::Pos]);
+        $partRevenue = (int) $partOrders->sum('revenue_idr');
         $partOrdersCount = $partOrders->count();
 
         // Pending Receivables
@@ -234,17 +233,18 @@ class DashboardService
         $pendingCount = $pendingQuery->count();
 
         // Growth vs Previous Period
-        $prevRevenue = (int) SalesOrder::whereBetween('created_at', [$prevStartDate, $prevEndDate])
-            ->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])
-            ->sum('total_idr');
+        $prevRevenue = (int) SalesOrder::earnedBetween($prevStartDate, $prevEndDate)->sum('revenue_idr');
 
         $revenueGrowth = $prevRevenue > 0
             ? round((($totalRevenue - $prevRevenue) / $prevRevenue) * 100, 1)
             : ($totalRevenue > 0 ? 100.0 : 0.0);
 
         // Expense / Purchase Orders in period
-        $purchasesQuery = PurchaseOrder::whereBetween('created_at', [$startDate, $endDate]);
-        $totalPurchases = (int) (clone $purchasesQuery)->sum('total_idr');
+        // Hanya barang yang sudah diterima: draft, dikirim, dan batal belum menjadi pengeluaran
+        $totalPurchases = (int) PurchaseOrderItem::whereHas('purchaseOrder', fn ($q) => $q
+            ->whereIn('status', [PurchaseOrderStatus::Received, PurchaseOrderStatus::PartiallyReceived])
+            ->whereBetween(DB::raw('COALESCE(received_at, created_at)'), [$startDate, $endDate]))
+            ->sum(DB::raw('received_qty * cost_idr'));
         $netInflow = $totalRevenue - $totalPurchases;
 
         // Workshop Operations
@@ -255,6 +255,7 @@ class DashboardService
             WorkOrderStatus::Booking,
             WorkOrderStatus::Queued,
             WorkOrderStatus::InProgress,
+            WorkOrderStatus::WaitingPartConfirmation,
             WorkOrderStatus::QualityControl,
         ])->count();
         $newBookings = ServiceBooking::whereBetween('created_at', [$startDate, $endDate])->count();
@@ -282,8 +283,8 @@ class DashboardService
 
         // Recent High-Value Transactions in period
         $recentTransactions = SalesOrder::with(['customer.user'])
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->latest()
+            ->inPeriod($startDate, $endDate)
+            ->orderByRaw('COALESCE(paid_at, created_at) desc')
             ->limit(8)
             ->get();
 
@@ -424,7 +425,7 @@ class DashboardService
         $points = [];
 
         if (! $isMonthly) {
-            $grouped = $paidOrders->groupBy(fn ($order) => $order->created_at->format('Y-m-d'));
+            $grouped = $paidOrders->groupBy(fn ($order) => $order->paid_at->format('Y-m-d'));
             $cursor = $startDate->copy();
             while ($cursor->lte($endDate)) {
                 $key = $cursor->format('Y-m-d');
@@ -432,15 +433,15 @@ class DashboardService
                 $points[] = [
                     'label' => $cursor->translatedFormat('d M'),
                     'full_date' => $cursor->translatedFormat('d F Y'),
-                    'car_rev' => (int) $ordersInDay->where('type', SalesOrderType::CarSales)->sum('total_idr'),
-                    'workshop_rev' => (int) $ordersInDay->where('type', SalesOrderType::Service)->sum('total_idr'),
-                    'part_rev' => (int) $ordersInDay->where('type', SalesOrderType::SparePart)->sum('total_idr'),
-                    'total_rev' => (int) $ordersInDay->sum('total_idr'),
+                    'car_rev' => (int) $ordersInDay->where('type', SalesOrderType::CarSales)->sum('revenue_idr'),
+                    'workshop_rev' => (int) $ordersInDay->where('type', SalesOrderType::Service)->sum('revenue_idr'),
+                    'part_rev' => (int) $ordersInDay->whereIn('type', [SalesOrderType::SparePart, SalesOrderType::Pos])->sum('revenue_idr'),
+                    'total_rev' => (int) $ordersInDay->sum('revenue_idr'),
                 ];
                 $cursor->addDay();
             }
         } else {
-            $grouped = $paidOrders->groupBy(fn ($order) => $order->created_at->format('Y-m'));
+            $grouped = $paidOrders->groupBy(fn ($order) => $order->paid_at->format('Y-m'));
             $cursor = $startDate->copy()->startOfMonth();
             while ($cursor->lte($endDate)) {
                 $key = $cursor->format('Y-m');
@@ -448,10 +449,10 @@ class DashboardService
                 $points[] = [
                     'label' => $cursor->translatedFormat('M Y'),
                     'full_date' => $cursor->translatedFormat('F Y'),
-                    'car_rev' => (int) $ordersInMonth->where('type', SalesOrderType::CarSales)->sum('total_idr'),
-                    'workshop_rev' => (int) $ordersInMonth->where('type', SalesOrderType::Service)->sum('total_idr'),
-                    'part_rev' => (int) $ordersInMonth->where('type', SalesOrderType::SparePart)->sum('total_idr'),
-                    'total_rev' => (int) $ordersInMonth->sum('total_idr'),
+                    'car_rev' => (int) $ordersInMonth->where('type', SalesOrderType::CarSales)->sum('revenue_idr'),
+                    'workshop_rev' => (int) $ordersInMonth->where('type', SalesOrderType::Service)->sum('revenue_idr'),
+                    'part_rev' => (int) $ordersInMonth->whereIn('type', [SalesOrderType::SparePart, SalesOrderType::Pos])->sum('revenue_idr'),
+                    'total_rev' => (int) $ordersInMonth->sum('revenue_idr'),
                 ];
                 $cursor->addMonth();
             }

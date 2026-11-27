@@ -12,7 +12,7 @@ class WorkOrderPolicy
 {
     public function viewAny(User $user): bool
     {
-        if (in_array($user->role, ['super-admin', 'manager', 'cashier', 'mechanic'])) {
+        if (in_array($user->role, ['super-admin', 'cashier', 'sales', 'mechanic'])) {
             return true;
         }
 
@@ -22,12 +22,12 @@ class WorkOrderPolicy
 
     public function view(User $user, WorkOrder $workOrder): bool
     {
-        if (in_array($user->role, ['super-admin', 'manager', 'cashier'])) {
+        if (in_array($user->role, ['super-admin', 'cashier', 'sales'])) {
             return true;
         }
 
         if ($user->role === 'mechanic') {
-            return $workOrder->assigned_mechanic_id === $user->id;
+            return $this->handledBy($user, $workOrder);
         }
 
         // Customer bisa melihat work order miliknya
@@ -40,12 +40,19 @@ class WorkOrderPolicy
 
     public function create(User $user): bool
     {
-        return in_array($user->role, ['super-admin', 'cashier']);
+        return in_array($user->role, ['super-admin', 'mechanic']);
+    }
+
+    /** QC akhir oleh Kepala Mekanik yang memegang work order. */
+    public function qualityControl(User $user, WorkOrder $workOrder): bool
+    {
+        return $user->role === 'super-admin'
+            || ($user->role === 'mechanic' && $workOrder->assigned_mechanic_id === $user->id);
     }
 
     public function manage(User $user): bool
     {
-        return in_array($user->role, ['super-admin', 'manager']);
+        return $user->role === 'super-admin';
     }
 
     public function update(User $user, WorkOrder $workOrder): bool
@@ -54,12 +61,12 @@ class WorkOrderPolicy
             return true;
         }
 
-        // Mekanik hanya boleh mengubah work order yang di-assign ke dirinya dan status belum selesai/dibayar/diserahkan
+        // Kepala Mekanik hanya boleh mengubah work order yang di-assign ke dirinya dan status belum selesai/dibayar/diserahkan
         if ($user->role === 'mechanic') {
             $statusVal = $workOrder->status instanceof WorkOrderStatus ? $workOrder->status->value : (string) $workOrder->status;
 
             return $workOrder->assigned_mechanic_id === $user->id
-                && in_array($statusVal, ['queued', 'booking', 'in_progress', 'quality_control'], true);
+                && in_array($statusVal, ['queued', 'booking', 'in_progress', 'waiting_part_confirmation', 'quality_control'], true);
         }
 
         return false;
@@ -72,7 +79,8 @@ class WorkOrderPolicy
 
     public function assignMechanic(User $user, WorkOrder $workOrder): bool
     {
-        return in_array($user->role, ['super-admin', 'manager']);
+        return $user->role === 'super-admin'
+            || ($user->role === 'mechanic' && $this->handledBy($user, $workOrder));
     }
 
     public function updateStatus(User $user, WorkOrder $workOrder): bool
@@ -81,12 +89,12 @@ class WorkOrderPolicy
             return true;
         }
 
-        // Mekanik hanya boleh mengubah status work order yang di-assign ke dirinya
+        // Kepala Mekanik hanya boleh mengubah status work order yang di-assign ke dirinya
         if ($user->role === 'mechanic') {
             $statusVal = $workOrder->status instanceof WorkOrderStatus ? $workOrder->status->value : (string) $workOrder->status;
 
             return $workOrder->assigned_mechanic_id === $user->id
-                && in_array($statusVal, ['queued', 'booking', 'in_progress', 'quality_control'], true);
+                && in_array($statusVal, ['queued', 'booking', 'in_progress', 'waiting_part_confirmation', 'quality_control'], true);
         }
 
         return false;
@@ -94,6 +102,12 @@ class WorkOrderPolicy
 
     public function deliver(User $user, WorkOrder $workOrder): bool
     {
-        return in_array($user->role, ['super-admin', 'cashier']);
+        return in_array($user->role, ['super-admin', 'cashier', 'sales']);
+    }
+
+    /** Work order milik sendiri, atau yang belum punya penanggung jawab. */
+    private function handledBy(User $user, WorkOrder $workOrder): bool
+    {
+        return $workOrder->assigned_mechanic_id === null || $workOrder->assigned_mechanic_id === $user->id;
     }
 }

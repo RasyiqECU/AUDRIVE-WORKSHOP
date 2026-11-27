@@ -46,7 +46,7 @@
                         <option value="sales" {{ old('role', $user->role) === 'sales' ? 'selected' : '' }}>Sales</option>
                         <option value="cashier" {{ old('role', $user->role) === 'cashier' ? 'selected' : '' }}>Cashier</option>
                         <option value="inventory" {{ old('role', $user->role) === 'inventory' ? 'selected' : '' }}>Inventory</option>
-                        <option value="mechanic" {{ old('role', $user->role) === 'mechanic' ? 'selected' : '' }}>Mechanic</option>
+                        <option value="mechanic" {{ old('role', $user->role) === 'mechanic' ? 'selected' : '' }}>Kepala Mekanik</option>
                         <option value="customer" {{ old('role', $user->role) === 'customer' ? 'selected' : '' }}>Customer</option>
                     </select>
                     @error('role') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror

@@ -14,7 +14,7 @@
         </span>
         <h2 class="font-display text-xl text-silver-bright tracking-wider">LOGIN INTERNAL</h2>
         <p class="font-heading text-xs text-silver-dim tracking-wider mt-1">
-            Pintu masuk staf operasional, kasir, mekanik, manajemen &amp; business owner
+            Pintu masuk staf operasional, kasir, kepala mekanik, manajemen &amp; business owner
         </p>
     </div>
 

@@ -45,28 +45,29 @@ $menuMatrix = [
         ],
     ],
     'manager' => [
-        'show' => ['Dashboard Manager', 'Work Order &amp; Antrean', 'Laporan Performa', 'Pusat Approval', 'Audit Trail'],
+        'show' => ['Dashboard Manager', 'Titip Jual', 'Klaim Garansi', 'Laporan Performa', 'Pusat Approval', 'Audit Trail'],
         'not' => [
-            'Unit Supercar', 'Pesanan Masuk', 'Jadwal Test Drive', 'Voucher & Promo',
-            'Booking Servis', 'AI Sound Scan', 'POS Kasir', 'Invoice & Bukti Bayar',
+            'Unit Supercar', 'Pesanan Masuk', 'Jadwal Test Drive', 'Voucher & Promo', 'Booking Servis',
+            'Work Order &amp; Antrean', 'AI Sound Scan', 'POS Kasir', 'Invoice & Bukti Bayar',
             'Katalog Spare Part', 'Stok & Movement', 'Purchase Order', 'Pesan Customer', 'Tiket Layanan',
             'Program Loyalitas', 'Database Pelanggan', 'Manajemen Pengguna', 'Konfigurasi Sistem', 'Ajukan Approval',
         ],
     ],
     'sales' => [
         'show' => [
-            'Dashboard Sales', 'Unit Supercar', 'Pesanan Masuk', 'Jadwal Test Drive', 'Voucher & Promo',
+            'Dashboard Sales', 'Titip Jual', 'Serah Terima Mobil', 'Unit Supercar', 'Pesanan Masuk', 'Jadwal Test Drive', 'Voucher & Promo',
             'Pesan Customer', 'Tiket Layanan', 'Ajukan Approval', 'Laporan Penjualan',
+            'Booking Servis', 'Work Order &amp; Antrean', 'Konfirmasi Part',
         ],
         'not' => [
-            'Booking Servis', 'Work Order & Antrean', 'AI Sound Scan', 'POS Kasir', 'Invoice & Bukti Bayar',
+            'AI Sound Scan', 'POS Kasir', 'Invoice & Bukti Bayar',
             'Katalog Spare Part', 'Stok & Movement', 'Purchase Order', 'Program Loyalitas', 'Database Pelanggan',
             'Laporan Performa', 'Pusat Approval', 'Audit Trail', 'Manajemen Pengguna', 'Konfigurasi Sistem',
         ],
     ],
     'cashier' => [
         'show' => [
-            'Dashboard Cashier', 'Booking Servis', 'Work Order &amp; Antrean', 'POS Kasir', 'Invoice & Bukti Bayar',
+            'Dashboard Cashier', 'Verifikasi Pembayaran', 'Booking Servis', 'Work Order &amp; Antrean', 'POS Kasir', 'Invoice & Bukti Bayar',
             'Ajukan Approval', 'Laporan Shift',
         ],
         'not' => [
@@ -77,7 +78,7 @@ $menuMatrix = [
         ],
     ],
     'inventory' => [
-        'show' => ['Dashboard Inventory', 'Katalog Spare Part', 'Stok & Movement', 'Purchase Order', 'Ajukan Approval', 'Laporan Inventori'],
+        'show' => ['Dashboard Inventory', 'Usulan Part Bengkel', 'Siapkan Pesanan', 'Katalog Spare Part', 'Stok & Movement', 'Purchase Order', 'Ajukan Approval', 'Laporan Inventori'],
         'not' => [
             'Unit Supercar', 'Pesanan Masuk', 'Jadwal Test Drive', 'Voucher & Promo', 'Booking Servis',
             'Work Order & Antrean', 'AI Sound Scan', 'POS Kasir', 'Invoice & Bukti Bayar',
@@ -86,9 +87,9 @@ $menuMatrix = [
         ],
     ],
     'mechanic' => [
-        'show' => ['Dashboard Mechanic', 'Work Order Saya', 'AI Sound Scan', 'Katalog Spare Part'],
+        'show' => ['Dashboard Mechanic', 'Titip Jual', 'Work Order Saya', 'Booking Servis', 'AI Sound Scan', 'Katalog Spare Part'],
         'not' => [
-            'Unit Supercar', 'Pesanan Masuk', 'Jadwal Test Drive', 'Voucher & Promo', 'Booking Servis',
+            'Unit Supercar', 'Pesanan Masuk', 'Jadwal Test Drive', 'Voucher & Promo',
             'Work Order & Antrean', 'POS Kasir', 'Invoice & Bukti Bayar', 'Stok & Movement', 'Purchase Order',
             'Pesan Customer', 'Tiket Layanan', 'Program Loyalitas', 'Database Pelanggan', 'Ajukan Approval',
             'Laporan Performa', 'Pusat Approval', 'Audit Trail', 'Manajemen Pengguna', 'Konfigurasi Sistem',

@@ -28,9 +28,11 @@
 
     {{-- Sub Navigation Tabs (Screen only) --}}
     <div class="no-print flex items-center gap-2 border-b border-gunmetal overflow-x-auto pb-2 print:hidden">
-        <a href="{{ route('admin.reports.index') }}" class="px-4 py-2 border-b-2 border-transparent text-silver-dim hover:text-silver-bright font-heading text-xs uppercase tracking-wider transition-premium flex items-center gap-2">
-            <span>📊</span> Ikhtisar Utama
-        </a>
+        @if(auth()->user()->role !== 'inventory')
+            <a href="{{ route('admin.reports.index') }}" class="px-4 py-2 border-b-2 border-transparent text-silver-dim hover:text-silver-bright font-heading text-xs uppercase tracking-wider transition-premium flex items-center gap-2">
+                <span>📊</span> Ikhtisar Utama
+            </a>
+        @endif
         @if(in_array(auth()->user()->role ?? '', ['super-admin', 'owner', 'manager', 'sales'], true))
             <a href="{{ route('admin.reports.sales') }}" class="px-4 py-2 border-b-2 border-transparent text-silver-dim hover:text-silver-bright font-heading text-xs uppercase tracking-wider transition-premium flex items-center gap-2">
                 <span>🏎</span> Penjualan Supercar

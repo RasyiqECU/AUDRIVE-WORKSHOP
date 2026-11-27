@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\PaymentStatus;
 use App\Enums\SalesOrderStatus;
 use App\Enums\SalesOrderType;
 use App\Support\HasCode;
@@ -12,12 +13,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Support\Facades\DB;
 
 class SalesOrder extends Model
 {
-    use HasFactory, HasCode;
+    use HasCode, HasFactory;
 
     protected const CODE_PREFIX = 'SO';
+
     protected const CODE_LENGTH = 6;
 
     protected $fillable = [
@@ -33,6 +36,20 @@ class SalesOrder extends Model
         'payment_status',
         'notes',
         'created_by',
+        'work_order_id',
+        'payment_channel',
+        'fulfillment_method',
+        'shipping_address',
+        'shipping_fee_idr',
+        'stock_reserved',
+        'reserved_until',
+        'prepared_at',
+        'handed_over_at',
+        'deposit_idr',
+        'paid_at',
+        'revenue_idr',
+        'sales_id',
+        'refunded_idr',
     ];
 
     protected function casts(): array
@@ -45,7 +62,86 @@ class SalesOrder extends Model
             'tax_idr' => 'integer',
             'total_idr' => 'integer',
             'paid_idr' => 'integer',
+            'shipping_fee_idr' => 'integer',
+            'deposit_idr' => 'integer',
+            'stock_reserved' => 'boolean',
+            'reserved_until' => 'datetime',
+            'prepared_at' => 'datetime',
+            'handed_over_at' => 'datetime',
+            'paid_at' => 'datetime',
+            'revenue_idr' => 'integer',
+            'refunded_idr' => 'integer',
         ];
+    }
+
+    /** Tanggal lunas dan omzet diisi otomatis, apa pun jalur pembayarannya. */
+    protected static function booted(): void
+    {
+        static::saving(function (SalesOrder $order) {
+            if (! in_array($order->status, [SalesOrderStatus::Paid, SalesOrderStatus::Completed], true)) {
+                $order->paid_at = null;
+                $order->revenue_idr = 0;
+
+                return;
+            }
+
+            $order->paid_at ??= now();
+
+            if (! $order->exists || $order->isDirty(['status', 'paid_at', 'subtotal_idr', 'discount_idr', 'total_idr', 'shipping_fee_idr', 'refunded_idr'])) {
+                $order->revenue_idr = $order->calculateRevenue();
+            }
+        });
+    }
+
+    /**
+     * Omzet milik AUDrive. Mobil titip jual hanya komisi dan biaya servis
+     * (ditambah towing bila ada); sisanya hak pemilik mobil.
+     */
+    public function calculateRevenue(): int
+    {
+        return max(0, $this->grossRevenue() - (int) $this->refunded_idr);
+    }
+
+    private function grossRevenue(): int
+    {
+        if ($this->type !== SalesOrderType::CarSales || ! $this->exists) {
+            return (int) $this->total_idr;
+        }
+
+        $car = $this->items()->whereNotNull('car_unit_id')->first()?->carUnit;
+        if (! $car?->isConsignment()) {
+            return (int) $this->total_idr;
+        }
+
+        $price = max(0, (int) $this->subtotal_idr - (int) $this->discount_idr);
+
+        return min($price, (int) $car->commission_idr + (int) $car->repair_cost_idr) + (int) $this->shipping_fee_idr;
+    }
+
+    /** Catat Sales yang menangani; selain role sales diabaikan. */
+    public function assignSales(?User $user): void
+    {
+        if ($user?->role === 'sales') {
+            $this->update(['sales_id' => $user->id]);
+        }
+    }
+
+    public function sales(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'sales_id');
+    }
+
+    /** Pesanan lunas, menurut tanggal lunas. */
+    public function scopeEarnedBetween($query, $start = null, $end = null)
+    {
+        return $query->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])
+            ->when($start && $end, fn ($q) => $q->whereBetween('paid_at', [$start, $end]));
+    }
+
+    /** Daftar transaksi: yang lunas menurut tanggal lunas, sisanya menurut tanggal pesanan. */
+    public function scopeInPeriod($query, $start = null, $end = null)
+    {
+        return $query->when($start && $end, fn ($q) => $q->whereBetween(DB::raw('COALESCE(paid_at, created_at)'), [$start, $end]));
     }
 
     public function customer(): BelongsTo
@@ -66,7 +162,7 @@ class SalesOrder extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class, 'paymentable_id')
-                    ->where('paymentable_type', SalesOrder::class);
+            ->where('paymentable_type', SalesOrder::class);
     }
 
     public function invoice(): MorphOne
@@ -106,6 +202,73 @@ class SalesOrder extends Model
     public function getRemainingBalanceAttribute(): int
     {
         return $this->total_idr - $this->paid_idr;
+    }
+
+    /** Nominal yang harus dibayar sekarang: booking fee dulu, lalu sisanya. */
+    public function amountDue(): int
+    {
+        return $this->paid_idr <= 0 && $this->deposit_idr > 0
+            ? $this->deposit_idr
+            : max(0, $this->total_idr - $this->paid_idr);
+    }
+
+    public function shippingLabel(): string
+    {
+        return $this->type === SalesOrderType::CarSales ? 'Biaya Towing' : 'Ongkos Kirim';
+    }
+
+    /** Halaman tempat customer memantau pesanan ini. */
+    public function customerUrl(): string
+    {
+        return $this->work_order_id
+            ? route('workshop.tracking.show', $this->work_order_id)
+            : route('parts.orders.show', $this->id);
+    }
+
+    public function isOnlineTransfer(): bool
+    {
+        return $this->payment_channel === 'online_transfer';
+    }
+
+    /** Customer boleh mengunggah (ulang) bukti transfer. */
+    public function awaitsProof(): bool
+    {
+        return $this->isOnlineTransfer()
+            && $this->status === SalesOrderStatus::Pending
+            && in_array($this->payment_status, [PaymentStatus::WaitingUpload->value, PaymentStatus::Rejected->value, 'dp_paid'], true)
+            && (! $this->reserved_until || $this->reserved_until->isFuture());
+    }
+
+    /** Status yang ditampilkan ke customer dan staf. */
+    public function progressLabel(): string
+    {
+        $refunded = $this->status === SalesOrderStatus::Paid && $this->refunded_idr > 0;
+
+        return $this->stageLabel().($refunded ? ' (Refund Sebagian)' : '');
+    }
+
+    private function stageLabel(): string
+    {
+        if ($this->status === SalesOrderStatus::Pending) {
+            if ($this->payment_status === 'dp_paid') {
+                return 'Booking Fee Diterima - Menunggu Pelunasan';
+            }
+
+            return match (true) {
+                $this->isOnlineTransfer() => PaymentStatus::tryFrom((string) $this->payment_status)?->label() ?? 'Menunggu Pembayaran',
+                default => 'Menunggu Pembayaran di Kasir',
+            };
+        }
+
+        if ($this->status === SalesOrderStatus::Paid && $this->type === SalesOrderType::SparePart) {
+            return match (true) {
+                $this->handed_over_at !== null => $this->fulfillment_method === 'delivery' ? 'Dikirim' : 'Sudah Diambil',
+                $this->prepared_at !== null => $this->fulfillment_method === 'delivery' ? 'Siap Dikirim' : 'Siap Diambil',
+                default => 'Lunas - Sedang Disiapkan',
+            };
+        }
+
+        return $this->status->label();
     }
 
     public function isFullyPaid(): bool

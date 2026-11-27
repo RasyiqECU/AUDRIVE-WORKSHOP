@@ -57,7 +57,7 @@ class TicketController extends Controller
     public function show(SupportTicket $ticket): View
     {
         $ticket->load(['customer.user', 'assignee', 'messages.user']);
-        $staffMembers = User::whereIn('role', ['super-admin', 'manager'])->orderBy('name')->get();
+        $staffMembers = User::whereIn('role', ['super-admin', 'sales'])->orderBy('name')->get();
 
         return view('admin.tickets.show', compact('ticket', 'staffMembers'));
     }

@@ -6,7 +6,7 @@
     $roleTitle = match($notifRole) {
         'super-admin' => 'SUPER ADMIN',
         'manager'     => 'OPERATIONS MANAGER',
-        'mechanic'    => 'BENGKEL & MEKANIK',
+        'mechanic'    => 'BENGKEL & KEPALA MEKANIK',
         'sales'       => 'SALES & SHOWROOM',
         'inventory'   => 'GUDANG & INVENTORY',
         'cashier'     => 'KASIR & PEMBAYARAN',
@@ -14,7 +14,7 @@
     };
     $roleDesc = match($notifRole) {
         'super-admin' => 'Pantau seluruh aktivitas operasional, pesanan, booking servis, dan pengajuan persetujuan sistem.',
-        'manager'     => 'Pantau pengajuan persetujuan (approval) masuk, evaluasi operasional, dan eskalasi divisi.',
+        'manager'     => 'Pantau pengajuan approval dan klaim garansi yang menunggu keputusan.',
         'mechanic'    => 'Pantau booking servis baru dari pelanggan dan penugasan work order perbaikan kendaraan.',
         'sales'       => 'Pantau permohonan test drive, pesanan pembelian mobil masuk, dan transaksi prospek pelanggan.',
         'inventory'   => 'Pantau peringatan stok suku cadang menipis dan pesanan masuk yang perlu disiapkan dari gudang.',

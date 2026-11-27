@@ -14,9 +14,9 @@
             <p class="text-sm text-silver-dim mt-2">
                 {{ $aiScan->created_at?->format('d M Y, H:i') ?? '-' }}
                 @if($aiScan->is_confirmed)
-                    • <span class="text-verde font-heading text-xs uppercase">✅ Sudah Dikonfirmasi Mekanik</span>
+                    • <span class="text-verde font-heading text-xs uppercase">✅ Sudah Dikonfirmasi Kepala Mekanik</span>
                 @else
-                    • <span class="text-silver-dim font-heading text-xs uppercase">💬 Belum Ada Review Mekanik</span>
+                    • <span class="text-silver-dim font-heading text-xs uppercase">💬 Belum Ada Review Kepala Mekanik</span>
                 @endif
             </p>
         </div>
@@ -105,7 +105,7 @@
                 <span class="text-giallo text-lg">🤖</span>
                 <div>
                     <h2 class="font-heading text-xs uppercase tracking-wider text-giallo">Hasil Diagnosa AI (Otomatis)</h2>
-                    <p class="text-[10px] text-silver-dim mt-0.5">Prediksi awal — memerlukan verifikasi mekanik</p>
+                    <p class="text-[10px] text-silver-dim mt-0.5">Prediksi awal — memerlukan verifikasi kepala mekanik</p>
                 </div>
             </div>
 
@@ -171,10 +171,10 @@
                 </div>
                 @endif
 
-                {{-- Catatan Teknis untuk Mekanik --}}
+                {{-- Catatan Teknis untuk Kepala Mekanik --}}
                 @if($aiScan->mechanic_ai_notes)
                 <div class="bg-giallo/5 border border-giallo/20 p-3">
-                    <p class="font-heading text-[10px] uppercase tracking-wider text-giallo mb-2">📋 Catatan Teknis AI (untuk Mekanik)</p>
+                    <p class="font-heading text-[10px] uppercase tracking-wider text-giallo mb-2">📋 Catatan Teknis AI (untuk Kepala Mekanik)</p>
                     <p class="font-body text-xs text-silver-dim leading-relaxed">{{ $aiScan->mechanic_ai_notes }}</p>
                 </div>
                 @endif
@@ -191,7 +191,7 @@
             </div>
         </div>
 
-        {{-- Kolom 2: Hasil Diagnosa Manual (Mekanik/Admin) --}}
+        {{-- Kolom 2: Hasil Diagnosa Manual (Kepala Mekanik/Admin) --}}
         <div class="panel border {{ $aiScan->is_confirmed ? 'border-verde/40' : 'border-gunmetal' }} overflow-hidden">
             <div class="bg-{{ $aiScan->is_confirmed ? 'verde' : 'steel' }}/10 px-5 py-3 border-b border-{{ $aiScan->is_confirmed ? 'verde/40' : 'gunmetal' }} flex items-center gap-2">
                 <span class="text-lg">{{ $aiScan->is_confirmed ? '🔧' : '⏳' }}</span>
@@ -200,7 +200,7 @@
                         Hasil Diagnosa Manual
                     </h2>
                     <p class="text-[10px] text-silver-dim mt-0.5">
-                        {{ $aiScan->is_confirmed ? 'Dikonfirmasi oleh: ' . ($aiScan->reviewer?->name ?? 'Mekanik') : 'Belum direview oleh mekanik' }}
+                        {{ $aiScan->is_confirmed ? 'Dikonfirmasi oleh: ' . ($aiScan->reviewer?->name ?? 'Kepala Mekanik') : 'Belum direview oleh kepala mekanik' }}
                     </p>
                 </div>
             </div>
@@ -209,7 +209,7 @@
             {{-- Sudah ada review --}}
             <div class="p-5 space-y-4">
                 <div>
-                    <p class="font-heading text-[10px] uppercase tracking-wider text-silver-dim mb-1">Keputusan Mekanik</p>
+                    <p class="font-heading text-[10px] uppercase tracking-wider text-silver-dim mb-1">Keputusan Kepala Mekanik</p>
                     <p class="font-display text-lg text-verde">
                         {{ $aiScan->mechanic_decision
                             ? str_replace('_', ' ', ucfirst($aiScan->mechanic_decision))
@@ -226,7 +226,7 @@
                 @endif
                 @if($aiScan->technician_review)
                 <div>
-                    <p class="font-heading text-[10px] uppercase tracking-wider text-silver-dim mb-1">Review Mekanik</p>
+                    <p class="font-heading text-[10px] uppercase tracking-wider text-silver-dim mb-1">Review Kepala Mekanik</p>
                     <p class="font-body text-xs text-silver-bright leading-relaxed">{{ $aiScan->technician_review }}</p>
                 </div>
                 @endif
@@ -281,6 +281,14 @@
                         <select name="mechanic_decision" class="w-full bg-nero border border-gunmetal px-4 py-2.5 text-silver-bright text-sm focus:border-arancio focus:outline-none">
                             <option value="">— Pilih diagnosa yang benar —</option>
                             <option value="normal">Mesin Normal</option>
+                            <option value="bad ignition">Sistem Pengapian Bermasalah</option>
+                            <option value="dead battery">Aki Lemah / Mati</option>
+                            <option value="knocking">Suara Ketukan Mesin</option>
+                            <option value="low oil">Level Oli Mesin Rendah</option>
+                            <option value="misfire">Misfire</option>
+                            <option value="power steering">Masalah Power Steering</option>
+                            <option value="serpentine belt">Serpentine Belt Aus / Kendor</option>
+                            <option value="not an engine">Bukan Suara Mesin</option>
                             <option value="timing_chain_belt">Kerusakan Timing Chain / Belt</option>
                             <option value="valve_lifter">Kerusakan Katup / Lifter</option>
                             <option value="rod_knock">Rod Knock / Bantalan Mesin</option>
@@ -303,7 +311,7 @@
                 {{-- Review & Catatan --}}
                 <div>
                     <label class="block font-heading text-xs uppercase tracking-wider text-silver-dim mb-2">
-                        Review / Temuan Mekanik <span class="text-danger">*</span>
+                        Review / Temuan Kepala Mekanik <span class="text-danger">*</span>
                     </label>
                     <textarea name="technician_review" rows="4" required
                         class="w-full bg-nero border border-gunmetal px-4 py-2.5 text-silver-bright text-sm focus:border-giallo focus:outline-none resize-none"

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\SalesOrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ApprovalRequest;
 use App\Models\Payment;
@@ -75,7 +76,9 @@ class ApprovalController extends Controller
             default => ['discount', 'refund', 'price_adjustment', 'stock_adjustment'],
         };
 
-        $salesOrders = SalesOrder::with('customer')
+        // Diskon hanya bisa diajukan untuk pesanan yang masih menunggu pembayaran
+        $salesOrders = SalesOrder::with('customer.user')
+            ->where('status', SalesOrderStatus::Pending)
             ->latest()
             ->limit(50)
             ->get();

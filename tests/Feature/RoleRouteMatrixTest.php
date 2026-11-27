@@ -19,6 +19,7 @@ use App\Models\SparePart;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Models\Voucher;
+use App\Models\WarrantyClaim;
 use App\Models\WorkOrder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -64,8 +65,8 @@ $groups = [
         ],
     ],
     [
-        'label' => 'Unit Supercar — view (Super Admin, Manager, Sales)',
-        'roles' => ['super-admin', 'manager', 'sales'],
+        'label' => 'Unit Supercar — view (Super Admin, Sales)',
+        'roles' => ['super-admin', 'sales'],
         'gets' => [
             ['admin.cars.index'],
             ['admin.cars.show', fn () => CarUnit::factory()->create()],
@@ -80,16 +81,16 @@ $groups = [
         ],
     ],
     [
-        'label' => 'Pesanan Masuk / Offers (Super Admin, Manager, Sales)',
-        'roles' => ['super-admin', 'manager', 'sales'],
+        'label' => 'Pesanan Masuk / Offers (Super Admin, Sales)',
+        'roles' => ['super-admin', 'sales'],
         'gets' => [
             ['admin.offers.index'],
             ['admin.offers.show', fn () => Offer::factory()->pending()->create()],
         ],
     ],
     [
-        'label' => 'Jadwal Test Drive — view (Super Admin, Manager, Sales)',
-        'roles' => ['super-admin', 'manager', 'sales'],
+        'label' => 'Jadwal Test Drive — view (Super Admin, Sales)',
+        'roles' => ['super-admin', 'sales'],
         'gets' => [
             ['admin.appointments.index'],
             ['admin.appointments.show', fn () => Appointment::factory()->create()],
@@ -116,8 +117,8 @@ $groups = [
         ],
     ],
     [
-        'label' => 'Invoice & Bukti Bayar (Super Admin, Manager, Kasir, Sales — Sales hanya invoice mobil)',
-        'roles' => ['super-admin', 'manager', 'cashier', 'sales'],
+        'label' => 'Invoice & Bukti Bayar (Super Admin, Kasir, Sales — Sales hanya invoice mobil)',
+        'roles' => ['super-admin', 'cashier', 'sales'],
         'gets' => [
             ['admin.invoices.index'],
             ['admin.invoices.show', function (string $role) {
@@ -150,36 +151,118 @@ $groups = [
         ],
     ],
     [
-        'label' => 'Booking Servis — ubah status & konversi WO (Super Admin & Kasir)',
-        'roles' => ['super-admin', 'cashier'],
+        'label' => 'Booking Servis — ubah status (Super Admin, Kasir, Sales)',
+        'roles' => ['super-admin', 'cashier', 'sales'],
         'gets' => [],
         'mutations' => [
             ['patch', 'admin.service-bookings.status', fn () => ServiceBooking::factory()->create()],
-            ['post', 'admin.service-bookings.convert', fn () => ServiceBooking::factory()->create()],
         ],
     ],
     [
-        'label' => 'Booking Servis — view antrean (Super Admin, Manager, Kasir)',
-        'roles' => ['super-admin', 'manager', 'cashier'],
+        'label' => 'Booking Servis — walk-in & check-in (Super Admin & Sales)',
+        'roles' => ['super-admin', 'sales'],
+        'gets' => [
+            ['admin.service-bookings.create'],
+        ],
+        'mutations' => [
+            ['post', 'admin.service-bookings.store'],
+            ['post', 'admin.service-bookings.check-in', fn () => ServiceBooking::factory()->create()],
+        ],
+    ],
+    [
+        'label' => 'Work Order — buat & lolos QC (Super Admin & Kepala Mekanik)',
+        'roles' => ['super-admin', 'mechanic'],
+        'gets' => [
+            ['admin.work-orders.create'],
+        ],
+        'mutations' => [
+            ['post', 'admin.service-bookings.convert', fn () => ServiceBooking::factory()->create()],
+            ['post', 'admin.work-orders.complete', fn () => WorkOrder::factory()->create()],
+        ],
+    ],
+    [
+        'label' => 'Titip Jual — lihat (Super Admin, Kepala Mekanik, Manager, Sales)',
+        'roles' => ['super-admin', 'mechanic', 'manager', 'sales'],
+        'gets' => [
+            ['admin.consignments.index'],
+        ],
+    ],
+    [
+        'label' => 'Titip Jual — persetujuan (Super Admin & Manager)',
+        'roles' => ['super-admin', 'manager'],
+        'gets' => [],
+        'mutations' => [
+            ['post', 'admin.consignments.approve', fn () => CarUnit::factory()->create()],
+        ],
+    ],
+    [
+        'label' => 'Serah Terima Mobil (Super Admin & Sales)',
+        'roles' => ['super-admin', 'sales'],
+        'gets' => [
+            ['admin.car-handovers.index'],
+        ],
+    ],
+    [
+        'label' => 'Verifikasi Pembayaran Online (Super Admin & Kasir)',
+        'roles' => ['super-admin', 'cashier'],
+        'gets' => [
+            ['admin.payment-verifications.index'],
+        ],
+    ],
+    [
+        'label' => 'Siapkan Pesanan (Super Admin & Inventory)',
+        'roles' => ['super-admin', 'inventory'],
+        'gets' => [
+            ['admin.fulfilments.index'],
+        ],
+        'mutations' => [
+            ['post', 'admin.fulfilments.prepare', fn () => SalesOrder::factory()->create()],
+        ],
+    ],
+    [
+        'label' => 'Klaim Garansi — buat (Super Admin & Sales)',
+        'roles' => ['super-admin', 'sales'],
+        'gets' => [
+            ['admin.warranty-claims.create'],
+        ],
+        'mutations' => [
+            ['post', 'admin.warranty-claims.store'],
+        ],
+    ],
+    [
+        'label' => 'Klaim Garansi — lihat (Super Admin, Sales, Mekanik, Manager, Inventory)',
+        'roles' => ['super-admin', 'sales', 'mechanic', 'manager', 'inventory'],
+        'gets' => [
+            ['admin.warranty-claims.index'],
+            ['admin.warranty-claims.show', fn () => WarrantyClaim::factory()->create()],
+        ],
+    ],
+    [
+        'label' => 'Usulan Part — lihat (Super Admin, Inventory, Sales)',
+        'roles' => ['super-admin', 'inventory', 'sales'],
+        'gets' => [
+            ['admin.part-requests.index'],
+        ],
+    ],
+    [
+        'label' => 'Booking Servis — view antrean (Super Admin, Kasir, Sales, Mekanik)',
+        'roles' => ['super-admin', 'cashier', 'sales', 'mechanic'],
         'gets' => [
             ['admin.service-bookings.index'],
             ['admin.service-bookings.show', fn () => ServiceBooking::factory()->create()],
         ],
     ],
     [
-        'label' => 'Work Order — buat & serah terima (Super Admin & Kasir)',
-        'roles' => ['super-admin', 'cashier'],
-        'gets' => [
-            ['admin.work-orders.create'],
-        ],
+        'label' => 'Work Order — serah terima (Super Admin, Kasir, Sales)',
+        'roles' => ['super-admin', 'cashier', 'sales'],
+        'gets' => [],
         'mutations' => [
-            ['post', 'admin.work-orders.store'],
             ['post', 'admin.work-orders.deliver', fn () => WorkOrder::factory()->create()],
         ],
     ],
     [
-        'label' => 'Work Order — penugasan mekanik (Super Admin & Manager)',
-        'roles' => ['super-admin', 'manager'],
+        'label' => 'Work Order — penugasan mekanik (Super Admin & Kepala Mekanik)',
+        'roles' => ['super-admin', 'mechanic'],
         'gets' => [],
         'mutations' => [
             ['patch', 'admin.work-orders.assign', fn () => WorkOrder::factory()->create()],
@@ -194,15 +277,15 @@ $groups = [
         ],
     ],
     [
-        'label' => 'Work Order — view antrean (Super Admin, Manager, Kasir, Mekanik)',
-        'roles' => ['super-admin', 'manager', 'cashier', 'mechanic'],
+        'label' => 'Work Order — view antrean (Super Admin, Kasir, Sales, Mekanik)',
+        'roles' => ['super-admin', 'cashier', 'sales', 'mechanic'],
         'gets' => [
             ['admin.work-orders.index'],
         ],
     ],
     [
-        'label' => 'AI Sound Scan — view & review (Super Admin, Manager, Mekanik)',
-        'roles' => ['super-admin', 'manager', 'mechanic'],
+        'label' => 'AI Sound Scan — view & review (Super Admin, Mekanik)',
+        'roles' => ['super-admin', 'mechanic'],
         'gets' => [
             ['admin.ai-scans.index'],
         ],
@@ -223,16 +306,16 @@ $groups = [
         ],
     ],
     [
-        'label' => 'Katalog Spare Part — view (Super Admin, Manager, Inventory, Mekanik)',
-        'roles' => ['super-admin', 'manager', 'inventory', 'mechanic'],
+        'label' => 'Katalog Spare Part — view (Super Admin, Inventory, Mekanik)',
+        'roles' => ['super-admin', 'inventory', 'mechanic'],
         'gets' => [
             ['admin.spare-parts.index'],
             ['admin.spare-parts.show', fn () => SparePart::factory()->create()],
         ],
     ],
     [
-        'label' => 'Stok & Movement — view (Super Admin, Manager, Inventory)',
-        'roles' => ['super-admin', 'manager', 'inventory'],
+        'label' => 'Stok & Movement — view (Super Admin, Inventory)',
+        'roles' => ['super-admin', 'inventory'],
         'gets' => [
             ['admin.inventory.index'],
             ['admin.inventory.low-stock'],
@@ -264,16 +347,16 @@ $groups = [
         ],
     ],
     [
-        'label' => 'Purchase Order — view (Super Admin, Manager, Inventory)',
-        'roles' => ['super-admin', 'manager', 'inventory'],
+        'label' => 'Purchase Order — view (Super Admin, Inventory)',
+        'roles' => ['super-admin', 'inventory'],
         'gets' => [
             ['admin.purchase-orders.index'],
             ['admin.purchase-orders.show', fn () => PurchaseOrder::factory()->create()],
         ],
     ],
     [
-        'label' => 'Database Pelanggan — view (Super Admin, Manager, Kasir)',
-        'roles' => ['super-admin', 'manager', 'cashier'],
+        'label' => 'Database Pelanggan — view (Super Admin, Kasir)',
+        'roles' => ['super-admin', 'cashier'],
         'gets' => [
             ['admin.customers.index'],
             ['admin.customers.show', fn () => Customer::factory()->create()],
@@ -282,8 +365,8 @@ $groups = [
         ],
     ],
     [
-        'label' => 'Database Pelanggan — koreksi (Super Admin & Manager)',
-        'roles' => ['super-admin', 'manager'],
+        'label' => 'Database Pelanggan — koreksi (Super Admin)',
+        'roles' => ['super-admin'],
         'gets' => [
             ['admin.customers.edit', fn () => Customer::factory()->create()],
         ],
@@ -292,8 +375,8 @@ $groups = [
         ],
     ],
     [
-        'label' => 'Pesan Customer (Super Admin, Manager, Sales)',
-        'roles' => ['super-admin', 'manager', 'sales'],
+        'label' => 'Pesan Customer (Super Admin, Sales)',
+        'roles' => ['super-admin', 'sales'],
         'gets' => [
             ['admin.contact-messages.index'],
             ['admin.contact-messages.show', fn () => ContactMessage::create([
@@ -313,8 +396,8 @@ $groups = [
         ],
     ],
     [
-        'label' => 'Tiket Layanan (Super Admin, Manager, Sales)',
-        'roles' => ['super-admin', 'manager', 'sales'],
+        'label' => 'Tiket Layanan (Super Admin, Sales)',
+        'roles' => ['super-admin', 'sales'],
         'gets' => [
             ['admin.tickets.index'],
             ['admin.tickets.show', fn () => SupportTicket::factory()->create()],
@@ -325,8 +408,8 @@ $groups = [
         ],
     ],
     [
-        'label' => 'Voucher & Promo — view (Super Admin, Manager, Sales)',
-        'roles' => ['super-admin', 'manager', 'sales'],
+        'label' => 'Voucher & Promo — view (Super Admin, Sales)',
+        'roles' => ['super-admin', 'sales'],
         'gets' => [
             ['admin.vouchers.index'],
             ['admin.vouchers.show', fn () => Voucher::factory()->create()],
@@ -335,8 +418,8 @@ $groups = [
         ],
     ],
     [
-        'label' => 'Voucher & Promo — CRUD penuh (Super Admin & Manager)',
-        'roles' => ['super-admin', 'manager'],
+        'label' => 'Voucher & Promo — CRUD penuh (Super Admin)',
+        'roles' => ['super-admin'],
         'gets' => [
             ['admin.vouchers.create'],
             ['admin.vouchers.edit', fn () => Voucher::factory()->create()],
@@ -355,16 +438,16 @@ $groups = [
         ],
     ],
     [
-        'label' => 'Program Loyalitas — view & koreksi (Super Admin, Manager, Sales, Kasir)',
-        'roles' => ['super-admin', 'manager', 'sales', 'cashier'],
+        'label' => 'Program Loyalitas — view & koreksi (Super Admin, Sales, Kasir)',
+        'roles' => ['super-admin', 'sales', 'cashier'],
         'gets' => [
             ['admin.loyalty.index'],
             ['admin.loyalty.history'],
         ],
     ],
     [
-        'label' => 'Koreksi Poin Loyalitas (Super Admin & Manager)',
-        'roles' => ['super-admin', 'manager'],
+        'label' => 'Koreksi Poin Loyalitas (Super Admin)',
+        'roles' => ['super-admin'],
         'gets' => [],
         'mutations' => [
             ['post', 'admin.loyalty.adjust', fn () => Customer::factory()->create()],
@@ -372,7 +455,7 @@ $groups = [
     ],
     [
         'label' => 'Pengajuan Approval — form pengajuan (staf operasional)',
-        'roles' => ['super-admin', 'manager', 'sales', 'cashier', 'inventory'],
+        'roles' => ['super-admin', 'sales', 'cashier', 'inventory'],
         'gets' => [
             ['admin.approvals.create'],
         ],
@@ -517,7 +600,7 @@ test('customer ditolak 403 pada seluruh route admin mutasi', function () {
         ['delete', 'admin.cars.destroy', [$car], []],
         ['post', 'admin.pos.store', [], []],
         ['post', 'admin.users.store', [], []],
-        ['post', 'admin.work-orders.store', [], []],
+        ['post', 'admin.service-bookings.store', [], []],
     ];
 
     foreach ($targets as [$method, $name, $param, $data]) {
@@ -528,8 +611,8 @@ test('customer ditolak 403 pada seluruh route admin mutasi', function () {
 
 /**
  * Verifikasi hasil pembersihan hasil audit: URL milik route mati di bawah ini
- * telah dibuang dari routes/admin.php (UI dan sidebar tidak pernah memakainya,
- * dan pembuatan booking hanya via portal customer / API). Konsekuensinya URL
+ * telah dibuang dari routes/admin.php (UI dan sidebar tidak pernah memakainya).
+ * Konsekuensinya URL
  * tersebut mengembalikan 404 (atau 405 bila URL masih di-shadow route GET
  * yang hidup) — yang penting bukan 500 lagi, bahkan untuk Super Admin.
  */
@@ -541,8 +624,6 @@ test('pembersihan hasil audit: URL modul mati mengembalikan 404, bukan 500', fun
 
     $checks = [
         // Route dead ServiceBookingController dibuang
-        ['get', '/admin/service-bookings/create'],
-        ['post', '/admin/service-bookings'],
         ['get', '/admin/service-bookings/'.$booking->id.'/edit'],
         ['patch', '/admin/service-bookings/'.$booking->id],
         ['delete', '/admin/service-bookings/'.$booking->id],

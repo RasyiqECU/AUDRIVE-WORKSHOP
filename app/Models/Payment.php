@@ -22,6 +22,14 @@ class Payment extends Model
         'reference',
         'paid_at',
         'metadata',
+        'purpose',
+        'proof_path',
+        'sender_name',
+        'destination_bank',
+        'uploaded_at',
+        'verified_by',
+        'verified_at',
+        'rejection_reason',
     ];
 
     protected function casts(): array
@@ -30,8 +38,29 @@ class Payment extends Model
             'status' => PaymentStatus::class,
             'amount_idr' => 'integer',
             'paid_at' => 'datetime',
+            'uploaded_at' => 'datetime',
+            'verified_at' => 'datetime',
             'metadata' => 'array',
         ];
+    }
+
+    /** Catat siapa yang menerima uang, dasar Laporan Shift Cashier. */
+    protected static function booted(): void
+    {
+        static::creating(function (Payment $payment) {
+            if ($payment->status === PaymentStatus::Success && in_array(auth()->user()?->role, ['cashier', 'super-admin'], true)) {
+                $payment->verified_by ??= auth()->id();
+            }
+        });
+    }
+
+    /** Uang yang benar-benar diterima seorang kasir (termasuk yang kemudian direfund). */
+    public function scopeReceivedBy($query, int $userId, $start = null, $end = null)
+    {
+        return $query->where('verified_by', $userId)
+            ->where('method', '!=', 'refund')
+            ->whereIn('status', [PaymentStatus::Success, PaymentStatus::Refunded])
+            ->when($start && $end, fn ($q) => $q->whereBetween('paid_at', [$start, $end]));
     }
 
     public function paymentable(): MorphTo

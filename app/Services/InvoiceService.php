@@ -38,7 +38,11 @@ class InvoiceService
             default => 'INV-',
         };
 
-        $status = in_array($salesOrder->status, [SalesOrderStatus::Paid, SalesOrderStatus::Completed], true) ? 'paid' : 'draft';
+        $status = match (true) {
+            in_array($salesOrder->status, [SalesOrderStatus::Paid, SalesOrderStatus::Completed], true) => 'paid',
+            in_array($salesOrder->status, [SalesOrderStatus::Expired, SalesOrderStatus::Cancelled], true) => 'cancelled',
+            default => 'draft',
+        };
 
         return Invoice::create([
             'invoiceable_type' => SalesOrder::class,
@@ -160,9 +164,9 @@ class InvoiceService
 
         $totalInvoices = Invoice::count();
         $totalPaid = Invoice::where('status', 'paid')->sum('total_idr');
-        $totalPending = Invoice::where('status', '!=', 'paid')->sum('total_idr');
+        $totalPending = Invoice::whereNotIn('status', ['paid', 'cancelled'])->sum('total_idr');
         $countPaid = Invoice::where('status', 'paid')->count();
-        $countPending = Invoice::where('status', '!=', 'paid')->count();
+        $countPending = Invoice::whereNotIn('status', ['paid', 'cancelled'])->count();
 
         return [
             'total_invoices' => $totalInvoices,

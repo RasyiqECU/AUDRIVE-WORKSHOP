@@ -1,22 +1,18 @@
 <?php
 
-
 declare(strict_types=1);
-
 
 namespace App\Http\Requests\Admin;
 
-
+use App\Models\CarUnit;
 use Illuminate\Foundation\Http\FormRequest;
-
 
 class StoreCarUnitRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('create', \App\Models\CarUnit::class);
+        return $this->user()->can('create', CarUnit::class);
     }
-
 
     protected function prepareForValidation(): void
     {
@@ -29,18 +25,17 @@ class StoreCarUnitRequest extends FormRequest
             }
         }
 
-        if (!empty($merge)) {
+        if (! empty($merge)) {
             $this->merge($merge);
         }
     }
-
 
     public function rules(): array
     {
         return [
             'brand' => ['required', 'string', 'max:50'],
             'model' => ['required', 'string', 'max:50'],
-            'year' => ['required', 'integer', 'min:1950', 'max:' . (date('Y') + 1)],
+            'year' => ['required', 'integer', 'min:1950', 'max:'.(date('Y') + 1)],
             'transmission' => ['required', 'in:manual,automatic,cvt'],
             'color' => ['nullable', 'string', 'max:30'],
             'mileage_km' => ['required', 'integer', 'min:0'],
@@ -49,6 +44,9 @@ class StoreCarUnitRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:2000'],
             'stock_status' => ['required', 'in:available,reserved,sold'],
             'warranty_status' => ['nullable', 'in:active,expired'],
+            'condition' => ['nullable', 'in:new,used'],
+            'condition_defects' => ['nullable', 'string', 'max:2000'],
+            'condition_additions' => ['nullable', 'string', 'max:2000'],
             'stnk_status' => ['nullable', 'in:valid,expired'],
             'bpkb_status' => ['nullable', 'in:available,missing'],
             'location' => ['nullable', 'string', 'max:100'],
@@ -61,7 +59,6 @@ class StoreCarUnitRequest extends FormRequest
         ];
     }
 
-
     public function messages(): array
     {
         return [
@@ -69,7 +66,7 @@ class StoreCarUnitRequest extends FormRequest
             'model.required' => 'Model wajib diisi.',
             'year.required' => 'Tahun wajib diisi.',
             'year.min' => 'Tahun minimal 1950.',
-            'year.max' => 'Tahun maksimal ' . (date('Y') + 1) . '.',
+            'year.max' => 'Tahun maksimal '.(date('Y') + 1).'.',
             'mileage_km.required' => 'Kilometer wajib diisi.',
             'mileage_km.min' => 'Kilometer tidak boleh negatif.',
             'price_buy_idr.required' => 'Harga beli wajib diisi.',
@@ -80,6 +77,3 @@ class StoreCarUnitRequest extends FormRequest
         ];
     }
 }
-
-
-

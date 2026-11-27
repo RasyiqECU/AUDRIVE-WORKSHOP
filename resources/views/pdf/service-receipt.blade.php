@@ -289,7 +289,7 @@
                 <div class="info-card-title">Data Administrasi Work Order</div>
                 <p>No. Work Order: <strong>#{{ $workOrder->code }}</strong></p>
                 <p>Tanggal Servis: <strong>{{ $workOrder->created_at->format('d F Y, H:i') }} WIB</strong></p>
-                <p>Mekanik Bertugas: <strong>{{ $mechanic?->name ?? 'Tim Teknisi AUDrive' }}</strong></p>
+                <p>Kepala Mekanik Bertugas: <strong>{{ $mechanic?->name ?? 'Tim Teknisi AUDrive' }}</strong></p>
                 <p>Status Pengerjaan: <strong style="text-transform: uppercase;">{{ $workOrder->status->value ?? (string)$workOrder->status }}</strong></p>
             </td>
         </tr>

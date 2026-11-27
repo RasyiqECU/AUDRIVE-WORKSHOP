@@ -230,4 +230,10 @@
         </div>
     </div>
 </div>
+@if($car->isConsignment())
+    <div class="panel border border-giallo/40 bg-carbon p-5 mt-6 flex flex-wrap justify-between gap-2 text-xs text-silver">
+        <span>Unit titip jual dari {{ $car->seller?->user?->name }}.</span>
+        <a href="{{ route('admin.consignments.show', $car) }}" class="text-giallo underline">Inspeksi, harga &amp; komisi</a>
+    </div>
+@endif
 @endsection

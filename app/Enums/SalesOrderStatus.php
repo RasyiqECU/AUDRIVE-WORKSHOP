@@ -12,16 +12,18 @@ enum SalesOrderStatus: string
     case Completed = 'completed';
     case Cancelled = 'cancelled';
     case Refunded = 'refunded';
+    case Expired = 'expired';
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Pending => 'Menunggu',
             self::Processing => 'Diproses',
             self::Paid => 'Dibayar',
             self::Completed => 'Selesai',
             self::Cancelled => 'Dibatalkan',
             self::Refunded => 'Dikembalikan',
+            self::Expired => 'Kedaluwarsa',
         };
     }
 }

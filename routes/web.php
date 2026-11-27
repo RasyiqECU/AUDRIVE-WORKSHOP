@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\ProfileController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +48,14 @@ Route::get('/dashboard', function () {
         default => redirect()->route('customer.dashboard'),
     };
 })->middleware(['auth'])->name('dashboard');
+
+// Profil & ganti password — berlaku untuk semua role (RoleMiddleware menolak akun nonaktif)
+Route::middleware(['auth', 'role'])->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    // Nama "password.update" sudah dipakai alur reset password
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+});
 
 // Load modular route files (web middleware group)
 Route::middleware('web')->group(function () {

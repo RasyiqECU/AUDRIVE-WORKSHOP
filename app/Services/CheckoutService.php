@@ -1,66 +1,56 @@
 <?php
 
-
 declare(strict_types=1);
-
 
 namespace App\Services;
 
-
+use App\Enums\CarUnitStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\SalesOrderStatus;
 use App\Enums\SalesOrderType;
-use App\Enums\StockMovementType;
 use App\Models\Cart;
+use App\Models\CarUnit;
 use App\Models\Customer;
-use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\SalesOrder;
 use App\Models\SalesOrderItem;
-use App\Models\SparePart;
-use App\Models\StockMovement;
 use App\Services\Notification\NotificationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-
 
 class CheckoutService
 {
     public function __construct(
         protected CartService $cartService,
-        protected ?NotificationService $notificationService = null
+        protected ?NotificationService $notificationService = null,
+        protected ?StockReservationService $reservations = null
     ) {
         $this->notificationService = $notificationService ?? app(NotificationService::class);
+        $this->reservations = $reservations ?? app(StockReservationService::class);
     }
 
-
+    /**
+     * Buat pesanan dan kunci stoknya. Stok fisik baru dipotong saat lunas.
+     */
     public function processCheckout(
         Cart $cart,
         ?Customer $customer,
         string $shippingMethod,
-        ?string $shippingAddress = null
+        ?string $shippingAddress = null,
+        string $paymentChannel = 'cashier'
     ): SalesOrder {
-        return DB::transaction(function () use ($cart, $customer, $shippingMethod, $shippingAddress) {
-            // Validate stock for all items
-            foreach ($cart->items as $item) {
-                $part = SparePart::where('id', $item->spare_part_id)
-                    ->lockForUpdate()
-                    ->first();
+        $order = DB::transaction(function () use ($cart, $customer, $shippingMethod, $shippingAddress, $paymentChannel) {
+            $items = $cart->items()->with('sparePart')->get();
 
+            $this->reservations->reserve(
+                $items->groupBy('spare_part_id')->map(fn ($rows) => (int) $rows->sum('qty'))->all()
+            );
 
-                if ($part->stock < $item->qty) {
-                    throw new \Exception("Stok tidak cukup untuk {$part->name}. Tersedia: {$part->stock}");
-                }
-            }
-
-
-            // Calculate totals
-            $subtotal = $this->cartService->calculateTotal($cart);
+            $delivery = $shippingMethod === 'delivery';
+            $subtotal = (int) $items->sum(fn ($item) => $item->qty * $item->price_idr);
             $tax = (int) ($subtotal * 0.11); // 11% tax
-            $total = $subtotal + $tax;
+            $shippingFee = $delivery ? PaymentSettings::shippingFee() : 0;
 
-
-            // Create sales order
             $salesOrder = SalesOrder::create([
                 'code' => $this->generateOrderCode(),
                 'customer_id' => $customer?->id,
@@ -69,185 +59,172 @@ class CheckoutService
                 'subtotal_idr' => $subtotal,
                 'discount_idr' => 0,
                 'tax_idr' => $tax,
-                'total_idr' => $total,
+                'shipping_fee_idr' => $shippingFee,
+                'total_idr' => $subtotal + $tax + $shippingFee,
                 'paid_idr' => 0,
-                'payment_status' => PaymentStatus::Pending,
-                'notes' => "Shipping: {$shippingMethod}" . ($shippingAddress ? " | Address: {$shippingAddress}" : ''),
+                'payment_status' => $paymentChannel === 'online_transfer' ? PaymentStatus::WaitingUpload : PaymentStatus::Pending,
+                'payment_channel' => $paymentChannel,
+                'fulfillment_method' => $delivery ? 'delivery' : 'self_pickup',
+                'shipping_address' => $delivery ? $shippingAddress : null,
+                'stock_reserved' => true,
+                'reserved_until' => now()->addHours(PaymentSettings::deadlineHours()),
+                'notes' => "Shipping: {$shippingMethod}".($shippingAddress ? " | Address: {$shippingAddress}" : ''),
                 'created_by' => $customer?->user_id ?? 1, // Default to admin if guest
             ]);
 
-
-            // Create sales order items and reduce stock
-            foreach ($cart->items as $item) {
-                $part = SparePart::where('id', $item->spare_part_id)
-                    ->lockForUpdate()
-                    ->first();
-
-
-                // Create sales order item
+            foreach ($items as $item) {
                 SalesOrderItem::create([
                     'sales_order_id' => $salesOrder->id,
                     'item_type' => 'spare_part',
-                    'spare_part_id' => $part->id,
-                    'description' => $part->name,
+                    'spare_part_id' => $item->spare_part_id,
+                    'description' => $item->sparePart->name,
                     'qty' => $item->qty,
                     'unit_price_idr' => $item->price_idr,
                     'subtotal_idr' => $item->qty * $item->price_idr,
                 ]);
-
-
-                // Reduce stock
-                $part->decrement('stock', $item->qty);
-                $part->refresh();
-
-                // Peringatan stok menipis otomatis ke Inventory & Super Admin
-                if ($part->stock <= ($part->low_stock_threshold ?? 5)) {
-                    try {
-                        $this->notificationService->notifyRoles(['inventory', 'super-admin'], 'low_stock_alert', [
-                            'title'           => "Peringatan Stok Suku Cadang Menipis: {$part->name}",
-                            'message'         => "Suku cadang {$part->name} tersisa {$part->stock} unit (Batas minimum: {$part->low_stock_threshold}). Segera lakukan restock.",
-                            'part_id'         => $part->id,
-                            'part_name'       => $part->name,
-                            'remaining_stock' => $part->stock,
-                            'action_url'      => route('admin.spare-parts.show', $part->id),
-                        ]);
-                    } catch (\Throwable $e) {
-                        \Illuminate\Support\Facades\Log::warning('Gagal kirim notifikasi low stock: ' . $e->getMessage());
-                    }
-                }
-
-                // Create stock movement
-                StockMovement::create([
-                    'spare_part_id' => $part->id,
-                    'type' => StockMovementType::Out,
-                    'qty' => $item->qty,
-                    'reference_type' => SalesOrder::class,
-                    'reference_id' => $salesOrder->id,
-                    'notes' => "Penjualan spare part - Order #{$salesOrder->code}",
-                    'created_by' => $customer?->user_id ?? 1,
-                ]);
             }
 
-            // Add loyalty points if customer is logged in
-            if ($customer) {
-                $points = (int) ($subtotal / 10000); // 1 point per Rp 10.000
-                if ($points > 0) {
-                    $customer->increment('loyalty_points', $points);
-
-                    // Create loyalty transaction
-                    $customer->loyaltyTransactions()->create([
-                        'type' => 'earning',
-                        'points' => $points,
-                        'reference_type' => SalesOrder::class,
-                        'reference_id' => $salesOrder->id,
-                        'description' => "Poin dari pembelian spare part #{$salesOrder->code}",
-                    ]);
-                }
-            }
-
-            // Clear cart
             $this->cartService->clearCart($cart);
-
-            // Notifikasi Pembelian Baru ke Customer & Role Terkait
-            $customerUser = $customer?->user;
-            if ($customerUser) {
-                $this->notificationService->send($customerUser, 'order_created', [
-                    'title'      => "Pesanan Berhasil Dibuat: #{$salesOrder->code}",
-                    'message'    => "Pesanan suku cadang #{$salesOrder->code} berhasil dibuat senilai Rp " . number_format($salesOrder->total_idr, 0, ',', '.') . ". Silakan lakukan pembayaran.",
-                    'order_code' => $salesOrder->code,
-                    'amount'     => $salesOrder->total_idr,
-                    'action_url' => route('parts.orders.show', $salesOrder->id),
-                ]);
-            }
-
-            // Notifikasi ke Tim Kasir & Gudang/Inventory + Super Admin
-            $customerName = $customerUser?->name ?? 'Pelanggan';
-            $this->notificationService->notifyRoles(['cashier', 'inventory', 'super-admin'], 'order_created', [
-                'title'      => "Pesanan Suku Cadang Masuk: #{$salesOrder->code}",
-                'message'    => "Pesanan suku cadang baru masuk dari {$customerName} (#{$salesOrder->code}) senilai Rp " . number_format($salesOrder->total_idr, 0, ',', '.'),
-                'order_code' => $salesOrder->code,
-                'amount'     => $salesOrder->total_idr,
-                'action_url' => route('admin.pos.index'),
-            ]);
 
             return $salesOrder;
         });
+
+        $customerUser = $customer?->user;
+        $total = 'Rp '.number_format($order->total_idr, 0, ',', '.');
+        if ($customerUser) {
+            $this->notificationService->send($customerUser, 'order_created', [
+                'title' => "Pesanan Berhasil Dibuat: #{$order->code}",
+                'message' => "Pesanan suku cadang #{$order->code} senilai {$total}. Bayar sebelum {$order->reserved_until->format('d M Y H:i')}.",
+                'action_url' => route('parts.orders.show', $order->id),
+            ]);
+        }
+
+        $this->notificationService->notifyRoles(['cashier', 'super-admin'], 'order_created', [
+            'title' => "Pesanan Suku Cadang Masuk: #{$order->code}",
+            'message' => 'Pesanan baru dari '.($customerUser?->name ?? 'Pelanggan')." senilai {$total}.",
+            'action_url' => route('admin.pos.index'),
+        ]);
+
+        return $order;
     }
 
-
+    /** Pembayaran di kasir (tunai/EDC). */
     public function processPayment(SalesOrder $salesOrder, string $method, int $amount): Payment
     {
         return DB::transaction(function () use ($salesOrder, $method, $amount) {
-            // Create payment
+            $salesOrder = SalesOrder::whereKey($salesOrder->id)->lockForUpdate()->firstOrFail();
+
+            if ($salesOrder->status !== SalesOrderStatus::Pending) {
+                throw new \InvalidArgumentException('Pesanan ini sudah tidak menunggu pembayaran.');
+            }
+
             $payment = Payment::create([
                 'paymentable_type' => SalesOrder::class,
                 'paymentable_id' => $salesOrder->id,
                 'method' => $method,
                 'status' => PaymentStatus::Success,
                 'amount_idr' => $amount,
-                'reference' => 'PAY-' . strtoupper(Str::random(10)),
+                'reference' => 'PAY-'.strtoupper(Str::random(10)),
                 'paid_at' => now(),
             ]);
 
-
-            // Update sales order
             $salesOrder->increment('paid_idr', $amount);
 
-
             if ($salesOrder->paid_idr >= $salesOrder->total_idr) {
-                $salesOrder->update([
-                    'payment_status' => PaymentStatus::Success,
-                    'status' => SalesOrderStatus::Paid,
-                ]);
-
-
-                // Create invoice
-                Invoice::create([
-                    'invoiceable_type' => SalesOrder::class,
-                    'invoiceable_id' => $salesOrder->id,
-                    'number' => 'INV-' . date('Ymd') . '-' . strtoupper(Str::random(6)),
-                    'status' => 'paid',
-                    'due_at' => now(),
-                    'total_idr' => $salesOrder->total_idr,
-                ]);
+                $this->markPaid($salesOrder, auth()->id());
             }
-
-            // Notifikasi Pembayaran Berhasil ke Customer
-            $customerUser = $salesOrder->customer?->user;
-            if ($customerUser) {
-                $this->notificationService->send($customerUser, 'payment_success', [
-                    'title'      => "Pembayaran Berhasil: #{$salesOrder->code}",
-                    'message'    => "Pembayaran sebesar Rp " . number_format($amount, 0, ',', '.') . " untuk pesanan #{$salesOrder->code} telah diverifikasi.",
-                    'order_code' => $salesOrder->code,
-                    'amount'     => $amount,
-                    'action_url' => route('parts.orders.show', $salesOrder->id),
-                ]);
-            }
-
-            // Notifikasi ke Tim Kasir & Sales + Super Admin
-            $this->notificationService->notifyRoles(['cashier', 'sales', 'super-admin'], 'payment_success', [
-                'title'      => "Pembayaran Diterima: #{$salesOrder->code}",
-                'message'    => "Pembayaran sebesar Rp " . number_format($amount, 0, ',', '.') . " untuk pesanan #{$salesOrder->code} telah diterima via {$method}.",
-                'order_code' => $salesOrder->code,
-                'amount'     => $amount,
-                'action_url' => route('admin.pos.index'),
-            ]);
 
             return $payment;
         });
     }
 
+    /**
+     * Pesanan lunas (lewat kasir atau verifikasi transfer): potong stok,
+     * terbitkan invoice, beri poin, beri tahu gudang.
+     */
+    public function markPaid(SalesOrder $order, ?int $actorId = null): void
+    {
+        // Pesanan lama (sebelum ada kuncian stok) sudah dipotong dan diberi poin saat checkout
+        $firstSettlement = $this->reservations->consume($order, $actorId);
+
+        $order->update([
+            'status' => SalesOrderStatus::Paid,
+            'payment_status' => PaymentStatus::Success,
+            'reserved_until' => null,
+        ]);
+
+        // Invoice draft bisa sudah ada (customer membukanya sebelum bayar)
+        app(InvoiceService::class)->ensureInvoiceForSalesOrder($order)
+            ->update(['status' => 'paid', 'total_idr' => $order->total_idr]);
+
+        if ($order->type === SalesOrderType::Service) {
+            app(ServiceBillingService::class)->settled($order, $actorId);
+        }
+
+        $customer = $order->customer;
+        if ($firstSettlement && $customer) {
+            $points = (int) ($order->subtotal_idr / 10000); // 1 point per Rp 10.000
+            if ($points > 0) {
+                $customer->increment('loyalty_points', $points);
+                $customer->loyaltyTransactions()->create([
+                    'type' => 'earning',
+                    'points' => $points,
+                    'reference_type' => SalesOrder::class,
+                    'reference_id' => $order->id,
+                    'description' => "Poin dari pembelian spare part #{$order->code}",
+                ]);
+            }
+        }
+
+        if ($order->type === SalesOrderType::CarSales) {
+            $carIds = $order->items()->whereNotNull('car_unit_id')->pluck('car_unit_id');
+            CarUnit::whereIn('id', $carIds)->update(['status' => CarUnitStatus::Sold]);
+
+            $points = (int) ($order->total_idr / 50000);
+            if ($customer && $points > 0) {
+                $customer->increment('loyalty_points', $points);
+                $customer->loyaltyTransactions()->create([
+                    'type' => 'earning',
+                    'points' => $points,
+                    'reference_type' => SalesOrder::class,
+                    'reference_id' => $order->id,
+                    'description' => "Poin dari transaksi pembelian mobil #{$order->code}",
+                ]);
+            }
+        }
+
+        $amount = 'Rp '.number_format($order->total_idr, 0, ',', '.');
+        if ($customer?->user) {
+            $this->notificationService->send($customer->user, 'payment_success', [
+                'title' => "Pembayaran Berhasil: #{$order->code}",
+                'message' => "Pembayaran {$amount} untuk pesanan #{$order->code} telah diverifikasi.",
+                'amount' => $order->total_idr,
+                'action_url' => $order->customerUrl(),
+            ]);
+        }
+
+        $this->notificationService->notifyRoles(['cashier', 'sales', 'super-admin'], 'payment_success', [
+            'title' => "Pembayaran Diterima: #{$order->code}",
+            'message' => "Pembayaran {$amount} untuk pesanan #{$order->code} telah diterima.",
+            'amount' => $order->total_idr,
+            'action_url' => route('admin.pos.index'),
+        ]);
+
+        if ($order->type === SalesOrderType::SparePart) {
+            $this->notificationService->notifyRoles(['inventory'], 'order_fulfilment', [
+                'title' => "Siapkan Barang: #{$order->code}",
+                'message' => $order->fulfillment_method === 'delivery' ? 'Pesanan lunas, siapkan untuk dikirim.' : 'Pesanan lunas, siapkan untuk diambil.',
+                'action_url' => route('admin.fulfilments.index'),
+            ]);
+        }
+    }
 
     protected function generateOrderCode(): string
     {
         do {
-            $code = 'SO-' . date('Ymd') . '-' . strtoupper(Str::random(6));
+            $code = 'SO-'.date('Ymd').'-'.strtoupper(Str::random(6));
         } while (SalesOrder::where('code', $code)->exists());
-
 
         return $code;
     }
 }
-
-
-

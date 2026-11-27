@@ -28,9 +28,11 @@
 
     {{-- Sub Navigation Tabs (Screen only) --}}
     <div class="no-print flex items-center gap-2 border-b border-gunmetal overflow-x-auto pb-2 print:hidden">
-        <a href="{{ route('admin.reports.index') }}" class="px-4 py-2 border-b-2 border-transparent text-silver-dim hover:text-silver-bright font-heading text-xs uppercase tracking-wider transition-premium flex items-center gap-2">
-            <span>📊</span> Ikhtisar Utama
-        </a>
+        @if(! $cashierId)
+            <a href="{{ route('admin.reports.index') }}" class="px-4 py-2 border-b-2 border-transparent text-silver-dim hover:text-silver-bright font-heading text-xs uppercase tracking-wider transition-premium flex items-center gap-2">
+                <span>📊</span> Ikhtisar Utama
+            </a>
+        @endif
         @if(in_array(auth()->user()->role ?? '', ['super-admin', 'owner', 'manager', 'sales'], true))
             <a href="{{ route('admin.reports.sales') }}" class="px-4 py-2 border-b-2 border-transparent text-silver-dim hover:text-silver-bright font-heading text-xs uppercase tracking-wider transition-premium flex items-center gap-2">
                 <span>🏎</span> Penjualan Supercar
@@ -144,12 +146,13 @@
     {{-- KPI Cards --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div class="panel border border-gunmetal bg-carbon p-5 relative overflow-hidden group hover:border-giallo/40 transition-premium">
-            <span class="text-silver-dim text-xs font-heading uppercase tracking-wider">Penerimaan Kas Bersih</span>
+            <span class="text-silver-dim text-xs font-heading uppercase tracking-wider">{{ $cashierId ? 'Uang Saya Terima' : 'Omzet AUDrive' }}</span>
             <p class="font-mono text-xl sm:text-2xl font-bold text-giallo mt-2">
                 Rp {{ number_format($totalIncome, 0, ',', '.') }}
             </p>
-            <p class="text-[10px] text-silver-dim font-mono mt-1">Status Lunas (Paid)</p>
+            <p class="text-[10px] text-silver-dim font-mono mt-1">{{ $cashierId ? 'Dari pembayaran yang Anda proses' : 'Lunas, menurut tanggal bayar' }}</p>
         </div>
+        @if(! $cashierId)
         <div class="panel border border-gunmetal bg-carbon p-5 relative overflow-hidden group hover:border-blue-400/40 transition-premium">
             <span class="text-silver-dim text-xs font-heading uppercase tracking-wider">Subtotal Tagihan Kotor</span>
             <p class="font-mono text-xl sm:text-2xl font-bold text-blue-400 mt-2">
@@ -171,6 +174,7 @@
             </p>
             <p class="text-[10px] text-silver-dim font-mono mt-1">Pajak pertambahan nilai</p>
         </div>
+        @endif
         <div class="panel border border-gunmetal bg-carbon p-5 relative overflow-hidden group hover:border-silver/40 transition-premium">
             <span class="text-silver-dim text-xs font-heading uppercase tracking-wider">Rata-rata Transaksi (AOV)</span>
             <p class="font-mono text-xl font-bold text-silver-bright mt-2">
@@ -179,6 +183,15 @@
             <p class="text-[10px] text-silver-dim font-mono mt-1">Average order value</p>
         </div>
     </div>
+
+    @if(! $cashierId)
+        <div class="panel border border-gunmetal bg-carbon p-4 text-xs font-mono flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span class="text-silver-dim">Nilai transaksi lunas <strong class="text-silver-bright">Rp {{ number_format($totalGross, 0, ',', '.') }}</strong></span>
+            <span class="text-silver-dim">&minus; Hak pemilik titip jual <strong class="text-arancio">Rp {{ number_format($consignorShare, 0, ',', '.') }}</strong></span>
+            <span class="text-silver-dim">&minus; Refund <strong class="text-danger">Rp {{ number_format($totalRefunded, 0, ',', '.') }}</strong></span>
+            <span class="text-silver-dim">= Omzet AUDrive <strong class="text-giallo">Rp {{ number_format($totalIncome, 0, ',', '.') }}</strong></span>
+        </div>
+    @endif
 
     {{-- Transactions Table --}}
     <div class="panel border border-gunmetal bg-carbon overflow-hidden shadow-xl">
@@ -224,7 +237,7 @@
                                 </span>
                             </td>
                             <td class="py-3.5 px-4 font-mono text-silver-dim">
-                                {{ $trx->created_at->format('d/m/Y H:i') }}
+                                {{ ($trx->paid_at ?? $trx->created_at)->format('d/m/Y H:i') }}
                             </td>
                             <td class="py-3.5 px-4 font-mono text-silver-bright uppercase font-bold text-[11px]">
                                 {{ $pm?->method ?? ($trx->payments?->first()?->method ?? '-') }}
@@ -240,6 +253,11 @@
                             </td>
                             <td class="py-3.5 px-4 font-mono font-bold text-giallo text-right">
                                 Rp {{ number_format($trx->total_idr, 0, ',', '.') }}
+                                @if($cashierId)
+                                    <p class="text-[10px] text-verde">Saya terima: Rp {{ number_format($received[$trx->id] ?? 0, 0, ',', '.') }}</p>
+                                @elseif($trx->paid_at && $trx->revenue_idr !== $trx->total_idr)
+                                    <p class="text-[10px] text-verde">Omzet: Rp {{ number_format($trx->revenue_idr, 0, ',', '.') }}</p>
+                                @endif
                             </td>
                             <td class="py-3.5 px-4 text-center">
                                 @if($isPaid)

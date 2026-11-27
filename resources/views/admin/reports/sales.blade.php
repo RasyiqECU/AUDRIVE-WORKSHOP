@@ -133,11 +133,11 @@
     {{-- KPI Cards --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="panel border border-gunmetal bg-carbon p-5 relative overflow-hidden group hover:border-giallo/40 transition-premium">
-            <span class="text-silver-dim text-xs font-heading uppercase tracking-wider">Total Revenue Unit Terjual</span>
+            <span class="text-silver-dim text-xs font-heading uppercase tracking-wider">Omzet AUDrive dari Mobil</span>
             <p class="font-mono text-xl sm:text-2xl font-bold text-giallo mt-2">
                 Rp {{ number_format($totalCarRevenue, 0, ',', '.') }}
             </p>
-            <p class="text-[10px] text-silver-dim font-mono mt-1">Status Paid & Completed</p>
+            <p class="text-[10px] text-silver-dim font-mono mt-1">Lunas; titip jual = komisi + servis</p>
         </div>
         <div class="panel border border-gunmetal bg-carbon p-5 relative overflow-hidden group hover:border-arancio/40 transition-premium">
             <span class="text-silver-dim text-xs font-heading uppercase tracking-wider">Total Unit Terjual</span>
@@ -162,6 +162,42 @@
         </div>
     </div>
 
+    {{-- Omzet per Sales (semua jenis transaksi) --}}
+    <div class="panel border border-gunmetal bg-carbon overflow-hidden">
+        <div class="p-4 border-b border-gunmetal bg-steel/20">
+            <h2 class="font-heading text-xs uppercase tracking-wider text-silver-bright font-bold">Omzet per Sales</h2>
+            <p class="text-[10px] text-silver-dim mt-1">Menurut tanggal lunas. Mobil titip jual dihitung dari komisi dan biaya servis, bukan harga mobil.</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-steel/30 text-silver-dim font-heading uppercase text-[10px] border-b border-gunmetal">
+                        <th class="py-2.5 px-4">Sales</th>
+                        <th class="py-2.5 px-4 text-right">Transaksi</th>
+                        <th class="py-2.5 px-4 text-right">Mobil</th>
+                        <th class="py-2.5 px-4 text-right">Servis</th>
+                        <th class="py-2.5 px-4 text-right">Spare Part</th>
+                        <th class="py-2.5 px-4 text-right">Total Omzet</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gunmetal/30">
+                    @forelse($salesRecap as $row)
+                        <tr>
+                            <td class="py-2.5 px-4 font-semibold text-silver-bright">{{ $row['name'] }}</td>
+                            <td class="py-2.5 px-4 font-mono text-right text-silver-dim">{{ $row['count'] }}</td>
+                            <td class="py-2.5 px-4 font-mono text-right text-silver-dim">Rp {{ number_format($row['car'], 0, ',', '.') }}</td>
+                            <td class="py-2.5 px-4 font-mono text-right text-silver-dim">Rp {{ number_format($row['service'], 0, ',', '.') }}</td>
+                            <td class="py-2.5 px-4 font-mono text-right text-silver-dim">Rp {{ number_format($row['part'], 0, ',', '.') }}</td>
+                            <td class="py-2.5 px-4 font-mono text-right font-bold text-giallo">Rp {{ number_format($row['total'], 0, ',', '.') }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="6" class="py-6 text-center text-silver-dim">Belum ada transaksi lunas pada periode ini.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     {{-- Orders Table --}}
     <div class="panel border border-gunmetal bg-carbon overflow-hidden shadow-xl">
         <div class="overflow-x-auto">
@@ -174,7 +210,8 @@
                         <th class="py-3 px-4">Tanggal Transaksi</th>
                         <th class="py-3 px-4 text-right">Harga Unit</th>
                         <th class="py-3 px-4 text-right">Diskon</th>
-                        <th class="py-3 px-4 text-right">Total Transaksi</th>
+                        <th class="py-3 px-4 text-right">Nilai Transaksi</th>
+                        <th class="py-3 px-4 text-right">Omzet AUDrive</th>
                         <th class="py-3 px-4 text-center">Status</th>
                         <th class="py-3 px-4 text-center print:hidden">Dokumen</th>
                     </tr>
@@ -189,7 +226,7 @@
                         <tr class="hover:bg-steel/10 transition-premium">
                             <td class="py-3.5 px-4 font-mono font-bold text-silver-bright">
                                 {{ $order->code }}
-                                @if($order->invoice)
+                                @if($order->invoice && auth()->user()->role !== 'manager')
                                     <p class="text-[10px] text-giallo font-normal">{{ $order->invoice->number }}</p>
                                 @endif
                             </td>
@@ -206,7 +243,8 @@
                                 @endif
                             </td>
                             <td class="py-3.5 px-4 font-mono text-silver-dim">
-                                {{ $order->created_at->format('d/m/Y H:i') }}
+                                {{ ($order->paid_at ?? $order->created_at)->format('d/m/Y H:i') }}
+                                <p class="text-[10px]">Sales: {{ $order->sales?->name ?? '-' }}</p>
                             </td>
                             <td class="py-3.5 px-4 font-mono text-silver-dim text-right">
                                 Rp {{ number_format($order->subtotal_idr, 0, ',', '.') }}
@@ -216,6 +254,9 @@
                             </td>
                             <td class="py-3.5 px-4 font-mono font-bold text-giallo text-right">
                                 Rp {{ number_format($order->total_idr, 0, ',', '.') }}
+                            </td>
+                            <td class="py-3.5 px-4 font-mono font-bold text-verde text-right">
+                                Rp {{ number_format($order->revenue_idr, 0, ',', '.') }}
                             </td>
                             <td class="py-3.5 px-4 text-center">
                                 @if($isPaid)
@@ -229,7 +270,7 @@
                                 @endif
                             </td>
                             <td class="py-3.5 px-4 text-center print:hidden">
-                                @if($order->invoice)
+                                @if($order->invoice && auth()->user()->role !== 'manager')
                                     <a href="{{ route('admin.invoices.show', $order->invoice) }}" class="px-2.5 py-1 bg-steel/50 hover:bg-steel border border-gunmetal text-silver-bright rounded text-[10px] font-heading uppercase tracking-wider transition-premium">
                                         Invoice
                                     </a>
@@ -238,7 +279,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="py-12 text-center text-silver-dim">
+                            <td colspan="10" class="py-12 text-center text-silver-dim">
                                 <span class="text-3xl block mb-2 opacity-50">🏎</span>
                                 <p class="font-display font-bold text-silver-bright text-sm tracking-wide">Tidak Ada Data Penjualan</p>
                                 <p class="text-xs text-silver-dim mt-1">Tidak ditemukan transaksi penjualan mobil pada periode atau filter yang dipilih.</p>
@@ -261,6 +302,9 @@
                             </td>
                             <td class="py-3 px-4 text-right text-giallo text-sm">
                                 Rp {{ number_format($salesOrders->sum('total_idr'), 0, ',', '.') }}
+                            </td>
+                            <td class="py-3 px-4 text-right text-verde text-sm">
+                                Rp {{ number_format($salesOrders->sum('revenue_idr'), 0, ',', '.') }}
                             </td>
                             <td colspan="2"></td>
                         </tr>

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends(auth()->user()->role === 'customer' ? 'layouts.customer' : 'layouts.admin')
 
 
 @section('title', 'Profil Saya')
@@ -61,14 +61,17 @@
                 </div>
 
 
+                @if($customer)
                 <div>
                     <label for="birth_date" class="block font-heading text-xs uppercase tracking-wider text-silver-dim mb-2">Tanggal Lahir</label>
                     <input id="birth_date" type="date" name="birth_date" value="{{ old('birth_date', $customer?->birth_date?->format('Y-m-d')) }}"
                         class="w-full bg-nero border border-gunmetal px-4 py-3 text-silver-bright text-sm focus:border-giallo focus:outline-none focus:ring-1 focus:ring-giallo/30 transition-premium" />
                 </div>
+                @endif
             </div>
 
 
+            @if($customer)
             <div>
                 <label for="address" class="block font-heading text-xs uppercase tracking-wider text-silver-dim mb-2">Alamat</label>
                 <textarea id="address" name="address" rows="2"
@@ -92,6 +95,9 @@
             </div>
 
 
+            @endif
+
+
             <div class="flex justify-end pt-4 border-t border-gunmetal/50">
                 <button type="submit" class="bg-giallo text-nero font-heading font-bold text-sm uppercase tracking-wider px-6 py-2.5 hover:bg-arancio transition-premium clip-angular-button">
                     Simpan Perubahan
@@ -107,7 +113,7 @@
             <h2 class="font-heading text-sm font-semibold text-silver-bright">Ubah Password</h2>
             <p class="font-body text-xs text-silver-dim mt-1">Pastikan akun Anda menggunakan password yang panjang dan acak.</p>
         </div>
-        <form method="POST" action="{{ route('password.update') }}" class="p-6 space-y-5">
+        <form method="POST" action="{{ route('profile.password.update') }}" class="p-6 space-y-5">
             @csrf
             @method('PUT')
 

@@ -429,12 +429,16 @@
                     </div>
                 @else
                     <div class="payment-proof-box" style="border-left: 3px solid #D97706;">
-                        <div style="font-weight: bold; color: #D97706; margin-bottom: 4px;">INFORMASI REKENING RESMI AUDrive:</div>
-                        <p><strong>Bank Central Asia (BCA) Prioritas</strong></p>
-                        <p style="font-family: monospace;">No. Rek: <strong>588-099-8800</strong> a.n PT AUDRIVE INDONESIA</p>
-                        <p><strong>Bank Mandiri Corporate</strong></p>
-                        <p style="font-family: monospace;">No. Rek: <strong>137-00-9988-7711</strong> a.n PT AUDRIVE INDONESIA</p>
-                        <p style="font-size: 8px; color: #64748B; margin-top: 4px;">Harap sertakan kode referensi: <strong>{{ $salesOrder->code }}</strong> pada berita transfer.</p>
+                        @if(($salesOrder->status->value ?? '') === 'pending')
+                            <div style="font-weight: bold; color: #D97706; margin-bottom: 4px;">INFORMASI REKENING RESMI AUDrive:</div>
+                            @foreach(\App\Services\PaymentSettings::accounts() as $account)
+                                <p><strong>{{ $account['bank'] }}</strong></p>
+                                <p style="font-family: monospace;">No. Rek: <strong>{{ $account['number'] }}</strong> a.n {{ $account['holder'] }}</p>
+                            @endforeach
+                            <p style="font-size: 8px; color: #64748B; margin-top: 4px;">Harap sertakan kode referensi: <strong>{{ $salesOrder->code }}</strong> pada berita transfer.</p>
+                        @else
+                            <p>Pesanan ini tidak menunggu pembayaran.</p>
+                        @endif
                     </div>
                 @endif
 
@@ -458,6 +462,12 @@
                         <tr>
                             <td class="label">Pajak Pertambahan Nilai (PPN 11%)</td>
                             <td class="amount">Rp {{ number_format($salesOrder->tax_idr, 0, ',', '.') }}</td>
+                        </tr>
+                    @endif
+                    @if($salesOrder->shipping_fee_idr > 0)
+                        <tr>
+                            <td class="label">{{ $salesOrder->shippingLabel() }}</td>
+                            <td class="amount">Rp {{ number_format($salesOrder->shipping_fee_idr, 0, ',', '.') }}</td>
                         </tr>
                     @endif
                     <tr class="grand-total">

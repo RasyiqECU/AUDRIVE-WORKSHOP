@@ -118,8 +118,8 @@ class ServiceBookingController extends Controller
                 'action_url' => route('workshop.booking.show', $booking->id),
             ]);
 
-            // 2. Notifikasi ke Tim Bengkel / Mechanic & Super Admin
-            $this->notificationService->notifyRoles(['mechanic', 'super-admin'], 'service_booking_created', [
+            // 2. Notifikasi ke Sales (check-in), Kepala Mekanik & Super Admin
+            $this->notificationService->notifyRoles(['sales', 'mechanic', 'super-admin'], 'service_booking_created', [
                 'title' => "Booking Servis Baru: {$vehicleName}",
                 'message' => "Booking servis baru masuk dari {$request->user()->name} untuk {$vehicleName} pada tanggal {$scheduleDate}.",
                 'vehicle' => $vehicleName,
@@ -184,7 +184,7 @@ class ServiceBookingController extends Controller
         if ($booking->workOrder) {
             $workOrder = $booking->workOrder;
             $vehicle = $booking->vehicle;
-            $items = $workOrder->items;
+            $items = $workOrder->billableItems()->with('sparePart')->get();
 
             if ($request->boolean('download')) {
                 $pdf = Pdf::loadView('pdf.service-receipt', compact('workOrder', 'customer', 'vehicle', 'items'));

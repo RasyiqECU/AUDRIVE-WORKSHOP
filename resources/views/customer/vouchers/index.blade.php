@@ -74,12 +74,20 @@
 
                     <div class="border-t border-gunmetal/40 pt-3 flex items-center justify-between">
                         <span class="text-[10px] text-silver-dim">S/D: {{ $voucher->end_date?->format('d M Y') ?? 'Selamanya' }}</span>
-                        <form action="{{ route('customer.vouchers.claim', $voucher->id) }}" method="POST">
-                            @csrf
-                            <button type="submit" class="px-3 py-1.5 bg-giallo hover:bg-giallo-bright text-carbon text-xs font-heading uppercase font-bold rounded clip-angular-button">
-                                Klaim Voucher
-                            </button>
-                        </form>
+                        @if($voucher->points_cost > 0)
+                            <a href="{{ route('customer.loyalty.index') }}" class="text-xs text-giallo underline">
+                                Tukar {{ number_format($voucher->points_cost, 0, ',', '.') }} poin
+                            </a>
+                        @elseif($claimedVouchers->contains('voucher_id', $voucher->id))
+                            <span class="text-xs text-silver-dim">Sudah diklaim</span>
+                        @else
+                            <form action="{{ route('customer.vouchers.claim', $voucher->id) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="px-3 py-1.5 bg-giallo hover:bg-giallo-bright text-carbon text-xs font-heading uppercase font-bold rounded clip-angular-button">
+                                    Klaim Voucher
+                                </button>
+                            </form>
+                        @endif
                     </div>
                 </div>
             @empty

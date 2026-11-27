@@ -27,6 +27,12 @@ node_modules/
 _ide_helper.php
 
 # Python (ai-service)
+# Bukti transfer customer (data pribadi)
+/storage/app/payment-proofs/
+
+# File hasil generate
+/storage/framework/views/*.php
+ai-service/output/spectrograms/*.png
 ai-service/__pycache__/
 ai-service/**/__pycache__/
 ai-service/venv/

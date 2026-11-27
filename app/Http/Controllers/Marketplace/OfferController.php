@@ -47,12 +47,13 @@ class OfferController extends Controller
             return back()->with('error', 'Silakan lengkapi profil customer Anda terlebih dahulu.');
         }
 
+        if ($car->isSoldBy($customer)) {
+            return back()->withErrors(['car_unit' => 'Anda tidak bisa memesan mobil titipan Anda sendiri.']);
+        }
+
         $amount = (int) ($request->amount_idr ?: $car->price_sell_idr);
 
         $offer = DB::transaction(function () use ($car, $customer, $amount, $request) {
-            // Ketika customer memesan mobil, status unit mobil langsung berubah menjadi Dipesan (Reserved)
-            $car->update(['status' => CarUnitStatus::Reserved]);
-
             return Offer::create([
                 'car_unit_id' => $car->id,
                 'customer_id' => $customer->id,
@@ -76,8 +77,8 @@ class OfferController extends Controller
 
         // 2. Notifikasi ke Customer pembuat pesanan
         $this->notificationService->send($request->user(), 'offer_submitted', [
-            'title' => "Pesanan Mobil Berhasil Dibuat: {$carName}",
-            'message' => "Pesanan pembelian Anda untuk {$carName} seharga Rp ".number_format($offer->amount_idr, 0, ',', '.').' berhasil dibuat. Unit telah di-reserve untuk Anda, menunggu konfirmasi tim Sales.',
+            'title' => "Penawaran Mobil Terkirim: {$carName}",
+            'message' => "Pesanan pembelian Anda untuk {$carName} seharga Rp ".number_format($offer->amount_idr, 0, ',', '.').' terkirim, menunggu konfirmasi tim Sales.',
             'car_name' => $carName,
             'amount' => $offer->amount_idr,
             'action_url' => route('marketplace.show', $car->slug),
@@ -85,7 +86,7 @@ class OfferController extends Controller
 
         return redirect()
             ->route('marketplace.show', $car->slug)
-            ->with('success', 'Pesanan pembelian unit mobil berhasil dibuat! Unit kini berstatus Dipesan (Reserved) untuk Anda.');
+            ->with('success', 'Penawaran terkirim. Unit dikunci setelah disetujui Sales, atau langsung lewat booking fee.');
     }
 
     public function update(Request $request, Offer $offer): RedirectResponse
@@ -116,14 +117,11 @@ class OfferController extends Controller
         }
 
         DB::transaction(function () use ($offer) {
-            // Jika pesanan yang dibatalkan berstatus pending, kembalikan status unit mobil menjadi Available
-            if ($offer->status === OfferStatus::Pending && $offer->carUnit?->status === CarUnitStatus::Reserved) {
-                $offer->carUnit->update(['status' => CarUnitStatus::Available]);
-            }
+            $offer->carUnit?->releaseIfUnclaimed();
 
             $offer->delete();
         });
 
-        return back()->with('success', 'Pesanan berhasil dibatalkan dan unit mobil kembali berstatus Tersedia.');
+        return back()->with('success', 'Penawaran dibatalkan.');
     }
 }

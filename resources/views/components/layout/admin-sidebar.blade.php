@@ -12,7 +12,7 @@
         'sales'       => ['label' => 'SALES EXECUTIVE', 'color' => 'text-arancio border-arancio/40 bg-arancio/10'],
         'inventory'   => ['label' => 'INVENTORY OFFICER', 'color' => 'text-verde border-verde/40 bg-verde/10'],
         'cashier'     => ['label' => 'CASHIER & POS', 'color' => 'text-blue-400 border-blue-400/40 bg-blue-400/10'],
-        'mechanic'    => ['label' => 'CHIEF MECHANIC', 'color' => 'text-giallo border-giallo/40 bg-giallo/10'],
+        'mechanic'    => ['label' => 'KEPALA MEKANIK', 'color' => 'text-giallo border-giallo/40 bg-giallo/10'],
     ];
     $badge = $roleBadges[$role] ?? ['label' => strtoupper($role), 'color' => 'text-silver-dim border-gunmetal bg-steel/20'];
 @endphp
@@ -79,12 +79,26 @@
             </a>
         @endif
 
-        {{-- Section Workshop & Servis (Super Admin, Manager, Cashier, Mechanic) --}}
-        @if(in_array($role, ['super-admin', 'manager', 'cashier', 'mechanic'], true))
+        {{-- Titip jual & serah terima mobil --}}
+        @if(in_array($role, ['super-admin', 'manager', 'sales', 'mechanic'], true))
+            <a href="{{ route('admin.consignments.index') }}" class="sidebar-item {{ request()->routeIs('admin.consignments.*') ? 'active' : '' }}">
+                <span class="text-sm">🤝</span>
+                <span class="font-heading text-xs font-medium tracking-wide">Titip Jual</span>
+            </a>
+        @endif
+        @if(in_array($role, ['super-admin', 'sales'], true))
+            <a href="{{ route('admin.car-handovers.index') }}" class="sidebar-item {{ request()->routeIs('admin.car-handovers.*') ? 'active' : '' }}">
+                <span class="text-sm">🔑</span>
+                <span class="font-heading text-xs font-medium tracking-wide">Serah Terima Mobil</span>
+            </a>
+        @endif
+
+        {{-- Section Workshop & Servis (Super Admin, Manager, Cashier, Sales, Mechanic) --}}
+        @if(in_array($role, ['super-admin', 'cashier', 'sales', 'mechanic'], true))
             <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Workshop & Servis</p>
 
-            {{-- Booking Servis: Super Admin & Cashier saja (Manager tidak beroperasi) --}}
-            @if(in_array($role, ['super-admin', 'cashier'], true))
+            {{-- Booking Servis: check-in (Sales), buat WO (Manager), status (Kasir) --}}
+            @if(in_array($role, ['super-admin', 'cashier', 'sales', 'mechanic'], true))
                 <a href="{{ route('admin.service-bookings.index') }}" class="sidebar-item {{ request()->routeIs('admin.service-bookings.*') ? 'active' : '' }}">
                     <span class="text-sm">📅</span>
                     <span class="font-heading text-xs font-medium tracking-wide">Booking Servis</span>
@@ -95,6 +109,20 @@
                 <span class="text-sm">🔧</span>
                 <span class="font-heading text-xs font-medium tracking-wide">{{ $role === 'mechanic' ? 'Work Order Saya' : 'Work Order & Antrean' }}</span>
             </a>
+
+            @if(in_array($role, ['super-admin', 'sales'], true))
+                <a href="{{ route('admin.part-requests.index') }}" class="sidebar-item {{ request()->routeIs('admin.part-requests.*') ? 'active' : '' }}">
+                    <span class="text-sm">🧩</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">Konfirmasi Part</span>
+                </a>
+            @endif
+
+            @if(in_array($role, ['super-admin', 'sales', 'mechanic'], true))
+                <a href="{{ route('admin.warranty-claims.index') }}" class="sidebar-item {{ request()->routeIs('admin.warranty-claims.*') ? 'active' : '' }}">
+                    <span class="text-sm">🛡</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">Klaim Garansi</span>
+                </a>
+            @endif
 
             {{-- AI Sound Scan: Super Admin & Mechanic saja --}}
             @if(in_array($role, ['super-admin', 'mechanic'], true))
@@ -114,6 +142,11 @@
                 <span class="font-heading text-xs font-medium tracking-wide">POS Kasir</span>
             </a>
 
+            <a href="{{ route('admin.payment-verifications.index') }}" class="sidebar-item {{ request()->routeIs('admin.payment-verifications.*') ? 'active' : '' }}">
+                <span class="text-sm">🔎</span>
+                <span class="font-heading text-xs font-medium tracking-wide">Verifikasi Pembayaran</span>
+            </a>
+
             <a href="{{ route('admin.invoices.index') }}" class="sidebar-item {{ request()->routeIs('admin.invoices.*') ? 'active' : '' }}">
                 <span class="text-sm">🧾</span>
                 <span class="font-heading text-xs font-medium tracking-wide">Invoice & Bukti Bayar</span>
@@ -128,6 +161,24 @@
                 <span class="text-sm">⚙️</span>
                 <span class="font-heading text-xs font-medium tracking-wide">Katalog Spare Part</span>
             </a>
+
+            @if(in_array($role, ['super-admin', 'inventory'], true))
+                <a href="{{ route('admin.fulfilments.index') }}" class="sidebar-item {{ request()->routeIs('admin.fulfilments.*') ? 'active' : '' }}">
+                    <span class="text-sm">📮</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">Siapkan Pesanan</span>
+                </a>
+            @endif
+
+            @if($role === 'inventory')
+                <a href="{{ route('admin.warranty-claims.index') }}" class="sidebar-item {{ request()->routeIs('admin.warranty-claims.*') ? 'active' : '' }}">
+                    <span class="text-sm">🛡</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">Klaim Garansi</span>
+                </a>
+                <a href="{{ route('admin.part-requests.index') }}" class="sidebar-item {{ request()->routeIs('admin.part-requests.*') ? 'active' : '' }}">
+                    <span class="text-sm">🧩</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">Usulan Part Bengkel</span>
+                </a>
+            @endif
 
             @if(in_array($role, ['super-admin', 'inventory'], true))
                 <a href="{{ route('admin.inventory.index') }}" class="sidebar-item {{ request()->routeIs('admin.inventory.*') ? 'active' : '' }}">
@@ -209,7 +260,7 @@
         @if(in_array($role, ['super-admin', 'manager', 'sales', 'cashier', 'inventory'], true))
             <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Laporan</p>
 
-            <a href="{{ route('admin.reports.index') }}" class="sidebar-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
+            <a href="{{ route(match ($role) { 'inventory' => 'admin.reports.inventory', 'cashier' => 'admin.reports.finance', default => 'admin.reports.index' }) }}" class="sidebar-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
                 <span class="text-sm">📊</span>
                 <span class="font-heading text-xs font-medium tracking-wide">
                     {{ match(true) {
@@ -230,6 +281,13 @@
                 <span class="text-sm">✅</span>
                 <span class="font-heading text-xs font-medium tracking-wide">Pusat Approval</span>
             </a>
+
+            @if($role === 'manager')
+                <a href="{{ route('admin.warranty-claims.index') }}" class="sidebar-item {{ request()->routeIs('admin.warranty-claims.*') ? 'active' : '' }}">
+                    <span class="text-sm">🛡</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">Klaim Garansi</span>
+                </a>
+            @endif
 
             <a href="{{ route('admin.audit-logs.index') }}" class="sidebar-item {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
                 <span class="text-sm">📋</span>
@@ -256,7 +314,7 @@
     {{-- Footer User Profile --}}
     <div class="absolute bottom-0 left-0 right-0 p-3 border-t border-gunmetal bg-carbon">
         <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
+            <a href="{{ route('profile.edit') }}" title="Profil Saya" class="flex items-center gap-2">
                 <div class="w-6 h-6 bg-steel border border-gunmetal clip-hexagon flex items-center justify-center">
                     <span class="font-heading text-[9px] text-giallo font-bold">
                         {{ substr($user->name ?? 'A', 0, 1) }}
@@ -266,7 +324,7 @@
                     <p class="font-heading text-[10px] text-silver-bright truncate max-w-[120px]">{{ $user->name }}</p>
                     <p class="font-mono text-[8px] text-silver-dim capitalize">{{ $role }}</p>
                 </div>
-            </div>
+            </a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" class="font-heading text-[10px] text-silver-dim hover:text-danger uppercase tracking-wider transition-premium">

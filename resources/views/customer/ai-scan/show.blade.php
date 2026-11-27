@@ -26,7 +26,7 @@
         $hasMechReview  = $aiScan->is_confirmed && ($aiScan->mechanic_decision || $aiScan->technician_review);
         $urgency        = $aiScan->getEffectiveUrgency();
 
-        // Tentukan urgency dari mekanik jika ada, else dari AI
+        // Tentukan urgency dari kepala mekanik jika ada, else dari AI
         $urgencyConfig  = [
             'safe'      => ['bg'=>'bg-verde/10',   'border'=>'border-verde/40',   'text'=>'text-verde',   'icon'=>'✅', 'label'=>'Aman — Tidak Perlu ke Bengkel'],
             'monitor'   => ['bg'=>'bg-giallo/10',  'border'=>'border-giallo/40',  'text'=>'text-giallo',  'icon'=>'⚠️', 'label'=>'Perlu Dipantau'],
@@ -77,10 +77,10 @@
     @endif
 
 
-    {{-- ═══ Tampilkan Diagnosa jika ada setidaknya 1 dari AI atau Mekanik ═══ --}}
+    {{-- ═══ Tampilkan Diagnosa jika ada setidaknya 1 dari AI atau Kepala Mekanik ═══ --}}
     @if($hasAiResult || $hasMechReview)
 
-        {{-- Urgensi Banner — dari mekanik jika ada, else dari AI --}}
+        {{-- Urgensi Banner — dari kepala mekanik jika ada, else dari AI --}}
         @if($hasMechReview || $hasAiResult)
         <div class="{{ $urgencyConfig['bg'] }} {{ $urgencyConfig['border'] }} border p-4 flex items-center gap-3">
             <span class="text-2xl shrink-0">{{ $urgencyConfig['icon'] }}</span>
@@ -88,7 +88,7 @@
                 <p class="font-heading text-sm {{ $urgencyConfig['text'] }} uppercase tracking-wider">
                     {{ $urgencyConfig['label'] }}
                     @if($hasMechReview)
-                        <span class="text-[10px] text-silver-dim normal-case tracking-normal ml-2">(dikonfirmasi mekanik)</span>
+                        <span class="text-[10px] text-silver-dim normal-case tracking-normal ml-2">(dikonfirmasi kepala mekanik)</span>
                     @endif
                 </p>
                 <p class="text-xs text-silver-dim mt-0.5">{{ $aiScan->getUrgencyAction() }}</p>
@@ -188,7 +188,7 @@
 
                     @if($aiScan->confidence && $aiScan->confidence < 0.6)
                     <p class="text-[10px] text-silver-dim/70 italic">
-                        * Kepercayaan AI di bawah 60%. Lihat konfirmasi mekanik jika tersedia.
+                        * Kepercayaan AI di bawah 60%. Lihat konfirmasi kepala mekanik jika tersedia.
                     </p>
                     @endif
                 </div>
@@ -196,22 +196,22 @@
             @endif
 
 
-            {{-- ─── Kolom 2: Diagnosa Mekanik (jika sudah dikonfirmasi) ─── --}}
+            {{-- ─── Kolom 2: Diagnosa Kepala Mekanik (jika sudah dikonfirmasi) ─── --}}
             @if($hasMechReview)
             <div class="panel border border-verde/40 overflow-hidden">
                 <div class="bg-verde/10 px-5 py-3 border-b border-verde/40 flex items-center gap-2">
                     <span class="text-xl">🔧</span>
                     <div>
-                        <h2 class="font-heading text-xs uppercase tracking-wider text-verde">Diagnosa Mekanik</h2>
+                        <h2 class="font-heading text-xs uppercase tracking-wider text-verde">Diagnosa Kepala Mekanik</h2>
                         <p class="text-[10px] text-silver-dim">
-                            Oleh: {{ $aiScan->reviewer?->name ?? 'Mekanik AUDrive' }}
+                            Oleh: {{ $aiScan->reviewer?->name ?? 'Kepala Mekanik AUDrive' }}
                             • {{ $aiScan->reviewed_at?->format('d M Y') ?? '-' }}
                         </p>
                     </div>
                 </div>
 
                 <div class="p-5 space-y-4">
-                    {{-- Keputusan Mekanik --}}
+                    {{-- Keputusan Kepala Mekanik --}}
                     <div>
                         <p class="font-heading text-[10px] uppercase tracking-wider text-silver-dim mb-1">Hasil Diagnosa Manual</p>
                         @php
@@ -224,12 +224,20 @@
                                 'combustion_misfire' => 'Masalah Pembakaran / Misfire',
                                 'exhaust_leak'       => 'Kebocoran Knalpot',
                                 'bearing_alternator' => 'Bearing Alternator / Pulley',
+                                'bad ignition'       => 'Sistem Pengapian Bermasalah',
+                                'dead battery'       => 'Aki Lemah / Mati',
+                                'knocking'           => 'Suara Ketukan Mesin',
+                                'low oil'            => 'Level Oli Mesin Rendah',
+                                'misfire'            => 'Misfire',
+                                'power steering'     => 'Masalah Power Steering',
+                                'serpentine belt'    => 'Serpentine Belt Aus / Kendor',
+                                'not an engine'      => 'Bukan Suara Mesin',
                             ];
                             $mechLabel = $mechLabels[$mechClass] ?? str_replace('_', ' ', ucfirst($mechClass ?? ''));
                         @endphp
 
                         @if($mechClass)
-                            {{-- Jika mekanik mengoreksi AI --}}
+                            {{-- Jika kepala mekanik mengoreksi AI --}}
                             @if($hasAiResult && $mechClass !== $aiScan->predicted_class)
                             <div class="flex items-center gap-2 mb-1 flex-wrap">
                                 <span class="text-[10px] text-silver-dim/60 line-through">
@@ -238,11 +246,11 @@
                                 <span class="text-silver-dim text-xs">→</span>
                             </div>
                             <p class="font-display text-xl text-verde">{{ $mechLabel }}</p>
-                            <p class="text-[10px] text-arancio mt-1">✏️ Mekanik mengoreksi hasil AI</p>
+                            <p class="text-[10px] text-arancio mt-1">✏️ Kepala Mekanik mengoreksi hasil AI</p>
                             @else
                             <p class="font-display text-xl text-verde">{{ $mechLabel ?: '—' }}</p>
                             @if($hasAiResult)
-                                <p class="text-[10px] text-verde mt-1">✅ Mekanik mengkonfirmasi hasil AI</p>
+                                <p class="text-[10px] text-verde mt-1">✅ Kepala Mekanik mengkonfirmasi hasil AI</p>
                             @endif
                             @endif
                         @else
@@ -251,7 +259,7 @@
                                 <p class="font-display text-xl text-verde">
                                     {{ $aiScan->class_label ?? str_replace('_', ' ', ucfirst($aiScan->predicted_class)) }}
                                 </p>
-                                <p class="text-[10px] text-verde mt-1">✅ Mekanik mengkonfirmasi hasil AI</p>
+                                <p class="text-[10px] text-verde mt-1">✅ Kepala Mekanik mengkonfirmasi hasil AI</p>
                             @else
                                 <p class="font-display text-xl text-verde">Review Tersedia</p>
                             @endif
@@ -261,17 +269,17 @@
                     {{-- Urgensi Final --}}
                     @if($aiScan->final_urgency)
                     <div>
-                        <p class="font-heading text-[10px] uppercase tracking-wider text-silver-dim mb-1">Urgensi (Dikonfirmasi Mekanik)</p>
+                        <p class="font-heading text-[10px] uppercase tracking-wider text-silver-dim mb-1">Urgensi (Dikonfirmasi Kepala Mekanik)</p>
                         <span class="px-2 py-1 text-[9px] font-heading uppercase tracking-wider border {{ $aiScan->getUrgencyColor() }}">
                             {{ $aiScan->getUrgencyIcon() }} {{ $aiScan->getUrgencyLabel() }}
                         </span>
                     </div>
                     @endif
 
-                    {{-- Catatan Mekanik --}}
+                    {{-- Catatan Kepala Mekanik --}}
                     @if($aiScan->technician_review)
                     <div class="bg-verde/5 border border-verde/20 p-3">
-                        <p class="font-heading text-[10px] uppercase tracking-wider text-verde mb-2">📝 Catatan Mekanik</p>
+                        <p class="font-heading text-[10px] uppercase tracking-wider text-verde mb-2">📝 Catatan Kepala Mekanik</p>
                         <p class="font-body text-xs text-silver-bright leading-relaxed">{{ $aiScan->technician_review }}</p>
                     </div>
                     @endif
@@ -290,22 +298,22 @@
         </div>{{-- end grid --}}
 
 
-        {{-- Info jika AI belum proses tapi mekanik sudah review --}}
+        {{-- Info jika AI belum proses tapi kepala mekanik sudah review --}}
         @if(!$hasAiResult && $hasMechReview)
         <div class="bg-steel/20 border border-gunmetal/50 p-4 flex items-start gap-3">
             <span class="text-silver-dim text-lg shrink-0">ℹ️</span>
             <p class="text-xs text-silver-dim">
-                Hasil diagnosa AI belum tersedia untuk rekaman ini. Diagnosa di atas merupakan hasil pemeriksaan manual oleh mekanik kami.
+                Hasil diagnosa AI belum tersedia untuk rekaman ini. Diagnosa di atas merupakan hasil pemeriksaan manual oleh kepala mekanik kami.
             </p>
         </div>
         @endif
 
-        {{-- Info jika AI ada tapi mekanik belum review --}}
+        {{-- Info jika AI ada tapi kepala mekanik belum review --}}
         @if($hasAiResult && !$hasMechReview)
         <div class="bg-steel/20 border border-gunmetal/50 p-4 flex items-start gap-3">
             <span class="text-lg shrink-0">ℹ️</span>
             <p class="text-xs text-silver-dim">
-                Hasil di atas merupakan analisis otomatis dari AI. Tim mekanik kami dapat memberikan konfirmasi tambahan — hasil review mekanik akan muncul di sini secara otomatis jika tersedia.
+                Hasil di atas merupakan analisis otomatis dari AI. Tim kepala mekanik kami dapat memberikan konfirmasi tambahan — hasil review kepala mekanik akan muncul di sini secara otomatis jika tersedia.
             </p>
         </div>
         @endif

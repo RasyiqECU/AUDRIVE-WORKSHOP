@@ -447,7 +447,7 @@
                 @else
                     <div style="border: 1px solid #CBD5E1; background: #FFF7ED; padding: 8px 10px; border-radius: 4px; font-size: 8.5px;">
                         <p style="color: #EA580C; font-weight: bold;">PEMBAYARAN BELUM LUNAS</p>
-                        <p>Silakan selesaikan pembayaran di meja kasir AUDrive Workshop atau transfer via rekening BCA 588-099-8800 a.n PT AUDRIVE INDONESIA.</p>
+                        <p>Silakan selesaikan pembayaran di meja kasir AUDrive Workshop atau transfer via rekening @foreach(\App\Services\PaymentSettings::accounts() as $account){{ $account['bank'] }} {{ $account['number'] }} a.n {{ $account['holder'] }}{{ $loop->last ? '.' : ' / ' }}@endforeach</p>
                     </div>
                 @endif
 
@@ -497,7 +497,7 @@
             </td>
             <td class="sig-space"></td>
             <td class="sig-cell">
-                <div class="sig-title">Kepala Bengkel / Service Manager,</div>
+                <div class="sig-title">Service Manager,</div>
                 <div class="sig-name">{{ $mechanic?->name ?? ($salesOrder->creator?->name ?? 'Chief Workshop Officer') }}</div>
                 <div class="sig-sub">Quality Control & Service Approval</div>
             </td>

@@ -15,25 +15,25 @@ enum AiScanStatus: string
 
     public function label(): string
     {
-        return match($this) {
-            self::Pending       => 'Menunggu',
-            self::Processing    => 'Diproses',
-            self::Completed     => 'Selesai',
-            self::Failed        => 'Gagal',
-            self::ManualReview  => 'Selesai (Confidence Rendah)',
-            self::Reviewed      => 'Terverifikasi Mekanik',
+        return match ($this) {
+            self::Pending => 'Menunggu',
+            self::Processing => 'Diproses',
+            self::Completed => 'Selesai',
+            self::Failed => 'Gagal',
+            self::ManualReview => 'Selesai (Confidence Rendah)',
+            self::Reviewed => 'Terverifikasi Kepala Mekanik',
         };
     }
 
     public function color(): string
     {
-        return match($this) {
-            self::Completed    => 'text-verde border-verde',
-            self::Reviewed     => 'text-teal-400 border-teal-400',
-            self::Processing   => 'text-blue-400 border-blue-400',
-            self::Pending      => 'text-giallo border-giallo',
+        return match ($this) {
+            self::Completed => 'text-verde border-verde',
+            self::Reviewed => 'text-teal-400 border-teal-400',
+            self::Processing => 'text-blue-400 border-blue-400',
+            self::Pending => 'text-giallo border-giallo',
             self::ManualReview => 'text-arancio border-arancio',
-            self::Failed       => 'text-danger border-danger',
+            self::Failed => 'text-danger border-danger',
         };
     }
 }

@@ -20,6 +20,7 @@ class CarInspection extends Model
         'ai_scan_id',
         'result',
         'inspected_at',
+        'estimated_repair_idr',
     ];
 
     protected function casts(): array

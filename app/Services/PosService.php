@@ -10,7 +10,6 @@ use App\Enums\SalesOrderStatus;
 use App\Enums\SalesOrderType;
 use App\Enums\StockMovementType;
 use App\Enums\WorkOrderStatus;
-use App\Models\AuditLog;
 use App\Models\CarUnit;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -45,8 +44,8 @@ class PosService
                     throw new \Exception('Spare part tidak ditemukan.');
                 }
 
-                if ($part->stock < $item['qty']) {
-                    throw new \Exception("Stok tidak cukup untuk {$part->name}. Tersedia: {$part->stock}");
+                if ($part->available_stock < $item['qty']) {
+                    throw new \Exception("Stok tidak cukup untuk {$part->name}. Tersedia: {$part->available_stock}");
                 }
             }
 
@@ -175,56 +174,50 @@ class PosService
         return DB::transaction(function () use ($workOrder, $discountIdr, $paymentMethod, $userId) {
             $workOrder->load(['items.sparePart', 'vehicle.customer', 'serviceBooking.customer']);
 
-            if ($workOrder->total_idr <= 0) {
+            if ($workOrder->total_idr <= 0 && ! $workOrder->is_warranty) {
                 throw new \InvalidArgumentException('Total Work Order harus lebih besar dari 0.');
             }
 
-            // Cek apakah transaksi sudah pernah dibuat
-            $existingOrder = SalesOrder::where('notes', 'like', "%{$workOrder->code}%")
-                ->where('type', SalesOrderType::Service)
+            // Sudah lunas? (termasuk data lama yang hanya ditandai lewat catatan)
+            $paidOrder = SalesOrder::where('type', SalesOrderType::Service)
                 ->where('status', SalesOrderStatus::Paid)
+                ->where(fn ($q) => $q->where('work_order_id', $workOrder->id)
+                    ->orWhere('notes', 'like', "%{$workOrder->code}%"))
                 ->first();
 
-            if ($existingOrder) {
-                return $existingOrder;
+            if ($paidOrder) {
+                return $paidOrder;
             }
 
-            $customer = $workOrder->vehicle?->customer ?? $workOrder->serviceBooking?->customer;
-            $subtotal = $workOrder->total_idr;
-            $discount = min($discountIdr, $subtotal);
-            $tax = (int) (($subtotal - $discount) * 0.11);
-            $total = $subtotal - $discount + $tax;
+            if ($workOrder->status !== WorkOrderStatus::Completed) {
+                throw new \InvalidArgumentException('Work Order belum lolos Quality Control.');
+            }
 
-            // Buat Sales Order
-            $salesOrder = SalesOrder::create([
-                'code' => $this->generateOrderCode(),
-                'customer_id' => $customer?->id,
-                'type' => SalesOrderType::Service,
-                'status' => SalesOrderStatus::Paid,
-                'subtotal_idr' => $subtotal,
-                'discount_idr' => $discount,
-                'tax_idr' => $tax,
-                'total_idr' => $total,
+            $salesOrder = app(ServiceBillingService::class)->issue($workOrder, $userId);
+            $salesOrder = SalesOrder::whereKey($salesOrder->id)->lockForUpdate()->firstOrFail();
+
+            if ($salesOrder->payment_status === PaymentStatus::WaitingVerification->value) {
+                throw new \InvalidArgumentException('Customer sudah mengunggah bukti transfer. Selesaikan di Verifikasi Pembayaran.');
+            }
+
+            if ($discountIdr > 0) {
+                $discount = min($discountIdr, $salesOrder->subtotal_idr);
+                $tax = (int) (($salesOrder->subtotal_idr - $discount) * 0.11);
+                $salesOrder->update([
+                    'discount_idr' => $discount,
+                    'tax_idr' => $tax,
+                    'total_idr' => $salesOrder->subtotal_idr - $discount + $tax,
+                ]);
+            }
+
+            $total = $salesOrder->total_idr;
+            $salesOrder->update([
+                'payment_channel' => 'cashier',
                 'paid_idr' => $total,
-                'payment_status' => PaymentStatus::Success,
                 'notes' => "Pembayaran Work Order #{$workOrder->code} - Metode: ".strtoupper($paymentMethod),
                 'created_by' => $userId,
             ]);
 
-            // Salin item WO ke SalesOrderItem
-            foreach ($workOrder->items as $item) {
-                SalesOrderItem::create([
-                    'sales_order_id' => $salesOrder->id,
-                    'item_type' => $item->item_type ?? 'service',
-                    'spare_part_id' => $item->spare_part_id,
-                    'description' => $item->description ?: ($item->sparePart?->name ?? 'Jasa Servis'),
-                    'qty' => $item->qty,
-                    'unit_price_idr' => $item->unit_price_idr,
-                    'subtotal_idr' => $item->subtotal_idr,
-                ]);
-            }
-
-            // Buat Payment
             Payment::create([
                 'paymentable_type' => SalesOrder::class,
                 'paymentable_id' => $salesOrder->id,
@@ -235,54 +228,11 @@ class PosService
                 'paid_at' => now(),
             ]);
 
-            // Buat Invoice
-            Invoice::create([
-                'invoiceable_type' => SalesOrder::class,
-                'invoiceable_id' => $salesOrder->id,
-                'number' => 'INV-WO-'.date('Ymd').'-'.strtoupper(Str::random(6)),
-                'status' => 'paid',
-                'due_at' => now(),
-                'total_idr' => $total,
-            ]);
+            app(CheckoutService::class)->markPaid($salesOrder, $userId);
 
-            // Tambah poin loyalitas jika customer terdaftar
-            if ($customer) {
-                $points = (int) (($subtotal - $discount) / 10000);
-                if ($points > 0) {
-                    $customer->increment('loyalty_points', $points);
-                    $customer->loyaltyTransactions()->create([
-                        'type' => 'earning',
-                        'points' => $points,
-                        'reference_type' => SalesOrder::class,
-                        'reference_id' => $salesOrder->id,
-                        'description' => "Poin dari servis Work Order #{$workOrder->code}",
-                    ]);
-                }
-            }
+            $customer = $salesOrder->customer;
 
-            // Update status Work Order langsung ke Delivered setelah dibayar lunas di kasir
-            $oldStatus = $workOrder->status;
-            $workOrder->update([
-                'status' => WorkOrderStatus::Delivered,
-                'completed_at' => $workOrder->completed_at ?? now(),
-            ]);
-
-            if ($workOrder->serviceBooking) {
-                $workOrder->serviceBooking->update(['status' => 'completed']);
-            }
-
-            // Catat ke Audit Log
-            AuditLog::create([
-                'user_id' => auth()->id() ?? $userId,
-                'action' => 'status_changed',
-                'model_type' => 'work_order',
-                'model_id' => $workOrder->id,
-                'old_values' => ['status' => $oldStatus->value ?? (string) $oldStatus],
-                'new_values' => ['status' => 'delivered'],
-                'description' => "Work Order #{$workOrder->code} status changed from ".($oldStatus->value ?? (string) $oldStatus).' to delivered',
-            ]);
-
-            // Notifikasi ke Customer & Mekanik terkait
+            // Notifikasi ke Customer & Kepala Mekanik terkait
             $customerUser = $workOrder->vehicle?->customer?->user ?? $workOrder->serviceBooking?->customer?->user;
             $vehicleName = $workOrder->vehicle ? ($workOrder->vehicle->brand.' '.$workOrder->vehicle->model.' ('.$workOrder->vehicle->plate_number.')') : 'Kendaraan Pelanggan';
 
@@ -290,8 +240,8 @@ class PosService
                 $notifService = app(NotificationServiceContract::class);
                 if ($customerUser) {
                     $notifService->send($customerUser, 'work_order_delivered', [
-                        'title' => "Pembayaran Diterima & Kendaraan Diserahkan: {$vehicleName}",
-                        'message' => "Pembayaran servis {$vehicleName} (WO #{$workOrder->code}) sebesar Rp ".number_format($total, 0, ',', '.').' telah berhasil diproses di kasir. Kendaraan telah resmi diserahterimakan.',
+                        'title' => "Pembayaran Diterima: {$vehicleName}",
+                        'message' => "Pembayaran servis {$vehicleName} (WO #{$workOrder->code}) sebesar Rp ".number_format($total, 0, ',', '.').' telah lunas. Tunjukkan bukti bayar untuk mengambil kendaraan.',
                         'vehicle' => $vehicleName,
                         'work_order_code' => $workOrder->code,
                         'action_url' => route('workshop.tracking.show', $workOrder->id),
@@ -300,8 +250,8 @@ class PosService
 
                 if ($workOrder->mechanic) {
                     $notifService->send($workOrder->mechanic, 'work_order_delivered', [
-                        'title' => "Unit WO #{$workOrder->code} Telah Lunas & Diserahkan",
-                        'message' => "Kendaraan {$vehicleName} (WO #{$workOrder->code}) telah lunas dibayar di Kasir dan resmi diserahterimakan kepada pelanggan.",
+                        'title' => "Unit WO #{$workOrder->code} Telah Lunas",
+                        'message' => "Kendaraan {$vehicleName} (WO #{$workOrder->code}) telah lunas dibayar di Kasir dan menunggu serah terima.",
                         'vehicle' => $vehicleName,
                         'work_order_code' => $workOrder->code,
                         'action_url' => route('admin.work-orders.show', $workOrder->id),
@@ -329,8 +279,20 @@ class PosService
             }
 
             $subtotal = $salesOrder->subtotal_idr;
-            $discount = min($discountIdr, $subtotal);
-            $total = max(0, $subtotal - $discount);
+            $discount = min(max($discountIdr, (int) $salesOrder->discount_idr), $subtotal);
+            $total = max(0, $subtotal - $discount) + $salesOrder->shipping_fee_idr;
+            $due = max(0, $total - $salesOrder->paid_idr);
+
+            // Booking yang belum membayar fee tidak boleh menyerobot unit yang sudah dikunci orang lain
+            $unitTaken = $salesOrder->deposit_idr > 0 && $salesOrder->paid_idr <= 0
+                && CarUnit::whereIn('id', $salesOrder->items->pluck('car_unit_id')->filter())
+                    ->where('status', '!=', CarUnitStatus::Available)->exists();
+            if ($unitTaken || $salesOrder->status !== SalesOrderStatus::Pending) {
+                throw new \InvalidArgumentException('Pesanan ini tidak bisa dibayar: unit sudah diambil atau pesanan tidak aktif.');
+            }
+            if ($salesOrder->payment_status === PaymentStatus::WaitingVerification->value) {
+                throw new \InvalidArgumentException('Selesaikan dulu bukti transfer di Verifikasi Pembayaran.');
+            }
 
             $salesOrder->update([
                 'status' => SalesOrderStatus::Paid,
@@ -338,6 +300,7 @@ class PosService
                 'total_idr' => $total,
                 'paid_idr' => $total,
                 'payment_status' => PaymentStatus::Success,
+                'reserved_until' => null,
                 'notes' => trim(($salesOrder->notes ?? '').' | Lunas via '.strtoupper($paymentMethod)),
             ]);
 
@@ -354,7 +317,7 @@ class PosService
                 'paymentable_id' => $salesOrder->id,
                 'method' => $paymentMethod,
                 'status' => PaymentStatus::Success,
-                'amount_idr' => $total,
+                'amount_idr' => $due,
                 'reference' => 'CAR-'.strtoupper(Str::random(10)),
                 'paid_at' => now(),
             ]);

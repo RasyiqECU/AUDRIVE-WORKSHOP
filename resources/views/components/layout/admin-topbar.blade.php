@@ -25,7 +25,7 @@
             'super-admin' => 'Super Admin',
             'owner'       => 'Business Owner',
             'manager'     => 'Manager',
-            'mechanic'    => 'Mekanik',
+            'mechanic'    => 'Kepala Mekanik',
             'sales'       => 'Sales',
             'inventory'   => 'Inventory',
             'cashier'     => 'Kasir',
@@ -45,13 +45,13 @@
         try {
             if ($topbarRole === 'mechanic') {
                 $stat1Label = 'WO Saya';
-                $stat1Value = \App\Models\WorkOrder::whereIn('status', ['queued', 'in_progress'])
+                $stat1Value = \App\Models\WorkOrder::whereIn('status', ['queued', 'in_progress', 'waiting_part_confirmation'])
                     ->where('assigned_mechanic_id', $topbarUser->id)
                     ->count();
                 $stat1Link = route('admin.work-orders.index');
 
                 $stat2Label = 'Antrean Bengkel';
-                $stat2Value = \App\Models\WorkOrder::whereIn('status', ['queued', 'in_progress'])->count();
+                $stat2Value = \App\Models\WorkOrder::whereIn('status', ['queued', 'in_progress', 'waiting_part_confirmation'])->count();
                 $stat2Color = 'text-giallo';
                 $stat2Link = route('admin.work-orders.index');
             } elseif ($topbarRole === 'sales') {
@@ -81,9 +81,7 @@
                 $stat1Link = route('admin.pos.index');
 
                 $stat2Label = 'Trx Hari Ini';
-                $stat2Value = \App\Models\SalesOrder::where('status', 'paid')
-                    ->whereDate('created_at', today())
-                    ->count();
+                $stat2Value = \App\Models\SalesOrder::earnedBetween(today(), now()->endOfDay())->count();
                 $stat2Color = 'text-verde';
                 $stat2Link = route('admin.pos.index');
             } elseif ($topbarRole === 'manager') {
@@ -92,30 +90,27 @@
                 $stat1Color = $stat1Value > 0 ? 'text-arancio font-bold animate-pulse' : 'text-silver-dim';
                 $stat1Link = route('admin.approvals.index');
 
-                $stat2Label = 'Total WO';
-                $stat2Value = \App\Models\WorkOrder::whereIn('status', ['queued', 'in_progress'])->count();
+                $stat2Label = 'Klaim Garansi';
+                $stat2Value = \App\Models\WarrantyClaim::where('status', 'diagnosed')->count();
                 $stat2Color = 'text-giallo';
-                $stat2Link = route('admin.work-orders.index');
+                $stat2Link = route('admin.warranty-claims.index');
             } elseif ($topbarRole === 'owner') {
                 $stat1Label = 'Omzet Bulan Ini';
-                $ownerMonthRev = (int) \App\Models\SalesOrder::whereIn('status', [\App\Enums\SalesOrderStatus::Paid, \App\Enums\SalesOrderStatus::Completed])
-                    ->where('created_at', '>=', now()->startOfMonth())
-                    ->sum('total_idr');
+                $ownerMonthRev = (int) \App\Models\SalesOrder::earnedBetween(now()->startOfMonth(), now()->endOfMonth())->sum('revenue_idr');
                 $stat1Value = 'Rp ' . number_format($ownerMonthRev / 1000000, 1, ',', '.') . ' Jt';
                 $stat1Color = 'text-giallo';
                 $stat1Link = route('admin.dashboard');
 
-                $stat2Label = 'Mobil Terjual';
-                $stat2Value = \App\Models\SalesOrder::where('type', \App\Enums\SalesOrderType::CarSales)
-                    ->whereIn('status', [\App\Enums\SalesOrderStatus::Paid, \App\Enums\SalesOrderStatus::Completed])
-                    ->where('created_at', '>=', now()->startOfMonth())
+                $stat2Label = 'Mobil Terjual Bulan Ini';
+                $stat2Value = \App\Models\SalesOrder::earnedBetween(now()->startOfMonth(), now()->endOfMonth())
+                    ->where('type', \App\Enums\SalesOrderType::CarSales)
                     ->count() . ' Unit';
                 $stat2Color = 'text-verde';
                 $stat2Link = route('admin.dashboard');
             } else {
                 // Super Admin
                 $stat1Label = 'WO Active';
-                $stat1Value = \App\Models\WorkOrder::whereIn('status', ['queued', 'in_progress'])->count();
+                $stat1Value = \App\Models\WorkOrder::whereIn('status', ['queued', 'in_progress', 'waiting_part_confirmation'])->count();
                 $stat1Color = 'text-giallo';
                 $stat1Link = route('admin.work-orders.index');
 
@@ -159,7 +154,7 @@
         @endif
 
         {{-- User Profile & Role Indicator --}}
-        <div class="flex items-center gap-2">
+        <a href="{{ route('profile.edit') }}" title="Profil Saya" class="flex items-center gap-2">
             <div class="w-7 h-7 bg-giallo/10 border border-giallo/30 clip-hexagon flex items-center justify-center">
                 <span class="font-heading text-[10px] text-giallo font-bold">
                     {{ substr($topbarUser->name ?? 'A', 0, 1) }}
@@ -169,6 +164,6 @@
                 <p class="font-heading text-xs text-silver-bright">{{ $topbarUser->name ?? 'Admin' }}</p>
                 <p class="font-mono text-[9px] text-giallo uppercase tracking-wider">{{ $topbarRoleLabel }}</p>
             </div>
-        </div>
+        </a>
     </div>
 </header>

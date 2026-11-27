@@ -1,9 +1,8 @@
 <?php
 
-
 namespace App\Http\Controllers\Api\V1;
 
-
+use App\Enums\SparePartStatus;
 use App\Http\Requests\Api\V1\CheckoutRequest;
 use App\Http\Requests\Api\V1\StoreCartItemRequest;
 use App\Http\Requests\Api\V1\UpdateCartItemRequest;
@@ -16,19 +15,17 @@ use App\Services\CheckoutService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-
 class CartController extends ApiController
 {
     protected CartService $cartService;
-    protected CheckoutService $checkoutService;
 
+    protected CheckoutService $checkoutService;
 
     public function __construct(CartService $cartService, CheckoutService $checkoutService)
     {
         $this->cartService = $cartService;
         $this->checkoutService = $checkoutService;
     }
-
 
     /**
      * Get cart
@@ -38,13 +35,11 @@ class CartController extends ApiController
         $cart = $this->cartService->getOrCreateCart($request->user()?->customer);
         $cart->load('items.sparePart');
 
-
         return $this->successResponse(
             new CartResource($cart),
             'Cart retrieved successfully'
         );
     }
-
 
     /**
      * Add item to cart
@@ -53,20 +48,16 @@ class CartController extends ApiController
     {
         $part = SparePart::findOrFail($request->spare_part_id);
 
-
-        $statusValue = $part->status instanceof \App\Enums\SparePartStatus ? $part->status->value : (string) $part->status;
+        $statusValue = $part->status instanceof SparePartStatus ? $part->status->value : (string) $part->status;
         if ($statusValue !== 'active') {
             return $this->errorResponse('Part is not available');
         }
 
-
         $cart = $this->cartService->getOrCreateCart($request->user()?->customer);
-
 
         try {
             $item = $this->cartService->addItem($cart, $part, (int) $request->qty);
             $cart->load('items.sparePart');
-
 
             return $this->successResponse(
                 new CartResource($cart),
@@ -77,19 +68,17 @@ class CartController extends ApiController
         }
     }
 
-
     /**
      * Update cart item
      */
     public function updateItem(UpdateCartItemRequest $request, int $itemId): JsonResponse
     {
         $item = CartItem::findOrFail($itemId);
-
+        abort_unless($this->cartService->ownsItem($item, $request->user()?->customer), 403);
 
         try {
             $this->cartService->updateItemQty($item, (int) $request->qty);
             $item->cart->load('items.sparePart');
-
 
             return $this->successResponse(
                 new CartResource($item->cart),
@@ -100,26 +89,23 @@ class CartController extends ApiController
         }
     }
 
-
     /**
      * Remove item from cart
      */
     public function destroyItem(Request $request, int $itemId): JsonResponse
     {
         $item = CartItem::findOrFail($itemId);
+        abort_unless($this->cartService->ownsItem($item, $request->user()?->customer), 403);
         $cart = $item->cart;
-
 
         $this->cartService->removeItem($item);
         $cart->load('items.sparePart');
-
 
         return $this->successResponse(
             new CartResource($cart),
             'Item removed from cart successfully'
         );
     }
-
 
     /**
      * Checkout
@@ -129,20 +115,18 @@ class CartController extends ApiController
         $cart = $this->cartService->getOrCreateCart($request->user()?->customer);
         $cart->load('items.sparePart');
 
-
         if ($cart->items->isEmpty()) {
             return $this->errorResponse('Cart is empty');
         }
-
 
         try {
             $salesOrder = $this->checkoutService->processCheckout(
                 $cart,
                 $request->user()?->customer,
                 $request->shipping_method,
-                $request->shipping_address
+                $request->shipping_address,
+                $request->input('payment_channel') ?: 'cashier'
             );
-
 
             return $this->successResponse(
                 new SalesOrderResource($salesOrder->load('items')),
@@ -154,6 +138,3 @@ class CartController extends ApiController
         }
     }
 }
-
-
-

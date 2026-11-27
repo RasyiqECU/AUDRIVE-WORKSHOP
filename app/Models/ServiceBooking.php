@@ -23,6 +23,11 @@ class ServiceBooking extends Model
         'status',
         'estimated_cost_idr',
         'notes',
+        'checked_in_at',
+        'checked_in_by',
+        'odometer_km',
+        'body_condition',
+        'belongings',
     ];
 
     protected function casts(): array
@@ -31,6 +36,8 @@ class ServiceBooking extends Model
             'preferred_date' => 'date',
             'estimated_cost_idr' => 'integer',
             'status' => ServiceBookingStatus::class,
+            'checked_in_at' => 'datetime',
+            'odometer_km' => 'integer',
         ];
     }
 

@@ -29,7 +29,7 @@ class SparePartController extends Controller
                         ->orWhere('brand', 'like', "%{$s}%");
                 });
             })
-            ->when($request->category_id, fn($q, $cat) => $q->where('category_id', $cat))
+            ->when($request->category_id, fn ($q, $cat) => $q->where('category_id', $cat))
             ->latest()
             ->paginate(15);
 
@@ -40,7 +40,8 @@ class SparePartController extends Controller
 
     public function show(SparePart $sparePart): View
     {
-        $sparePart->load(['category', 'compatibilities', 'stockMovements' => fn($q) => $q->latest()->take(10)]);
+        $sparePart->load(['category', 'compatibilities', 'stockMovements' => fn ($q) => $q->latest()->take(10)]);
+
         return view('admin.spare-parts.show', compact('sparePart'));
     }
 
@@ -49,6 +50,7 @@ class SparePartController extends Controller
         $this->authorizeManage();
 
         $categories = SparePartCategory::orderBy('name')->get();
+
         return view('admin.spare-parts.create', compact('categories'));
     }
 
@@ -69,7 +71,7 @@ class SparePartController extends Controller
         ], [
             'image.image' => 'File harus berupa gambar.',
             'image.mimes' => 'Format gambar harus JPEG, PNG, JPG, atau WEBP.',
-            'image.max'   => 'Ukuran gambar maksimal 8 MB.',
+            'image.max' => 'Ukuran gambar maksimal 8 MB.',
         ]);
 
         if ($request->hasFile('image')) {
@@ -87,6 +89,7 @@ class SparePartController extends Controller
 
         $categories = SparePartCategory::orderBy('name')->get();
         $sparePart->load('compatibilities');
+
         return view('admin.spare-parts.edit', compact('sparePart', 'categories'));
     }
 
@@ -95,12 +98,12 @@ class SparePartController extends Controller
         $this->authorizeManage();
 
         $validated = $request->validate([
-            'sku' => 'required|string|max:50|unique:spare_parts,sku,' . $sparePart->id,
+            'sku' => 'required|string|max:50|unique:spare_parts,sku,'.$sparePart->id,
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:spare_part_categories,id',
             'brand' => 'nullable|string|max:100',
             'price_idr' => 'required|integer|min:0',
-            'stock' => 'required|integer|min:0',
+            'stock' => 'required|integer|min:'.(int) $sparePart->booked_stock,
             'low_stock_threshold' => 'required|integer|min:0',
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:8192',
@@ -108,7 +111,7 @@ class SparePartController extends Controller
         ], [
             'image.image' => 'File harus berupa gambar.',
             'image.mimes' => 'Format gambar harus JPEG, PNG, JPG, atau WEBP.',
-            'image.max'   => 'Ukuran gambar maksimal 8 MB.',
+            'image.max' => 'Ukuran gambar maksimal 8 MB.',
         ]);
 
         // Hapus gambar jika opsi hapus dipilih
@@ -155,13 +158,14 @@ class SparePartController extends Controller
         }
 
         $sparePart->delete();
+
         return redirect()->route('admin.spare-parts.index')->with('success', 'Spare part berhasil dihapus.');
     }
 
     protected function authorizeManage(): void
     {
         $role = auth()->user()->role ?? '';
-        if (!in_array($role, ['super-admin', 'inventory'], true)) {
+        if (! in_array($role, ['super-admin', 'inventory'], true)) {
             abort(403, 'Akses ditolak: Hanya role Inventory dan Super Admin yang berhak mengelola atau mengubah data suku cadang.');
         }
     }

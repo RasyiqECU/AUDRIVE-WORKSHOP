@@ -14,6 +14,9 @@
                 Daftar antrian booking servis berkala & perbaikan supercar dari pelanggan
             </p>
         </div>
+        @if(in_array(auth()->user()->role, ['super-admin', 'sales'], true))
+            <a href="{{ route('admin.service-bookings.create') }}" class="px-4 py-2 bg-giallo text-nero font-heading font-bold text-xs uppercase rounded">+ Booking Walk-in</a>
+        @endif
     </div>
 
     {{-- Bookings Table --}}
@@ -57,7 +60,7 @@
                             </td>
                             <td class="py-3.5 px-4 text-right space-x-2">
                                 <a href="{{ route('admin.service-bookings.show', $booking) }}" class="px-3 py-1.5 bg-steel/50 hover:bg-giallo hover:text-nero border border-gunmetal text-silver-bright font-heading text-[10px] uppercase rounded transition-premium">
-                                    Detail / Konversi
+                                    Detail
                                 </a>
                             </td>
                         </tr>
