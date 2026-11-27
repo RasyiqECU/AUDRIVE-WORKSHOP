@@ -43,12 +43,12 @@ class OfferController extends Controller
         return view('admin.offers.show', compact('offer', 'salesOrder'));
     }
 
-    public function accept(Offer $offer): RedirectResponse
+    public function accept(Request $request, Offer $offer): RedirectResponse
     {
         $this->authorize('update', $offer);
 
         try {
-            $this->offerService->accept($offer, auth()->id());
+            $this->offerService->accept($offer, auth()->id(), $request->boolean('seller_approved'));
 
             // Notifikasi ke Customer bahwa pesanan disetujui
             if ($offer->customer?->user) {

@@ -1,11 +1,8 @@
 <?php
 
-
 declare(strict_types=1);
 
-
 namespace App\Services;
-
 
 use App\Enums\PaymentStatus;
 use App\Enums\SalesOrderStatus;
@@ -13,7 +10,6 @@ use App\Enums\SalesOrderType;
 use App\Enums\StockMovementType;
 use App\Models\Cart;
 use App\Models\Customer;
-use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\SalesOrder;
 use App\Models\SalesOrderItem;
@@ -21,8 +17,8 @@ use App\Models\SparePart;
 use App\Models\StockMovement;
 use App\Services\Notification\NotificationService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-
 
 class CheckoutService
 {
@@ -32,7 +28,6 @@ class CheckoutService
     ) {
         $this->notificationService = $notificationService ?? app(NotificationService::class);
     }
-
 
     public function processCheckout(
         Cart $cart,
@@ -47,18 +42,15 @@ class CheckoutService
                     ->lockForUpdate()
                     ->first();
 
-
                 if ($part->stock < $item->qty) {
                     throw new \Exception("Stok tidak cukup untuk {$part->name}. Tersedia: {$part->stock}");
                 }
             }
 
-
             // Calculate totals
             $subtotal = $this->cartService->calculateTotal($cart);
             $tax = (int) ($subtotal * 0.11); // 11% tax
             $total = $subtotal + $tax;
-
 
             // Create sales order
             $salesOrder = SalesOrder::create([
@@ -72,17 +64,15 @@ class CheckoutService
                 'total_idr' => $total,
                 'paid_idr' => 0,
                 'payment_status' => PaymentStatus::Pending,
-                'notes' => "Shipping: {$shippingMethod}" . ($shippingAddress ? " | Address: {$shippingAddress}" : ''),
+                'notes' => "Shipping: {$shippingMethod}".($shippingAddress ? " | Address: {$shippingAddress}" : ''),
                 'created_by' => $customer?->user_id ?? 1, // Default to admin if guest
             ]);
-
 
             // Create sales order items and reduce stock
             foreach ($cart->items as $item) {
                 $part = SparePart::where('id', $item->spare_part_id)
                     ->lockForUpdate()
                     ->first();
-
 
                 // Create sales order item
                 SalesOrderItem::create([
@@ -95,7 +85,6 @@ class CheckoutService
                     'subtotal_idr' => $item->qty * $item->price_idr,
                 ]);
 
-
                 // Reduce stock
                 $part->decrement('stock', $item->qty);
                 $part->refresh();
@@ -104,15 +93,15 @@ class CheckoutService
                 if ($part->stock <= ($part->low_stock_threshold ?? 5)) {
                     try {
                         $this->notificationService->notifyRoles(['inventory', 'super-admin'], 'low_stock_alert', [
-                            'title'           => "Peringatan Stok Suku Cadang Menipis: {$part->name}",
-                            'message'         => "Suku cadang {$part->name} tersisa {$part->stock} unit (Batas minimum: {$part->low_stock_threshold}). Segera lakukan restock.",
-                            'part_id'         => $part->id,
-                            'part_name'       => $part->name,
+                            'title' => "Peringatan Stok Suku Cadang Menipis: {$part->name}",
+                            'message' => "Suku cadang {$part->name} tersisa {$part->stock} unit (Batas minimum: {$part->low_stock_threshold}). Segera lakukan restock.",
+                            'part_id' => $part->id,
+                            'part_name' => $part->name,
                             'remaining_stock' => $part->stock,
-                            'action_url'      => route('admin.spare-parts.show', $part->id),
+                            'action_url' => route('admin.spare-parts.show', $part->id),
                         ]);
                     } catch (\Throwable $e) {
-                        \Illuminate\Support\Facades\Log::warning('Gagal kirim notifikasi low stock: ' . $e->getMessage());
+                        Log::warning('Gagal kirim notifikasi low stock: '.$e->getMessage());
                     }
                 }
 
@@ -152,10 +141,10 @@ class CheckoutService
             $customerUser = $customer?->user;
             if ($customerUser) {
                 $this->notificationService->send($customerUser, 'order_created', [
-                    'title'      => "Pesanan Berhasil Dibuat: #{$salesOrder->code}",
-                    'message'    => "Pesanan suku cadang #{$salesOrder->code} berhasil dibuat senilai Rp " . number_format($salesOrder->total_idr, 0, ',', '.') . ". Silakan lakukan pembayaran.",
+                    'title' => "Pesanan Berhasil Dibuat: #{$salesOrder->code}",
+                    'message' => "Pesanan suku cadang #{$salesOrder->code} berhasil dibuat senilai Rp ".number_format($salesOrder->total_idr, 0, ',', '.').'. Silakan lakukan pembayaran.',
                     'order_code' => $salesOrder->code,
-                    'amount'     => $salesOrder->total_idr,
+                    'amount' => $salesOrder->total_idr,
                     'action_url' => route('parts.orders.show', $salesOrder->id),
                 ]);
             }
@@ -163,10 +152,10 @@ class CheckoutService
             // Notifikasi ke Tim Kasir & Gudang/Inventory + Super Admin
             $customerName = $customerUser?->name ?? 'Pelanggan';
             $this->notificationService->notifyRoles(['cashier', 'inventory', 'super-admin'], 'order_created', [
-                'title'      => "Pesanan Suku Cadang Masuk: #{$salesOrder->code}",
-                'message'    => "Pesanan suku cadang baru masuk dari {$customerName} (#{$salesOrder->code}) senilai Rp " . number_format($salesOrder->total_idr, 0, ',', '.'),
+                'title' => "Pesanan Suku Cadang Masuk: #{$salesOrder->code}",
+                'message' => "Pesanan suku cadang baru masuk dari {$customerName} (#{$salesOrder->code}) senilai Rp ".number_format($salesOrder->total_idr, 0, ',', '.'),
                 'order_code' => $salesOrder->code,
-                'amount'     => $salesOrder->total_idr,
+                'amount' => $salesOrder->total_idr,
                 'action_url' => route('admin.pos.index'),
             ]);
 
@@ -174,10 +163,15 @@ class CheckoutService
         });
     }
 
-
     public function processPayment(SalesOrder $salesOrder, string $method, int $amount): Payment
     {
         return DB::transaction(function () use ($salesOrder, $method, $amount) {
+            $salesOrder = SalesOrder::whereKey($salesOrder->id)->lockForUpdate()->firstOrFail();
+
+            if ($salesOrder->status !== SalesOrderStatus::Pending) {
+                throw new \InvalidArgumentException('Pesanan ini sudah tidak menunggu pembayaran.');
+            }
+
             // Create payment
             $payment = Payment::create([
                 'paymentable_type' => SalesOrder::class,
@@ -185,14 +179,12 @@ class CheckoutService
                 'method' => $method,
                 'status' => PaymentStatus::Success,
                 'amount_idr' => $amount,
-                'reference' => 'PAY-' . strtoupper(Str::random(10)),
+                'reference' => 'PAY-'.strtoupper(Str::random(10)),
                 'paid_at' => now(),
             ]);
 
-
             // Update sales order
             $salesOrder->increment('paid_idr', $amount);
-
 
             if ($salesOrder->paid_idr >= $salesOrder->total_idr) {
                 $salesOrder->update([
@@ -200,36 +192,28 @@ class CheckoutService
                     'status' => SalesOrderStatus::Paid,
                 ]);
 
-
-                // Create invoice
-                Invoice::create([
-                    'invoiceable_type' => SalesOrder::class,
-                    'invoiceable_id' => $salesOrder->id,
-                    'number' => 'INV-' . date('Ymd') . '-' . strtoupper(Str::random(6)),
-                    'status' => 'paid',
-                    'due_at' => now(),
-                    'total_idr' => $salesOrder->total_idr,
-                ]);
+                // Invoice draft bisa sudah ada (customer membukanya sebelum bayar)
+                app(InvoiceService::class)->ensureInvoiceForSalesOrder($salesOrder)->update(['status' => 'paid']);
             }
 
             // Notifikasi Pembayaran Berhasil ke Customer
             $customerUser = $salesOrder->customer?->user;
             if ($customerUser) {
                 $this->notificationService->send($customerUser, 'payment_success', [
-                    'title'      => "Pembayaran Berhasil: #{$salesOrder->code}",
-                    'message'    => "Pembayaran sebesar Rp " . number_format($amount, 0, ',', '.') . " untuk pesanan #{$salesOrder->code} telah diverifikasi.",
+                    'title' => "Pembayaran Berhasil: #{$salesOrder->code}",
+                    'message' => 'Pembayaran sebesar Rp '.number_format($amount, 0, ',', '.')." untuk pesanan #{$salesOrder->code} telah diverifikasi.",
                     'order_code' => $salesOrder->code,
-                    'amount'     => $amount,
+                    'amount' => $amount,
                     'action_url' => route('parts.orders.show', $salesOrder->id),
                 ]);
             }
 
             // Notifikasi ke Tim Kasir & Sales + Super Admin
             $this->notificationService->notifyRoles(['cashier', 'sales', 'super-admin'], 'payment_success', [
-                'title'      => "Pembayaran Diterima: #{$salesOrder->code}",
-                'message'    => "Pembayaran sebesar Rp " . number_format($amount, 0, ',', '.') . " untuk pesanan #{$salesOrder->code} telah diterima via {$method}.",
+                'title' => "Pembayaran Diterima: #{$salesOrder->code}",
+                'message' => 'Pembayaran sebesar Rp '.number_format($amount, 0, ',', '.')." untuk pesanan #{$salesOrder->code} telah diterima via {$method}.",
                 'order_code' => $salesOrder->code,
-                'amount'     => $amount,
+                'amount' => $amount,
                 'action_url' => route('admin.pos.index'),
             ]);
 
@@ -237,17 +221,12 @@ class CheckoutService
         });
     }
 
-
     protected function generateOrderCode(): string
     {
         do {
-            $code = 'SO-' . date('Ymd') . '-' . strtoupper(Str::random(6));
+            $code = 'SO-'.date('Ymd').'-'.strtoupper(Str::random(6));
         } while (SalesOrder::where('code', $code)->exists());
-
 
         return $code;
     }
 }
-
-
-

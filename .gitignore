@@ -27,6 +27,9 @@ node_modules/
 _ide_helper.php
 
 # Python (ai-service)
+# File hasil generate
+/storage/framework/views/*.php
+ai-service/output/spectrograms/*.png
 ai-service/__pycache__/
 ai-service/**/__pycache__/
 ai-service/venv/

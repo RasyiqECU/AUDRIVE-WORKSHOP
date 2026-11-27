@@ -58,7 +58,7 @@
                 <option value="sales" {{ request('role') === 'sales' ? 'selected' : '' }}>🏎 Sales Executive</option>
                 <option value="cashier" {{ request('role') === 'cashier' ? 'selected' : '' }}>💳 Kasir</option>
                 <option value="inventory" {{ request('role') === 'inventory' ? 'selected' : '' }}>📦 Gudang / Inventory</option>
-                <option value="mechanic" {{ request('role') === 'mechanic' ? 'selected' : '' }}>🔧 Mekanik / Teknisi</option>
+                <option value="mechanic" {{ request('role') === 'mechanic' ? 'selected' : '' }}>🔧 Kepala Mekanik</option>
                 <option value="customer" {{ request('role') === 'customer' ? 'selected' : '' }}>👤 Customer</option>
             </select>
 

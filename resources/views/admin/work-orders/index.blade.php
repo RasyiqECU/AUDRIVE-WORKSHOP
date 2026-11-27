@@ -11,7 +11,7 @@
                 MANAJEMEN WORK ORDER (WO)
             </h1>
             <p class="text-sm text-silver-dim mt-1">
-                Pantau progres pengerjaan servis mekanik, pergantian suku cadang, dan rincian biaya
+                Pantau progres pengerjaan servis kepala mekanik, pergantian suku cadang, dan rincian biaya
             </p>
         </div>
     </div>
@@ -46,7 +46,7 @@
                     <tr class="bg-steel/40 border-b border-gunmetal text-[11px] font-heading uppercase tracking-wider text-silver-dim">
                         <th class="py-3 px-4">Kode WO</th>
                         <th class="py-3 px-4">Customer & Kendaraan</th>
-                        <th class="py-3 px-4">Mekanik</th>
+                        <th class="py-3 px-4">Kepala Mekanik</th>
                         <th class="py-3 px-4">Total Biaya</th>
                         <th class="py-3 px-4">Status</th>
                         <th class="py-3 px-4 text-right">Aksi</th>

@@ -1,32 +1,31 @@
 <?php
 
-
 declare(strict_types=1);
-
 
 namespace App\Http\Controllers\Admin;
 
-
+use App\Enums\CarUnitStatus;
 use App\Enums\SalesOrderStatus;
 use App\Enums\SalesOrderType;
 use App\Enums\WorkOrderStatus;
 use App\Http\Controllers\Controller;
+use App\Models\CarUnit;
 use App\Models\Customer;
 use App\Models\SalesOrder;
 use App\Models\SparePart;
 use App\Models\WorkOrder;
+use App\Services\CheckoutService;
 use App\Services\PosService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-
 
 class PosController extends Controller
 {
     public function __construct(
         protected PosService $posService
     ) {}
-
 
     public function index(Request $request): View
     {
@@ -41,19 +40,17 @@ class PosController extends Controller
             ->pluck('notes')
             ->map(function ($notes) {
                 preg_match('/WO-[A-Z0-9]+|WO\d+/', (string) $notes, $matches);
+
                 return $matches[0] ?? null;
             })
             ->filter()
             ->toArray();
 
         // Ambil work order yang aktif / selesai dan belum dibayar
-        $pendingWorkOrders = WorkOrder::whereIn('status', [
-                WorkOrderStatus::Completed,
-                WorkOrderStatus::InProgress,
-                WorkOrderStatus::QualityControl,
-            ])
+        $pendingWorkOrders = WorkOrder::where('status', WorkOrderStatus::Completed)
+            ->whereNull('paid_at')
             ->whereNotIn('code', $paidWoCodes)
-            ->where('total_idr', '>', 0)
+            ->where(fn ($q) => $q->where('total_idr', '>', 0)->orWhere('is_warranty', true))
             ->with(['vehicle.customer.user', 'items.sparePart', 'mechanic'])
             ->latest()
             ->get();
@@ -64,10 +61,23 @@ class PosController extends Controller
             ->latest()
             ->get();
 
-        $recentTransactions = SalesOrder::whereIn('type', [SalesOrderType::Pos, SalesOrderType::Service, SalesOrderType::CarSales])
+        $pendingPartOrders = SalesOrder::where('type', SalesOrderType::SparePart)
+            ->where('status', SalesOrderStatus::Pending)
+            ->with(['customer.user', 'items'])
+            ->latest()
+            ->get();
+
+        $recentTransactions = SalesOrder::whereIn('type', [SalesOrderType::Pos, SalesOrderType::Service, SalesOrderType::CarSales, SalesOrderType::SparePart])
+            ->where('status', SalesOrderStatus::Paid)
             ->with('customer.user')
             ->latest()
             ->limit(10)
+            ->get();
+
+        $consignmentPayouts = CarUnit::where('ownership', 'consignment')
+            ->where('status', CarUnitStatus::Sold)
+            ->whereNull('seller_paid_at')
+            ->with('seller.user')
             ->get();
 
         $selectedWoId = $request->query('work_order_id');
@@ -76,30 +86,26 @@ class PosController extends Controller
         $selectedCarOrderId = $request->query('car_sales_id');
         $selectedCarOrder = $selectedCarOrderId ? SalesOrder::with(['customer.user', 'items'])->find($selectedCarOrderId) : null;
 
-        return view('admin.pos.index', compact('parts', 'pendingWorkOrders', 'pendingCarOrders', 'recentTransactions', 'selectedWorkOrder', 'selectedCarOrder'));
+        return view('admin.pos.index', compact('parts', 'pendingWorkOrders', 'pendingCarOrders', 'pendingPartOrders', 'consignmentPayouts', 'recentTransactions', 'selectedWorkOrder', 'selectedCarOrder'));
     }
 
-
-    public function search(Request $request): \Illuminate\Http\JsonResponse
+    public function search(Request $request): JsonResponse
     {
         $request->validate([
             'search' => 'required|string|min:2',
         ]);
 
-
         $parts = SparePart::where('status', 'active')
             ->where(function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
-                  ->orWhere('sku', 'like', "%{$request->search}%");
+                    ->orWhere('sku', 'like', "%{$request->search}%");
             })
             ->with('category')
             ->limit(20)
             ->get();
 
-
         return response()->json($parts);
     }
-
 
     public function store(Request $request): RedirectResponse
     {
@@ -112,9 +118,7 @@ class PosController extends Controller
             'payment_method' => 'required|in:cash,card,transfer,ewallet',
         ]);
 
-
         $customer = $request->customer_id ? Customer::find($request->customer_id) : null;
-
 
         try {
             $salesOrder = $this->posService->createPosTransaction(
@@ -125,7 +129,6 @@ class PosController extends Controller
                 auth()->id()
             );
 
-
             return redirect()
                 ->route('admin.pos.receipt', $salesOrder)
                 ->with('success', 'Transaksi POS berhasil.');
@@ -133,7 +136,6 @@ class PosController extends Controller
             return back()->with('error', $e->getMessage())->withInput();
         }
     }
-
 
     public function payWorkOrder(Request $request, WorkOrder $workOrder): RedirectResponse
     {
@@ -158,7 +160,6 @@ class PosController extends Controller
         }
     }
 
-
     public function payCarSales(Request $request, SalesOrder $salesOrder): RedirectResponse
     {
         $validated = $request->validate([
@@ -182,20 +183,37 @@ class PosController extends Controller
         }
     }
 
+    /** Pelunasan pesanan spare part online yang masih menunggu pembayaran. */
+    public function payPartOrder(Request $request, SalesOrder $salesOrder, CheckoutService $checkoutService): RedirectResponse
+    {
+        $validated = $request->validate([
+            'payment_method' => 'required|in:cash,card,transfer,ewallet',
+        ]);
+
+        abort_unless($salesOrder->type === SalesOrderType::SparePart, 404);
+
+        try {
+            $checkoutService->processPayment($salesOrder, $validated['payment_method'], $salesOrder->total_idr);
+
+            return redirect()
+                ->route('admin.pos.receipt', $salesOrder)
+                ->with('success', "Pembayaran pesanan #{$salesOrder->code} berhasil diproses.");
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
 
     public function receipt(SalesOrder $salesOrder): View
     {
         $salesOrder->load(['items.sparePart', 'customer.user', 'payments']);
+
         return view('admin.pos.receipt', compact('salesOrder'));
     }
-
 
     public function printReceipt(SalesOrder $salesOrder): View
     {
         $salesOrder->load(['items.sparePart', 'customer.user', 'payments']);
+
         return view('admin.pos.print-receipt', compact('salesOrder'));
     }
 }
-
-
-

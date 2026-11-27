@@ -1,11 +1,8 @@
 <?php
 
-
 declare(strict_types=1);
 
-
 namespace App\Services;
-
 
 use App\Enums\AiScanStatus;
 use App\Enums\CarUnitStatus;
@@ -25,7 +22,6 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
-
 class FinanceService
 {
     /**
@@ -42,7 +38,6 @@ class FinanceService
         ];
     }
 
-
     /**
      * Get sales statistics
      */
@@ -51,24 +46,20 @@ class FinanceService
         $currentMonth = Carbon::now()->startOfMonth();
         $lastMonth = Carbon::now()->subMonth()->startOfMonth();
 
-
         $currentMonthSales = SalesOrder::where('type', SalesOrderType::CarSales)
             ->where('status', SalesOrderStatus::Paid)
             ->where('created_at', '>=', $currentMonth)
             ->sum('total_idr');
-
 
         $lastMonthSales = SalesOrder::where('type', SalesOrderType::CarSales)
             ->where('status', SalesOrderStatus::Paid)
             ->whereBetween('created_at', [$lastMonth, $currentMonth])
             ->sum('total_idr');
 
-
         $carsSold = SalesOrder::where('type', SalesOrderType::CarSales)
             ->where('status', SalesOrderStatus::Paid)
             ->where('created_at', '>=', $currentMonth)
             ->count();
-
 
         return [
             'revenue_current_month' => $currentMonthSales,
@@ -81,7 +72,6 @@ class FinanceService
         ];
     }
 
-
     /**
      * Get workshop statistics
      */
@@ -89,12 +79,10 @@ class FinanceService
     {
         $currentMonth = Carbon::now()->startOfMonth();
 
-
         $workshopRevenue = SalesOrder::where('type', SalesOrderType::Service)
             ->where('status', SalesOrderStatus::Paid)
             ->where('created_at', '>=', $currentMonth)
             ->sum('total_idr');
-
 
         $activeWorkOrders = WorkOrder::whereIn('status', [
             WorkOrderStatus::Booking,
@@ -102,14 +90,13 @@ class FinanceService
             WorkOrderStatus::InProgress,
         ])->count();
 
-
         $bookingsToday = ServiceBooking::whereDate('preferred_date', today())
             ->whereIn('status', [
                 ServiceBookingStatus::Pending,
                 ServiceBookingStatus::Confirmed,
+                ServiceBookingStatus::CheckedIn,
             ])
             ->count();
-
 
         return [
             'revenue_current_month' => $workshopRevenue,
@@ -117,7 +104,6 @@ class FinanceService
             'bookings_today' => $bookingsToday,
         ];
     }
-
 
     /**
      * Get inventory statistics
@@ -127,11 +113,9 @@ class FinanceService
         $lowStockParts = SparePart::whereColumn('stock', '<=', 'low_stock_threshold')
             ->count();
 
-
         $totalPartsValue = SparePart::select(
             DB::raw('SUM(stock * price_idr) as total_value')
         )->value('total_value') ?? 0;
-
 
         return [
             'low_stock_parts' => $lowStockParts,
@@ -140,7 +124,6 @@ class FinanceService
         ];
     }
 
-
     /**
      * Get AI scan statistics
      */
@@ -148,12 +131,10 @@ class FinanceService
     {
         $currentMonth = Carbon::now()->startOfMonth();
 
-
         $totalScans = AiScan::where('created_at', '>=', $currentMonth)->count();
-        $completedScans = AiScan::where('status', AiScanStatus::Completed)
+        $completedScans = AiScan::whereIn('status', [AiScanStatus::Completed, AiScanStatus::ManualReview, AiScanStatus::Reviewed])
             ->where('created_at', '>=', $currentMonth)
             ->count();
-
 
         return [
             'total_scans' => $totalScans,
@@ -164,7 +145,6 @@ class FinanceService
         ];
     }
 
-
     /**
      * Get customer statistics
      */
@@ -172,14 +152,12 @@ class FinanceService
     {
         $totalCustomers = Customer::count();
 
-
         // Repeat customer rate (customers with more than 1 transaction)
         $repeatCustomers = Customer::whereHas('salesOrders', function ($query) {
             $query->where('status', SalesOrderStatus::Paid)
-                  ->groupBy('customer_id')
-                  ->havingRaw('COUNT(*) > 1');
+                ->groupBy('customer_id')
+                ->havingRaw('COUNT(*) > 1');
         })->count();
-
 
         return [
             'total_customers' => $totalCustomers,
@@ -189,7 +167,6 @@ class FinanceService
                 : 0,
         ];
     }
-
 
     /**
      * Get pending approvals
@@ -203,7 +180,6 @@ class FinanceService
             ->get();
     }
 
-
     /**
      * Get recent activities
      */
@@ -213,6 +189,3 @@ class FinanceService
         return collect([]);
     }
 }
-
-
-

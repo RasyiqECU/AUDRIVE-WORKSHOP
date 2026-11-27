@@ -71,6 +71,24 @@
                 </div>
             </div>
 
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block font-heading text-xs uppercase tracking-wider text-silver-bright mb-2">Kondisi *</label>
+                    <select name="condition" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
+                        <option value="used" @selected(old('condition', 'used') === 'used')>Bekas</option>
+                        <option value="new" @selected(old('condition', 'used') === 'new')>Baru</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-heading text-xs uppercase tracking-wider text-silver-bright mb-2">Kekurangan</label>
+                    <textarea name="condition_defects" rows="2" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">{{ old('condition_defects') }}</textarea>
+                </div>
+                <div>
+                    <label class="block font-heading text-xs uppercase tracking-wider text-silver-bright mb-2">Penambahan</label>
+                    <textarea name="condition_additions" rows="2" class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">{{ old('condition_additions') }}</textarea>
+                </div>
+            </div>
+
             <div>
                 <label class="block font-heading text-xs uppercase tracking-wider text-silver-bright mb-2">Deskripsi & Kelengkapan</label>
                 <textarea name="description" rows="4" placeholder="Deskripsi spesifikasi mesin, opsi velg, jok, knalpot akrapovic, paket carbon..." class="w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">{{ old('description') }}</textarea>

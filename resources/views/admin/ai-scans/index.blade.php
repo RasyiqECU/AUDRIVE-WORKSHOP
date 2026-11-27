@@ -34,12 +34,9 @@
 
             <select name="predicted_class" class="bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
                 <option value="">Semua Prediksi</option>
-                <option value="engine_knocking" {{ request('predicted_class') === 'engine_knocking' ? 'selected' : '' }}>Engine Knocking</option>
-                <option value="bearing_abnormal" {{ request('predicted_class') === 'bearing_abnormal' ? 'selected' : '' }}>Bearing Abnormal</option>
-                <option value="belt_roller_worn" {{ request('predicted_class') === 'belt_roller_worn' ? 'selected' : '' }}>Belt/Roller Worn</option>
-                <option value="exhaust_leak" {{ request('predicted_class') === 'exhaust_leak' ? 'selected' : '' }}>Exhaust Leak</option>
-                <option value="idle_unstable" {{ request('predicted_class') === 'idle_unstable' ? 'selected' : '' }}>Idle Unstable</option>
-                <option value="transmission_noise" {{ request('predicted_class') === 'transmission_noise' ? 'selected' : '' }}>Transmission Noise</option>
+                @foreach(['normal', 'bad ignition', 'dead battery', 'knocking', 'low oil', 'misfire', 'power steering', 'serpentine belt', 'not an engine'] as $modelClass)
+                    <option value="{{ $modelClass }}" {{ request('predicted_class') === $modelClass ? 'selected' : '' }}>{{ ucwords($modelClass) }}</option>
+                @endforeach
             </select>
 
 

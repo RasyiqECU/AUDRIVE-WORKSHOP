@@ -13,9 +13,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WorkOrder extends Model
 {
-    use HasFactory, HasCode;
+    use HasCode, HasFactory;
 
     protected const CODE_PREFIX = 'WO';
+
     protected const CODE_LENGTH = 6;
 
     protected $fillable = [
@@ -30,6 +31,10 @@ class WorkOrder extends Model
         'total_jasa_idr',
         'total_part_idr',
         'total_idr',
+        'estimated_completion_at',
+        'paid_at',
+        'delivered_at',
+        'is_warranty',
     ];
 
     protected function casts(): array
@@ -38,6 +43,10 @@ class WorkOrder extends Model
             'status' => WorkOrderStatus::class,
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
+            'estimated_completion_at' => 'datetime',
+            'paid_at' => 'datetime',
+            'delivered_at' => 'datetime',
+            'is_warranty' => 'boolean',
             'total_jasa_idr' => 'integer',
             'total_part_idr' => 'integer',
             'total_idr' => 'integer',
@@ -64,6 +73,17 @@ class WorkOrder extends Model
         return $this->hasMany(WorkOrderItem::class);
     }
 
+    /** Item yang ditagihkan: usulan yang menunggu/ditolak tidak ikut. */
+    public function billableItems(): HasMany
+    {
+        return $this->items()->where('approval_status', 'approved');
+    }
+
+    public function hasPendingParts(): bool
+    {
+        return $this->items()->where('approval_status', 'pending')->exists();
+    }
+
     public function scopeInProgress($query)
     {
         return $query->where('status', WorkOrderStatus::InProgress);
@@ -81,8 +101,8 @@ class WorkOrder extends Model
 
     public function recalculateTotals(): void
     {
-        $this->total_jasa_idr = $this->items()->where('type', 'service')->sum('subtotal_idr');
-        $this->total_part_idr = $this->items()->where('type', 'part')->sum('subtotal_idr');
+        $this->total_jasa_idr = $this->billableItems()->where('type', 'service')->sum('subtotal_idr');
+        $this->total_part_idr = $this->billableItems()->where('type', 'part')->sum('subtotal_idr');
         $this->total_idr = $this->total_jasa_idr + $this->total_part_idr;
         $this->save();
     }

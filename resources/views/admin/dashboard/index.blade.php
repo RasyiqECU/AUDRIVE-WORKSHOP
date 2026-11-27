@@ -5,7 +5,7 @@
     $role = $user->role ?? 'admin';
     $roleTitles = [
         'super-admin' => ['title' => 'Executive Command Center', 'desc' => 'Ringkasan komprehensif performa seluruh divisi AUDrive'],
-        'manager'     => ['title' => 'Operations & Management Dashboard', 'desc' => 'Monitoring performa operasional, approval, dan sales pipeline'],
+        'manager'     => ['title' => 'Operations & Management Dashboard', 'desc' => 'Approval dan laporan performa'],
         'sales'       => ['title' => 'Sales & Showroom Dashboard', 'desc' => 'Performa penjualan supercar, pipeline negosiasi, dan database prospek'],
         'inventory'   => ['title' => 'Inventory & Logistics Dashboard', 'desc' => 'Pengawasan stok spare part, movement pergudangan, dan purchase order'],
         'cashier'     => ['title' => 'Cashier & POS Terminal', 'desc' => 'Pusat kasir, penagihan work order bengkel, dan transaksi ritel'],
@@ -57,7 +57,7 @@
                 </a>
             @endif
 
-            @if(in_array($role, ['super-admin', 'manager', 'cashier', 'mechanic'], true))
+            @if(in_array($role, ['super-admin', 'cashier', 'mechanic'], true))
                 <a href="{{ route('admin.work-orders.index') }}" class="px-4 py-2 bg-verde hover:bg-emerald-600 text-nero font-heading font-bold text-xs uppercase tracking-wider transition-premium shadow-md shadow-verde/20">
                     🔧 Work Order Aktif
                 </a>
@@ -285,7 +285,7 @@
             </div>
         </div>
 
-        {{-- Menu Aksi Cepat Mekanik --}}
+        {{-- Menu Aksi Cepat Kepala Mekanik --}}
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <a href="{{ route('admin.work-orders.index') }}" class="panel p-6 border-2 border-giallo bg-carbon hover:bg-steel/30 transition-premium group flex items-center justify-between">
                 <div>

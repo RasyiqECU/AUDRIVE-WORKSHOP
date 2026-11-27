@@ -47,6 +47,10 @@ class OfferController extends Controller
             return back()->with('error', 'Silakan lengkapi profil customer Anda terlebih dahulu.');
         }
 
+        if ($car->isSoldBy($customer)) {
+            return back()->withErrors(['car_unit' => 'Anda tidak bisa memesan mobil titipan Anda sendiri.']);
+        }
+
         $amount = (int) ($request->amount_idr ?: $car->price_sell_idr);
 
         $offer = DB::transaction(function () use ($car, $customer, $amount, $request) {

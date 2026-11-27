@@ -175,7 +175,7 @@ class PosService
         return DB::transaction(function () use ($workOrder, $discountIdr, $paymentMethod, $userId) {
             $workOrder->load(['items.sparePart', 'vehicle.customer', 'serviceBooking.customer']);
 
-            if ($workOrder->total_idr <= 0) {
+            if ($workOrder->total_idr <= 0 && ! $workOrder->is_warranty) {
                 throw new \InvalidArgumentException('Total Work Order harus lebih besar dari 0.');
             }
 
@@ -187,6 +187,10 @@ class PosService
 
             if ($existingOrder) {
                 return $existingOrder;
+            }
+
+            if ($workOrder->status !== WorkOrderStatus::Completed) {
+                throw new \InvalidArgumentException('Work Order belum lolos Quality Control.');
             }
 
             $customer = $workOrder->vehicle?->customer ?? $workOrder->serviceBooking?->customer;
@@ -212,10 +216,10 @@ class PosService
             ]);
 
             // Salin item WO ke SalesOrderItem
-            foreach ($workOrder->items as $item) {
+            foreach ($workOrder->billableItems()->with('sparePart')->get() as $item) {
                 SalesOrderItem::create([
                     'sales_order_id' => $salesOrder->id,
-                    'item_type' => $item->item_type ?? 'service',
+                    'item_type' => $item->type === 'part' ? 'spare_part' : 'service',
                     'spare_part_id' => $item->spare_part_id,
                     'description' => $item->description ?: ($item->sparePart?->name ?? 'Jasa Servis'),
                     'qty' => $item->qty,
@@ -260,29 +264,21 @@ class PosService
                 }
             }
 
-            // Update status Work Order langsung ke Delivered setelah dibayar lunas di kasir
-            $oldStatus = $workOrder->status;
-            $workOrder->update([
-                'status' => WorkOrderStatus::Delivered,
-                'completed_at' => $workOrder->completed_at ?? now(),
-            ]);
-
-            if ($workOrder->serviceBooking) {
-                $workOrder->serviceBooking->update(['status' => 'completed']);
-            }
+            // Lunas; serah terima dicatat terpisah oleh Sales / Kasir
+            $workOrder->update(['paid_at' => now()]);
 
             // Catat ke Audit Log
             AuditLog::create([
                 'user_id' => auth()->id() ?? $userId,
-                'action' => 'status_changed',
+                'action' => 'work_order_paid',
                 'model_type' => 'work_order',
                 'model_id' => $workOrder->id,
-                'old_values' => ['status' => $oldStatus->value ?? (string) $oldStatus],
-                'new_values' => ['status' => 'delivered'],
-                'description' => "Work Order #{$workOrder->code} status changed from ".($oldStatus->value ?? (string) $oldStatus).' to delivered',
+                'old_values' => ['paid_at' => null],
+                'new_values' => ['paid_at' => now()->toDateTimeString()],
+                'description' => "Work Order #{$workOrder->code} lunas di kasir",
             ]);
 
-            // Notifikasi ke Customer & Mekanik terkait
+            // Notifikasi ke Customer & Kepala Mekanik terkait
             $customerUser = $workOrder->vehicle?->customer?->user ?? $workOrder->serviceBooking?->customer?->user;
             $vehicleName = $workOrder->vehicle ? ($workOrder->vehicle->brand.' '.$workOrder->vehicle->model.' ('.$workOrder->vehicle->plate_number.')') : 'Kendaraan Pelanggan';
 
@@ -290,8 +286,8 @@ class PosService
                 $notifService = app(NotificationServiceContract::class);
                 if ($customerUser) {
                     $notifService->send($customerUser, 'work_order_delivered', [
-                        'title' => "Pembayaran Diterima & Kendaraan Diserahkan: {$vehicleName}",
-                        'message' => "Pembayaran servis {$vehicleName} (WO #{$workOrder->code}) sebesar Rp ".number_format($total, 0, ',', '.').' telah berhasil diproses di kasir. Kendaraan telah resmi diserahterimakan.',
+                        'title' => "Pembayaran Diterima: {$vehicleName}",
+                        'message' => "Pembayaran servis {$vehicleName} (WO #{$workOrder->code}) sebesar Rp ".number_format($total, 0, ',', '.').' telah lunas. Tunjukkan bukti bayar untuk mengambil kendaraan.',
                         'vehicle' => $vehicleName,
                         'work_order_code' => $workOrder->code,
                         'action_url' => route('workshop.tracking.show', $workOrder->id),
@@ -300,8 +296,8 @@ class PosService
 
                 if ($workOrder->mechanic) {
                     $notifService->send($workOrder->mechanic, 'work_order_delivered', [
-                        'title' => "Unit WO #{$workOrder->code} Telah Lunas & Diserahkan",
-                        'message' => "Kendaraan {$vehicleName} (WO #{$workOrder->code}) telah lunas dibayar di Kasir dan resmi diserahterimakan kepada pelanggan.",
+                        'title' => "Unit WO #{$workOrder->code} Telah Lunas",
+                        'message' => "Kendaraan {$vehicleName} (WO #{$workOrder->code}) telah lunas dibayar di Kasir dan menunggu serah terima.",
                         'vehicle' => $vehicleName,
                         'work_order_code' => $workOrder->code,
                         'action_url' => route('admin.work-orders.show', $workOrder->id),

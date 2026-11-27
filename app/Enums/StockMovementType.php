@@ -9,13 +9,15 @@ enum StockMovementType: string
     case In = 'in';
     case Out = 'out';
     case Adjustment = 'adjustment';
+    case Warranty = 'warranty';
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::In => 'Masuk',
             self::Out => 'Keluar',
             self::Adjustment => 'Penyesuaian',
+            self::Warranty => 'Garansi',
         };
     }
 }

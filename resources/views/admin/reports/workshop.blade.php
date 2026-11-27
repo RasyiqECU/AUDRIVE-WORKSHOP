@@ -16,7 +16,7 @@
                 LAPORAN RESMI BENGKEL & WORK ORDER
             </h1>
             <p class="text-sm text-silver-dim mt-1">
-                Rekap pengerjaan perbaikan, servis berkala, utilisasi mekanik, dan rincian biaya jasa serta suku cadang.
+                Rekap pengerjaan perbaikan, servis berkala, utilisasi kepala mekanik, dan rincian biaya jasa serta suku cadang.
             </p>
         </div>
         <div class="flex items-center gap-2">
@@ -87,9 +87,9 @@
 
             {{-- Mechanic --}}
             <div>
-                <label class="block text-[10px] font-heading uppercase tracking-wider text-silver-dim mb-1">Mekanik Bertugas</label>
+                <label class="block text-[10px] font-heading uppercase tracking-wider text-silver-dim mb-1">Kepala Mekanik Bertugas</label>
                 <select name="mechanic_id" class="w-full bg-steel/20 border border-gunmetal rounded px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none">
-                    <option value="all" {{ request('mechanic_id') === 'all' ? 'selected' : '' }}>Semua Mekanik</option>
+                    <option value="all" {{ request('mechanic_id') === 'all' ? 'selected' : '' }}>Semua Kepala Mekanik</option>
                     @foreach($mechanics as $m)
                         <option value="{{ $m->id }}" {{ request('mechanic_id') == $m->id ? 'selected' : '' }}>{{ $m->name }}</option>
                     @endforeach
@@ -155,7 +155,7 @@
             <p class="font-mono text-xl sm:text-2xl font-bold text-arancio mt-2">
                 Rp {{ number_format($totalJasaRevenue, 0, ',', '.') }}
             </p>
-            <p class="text-[10px] text-silver-dim font-mono mt-1">Jasa mekanik & diagnostik</p>
+            <p class="text-[10px] text-silver-dim font-mono mt-1">Jasa kepala mekanik & diagnostik</p>
         </div>
         <div class="panel border border-gunmetal bg-carbon p-5 relative overflow-hidden group hover:border-blue-400/40 transition-premium">
             <span class="text-silver-dim text-xs font-heading uppercase tracking-wider">Porsi Suku Cadang Terpasang</span>
@@ -189,7 +189,7 @@
                         <th class="py-3 px-4">WO Code</th>
                         <th class="py-3 px-4">Customer & Kontak</th>
                         <th class="py-3 px-4">Kendaraan Supercar</th>
-                        <th class="py-3 px-4">Mekanik Bertugas</th>
+                        <th class="py-3 px-4">Kepala Mekanik Bertugas</th>
                         <th class="py-3 px-4 text-right">Biaya Jasa</th>
                         <th class="py-3 px-4 text-right">Biaya Parts</th>
                         <th class="py-3 px-4 text-right">Total Biaya</th>
@@ -233,9 +233,11 @@
                                 </span>
                             </td>
                             <td class="py-3.5 px-4 text-center print:hidden">
+                                @if(auth()->user()->role !== 'manager')
                                 <a href="{{ route('admin.work-orders.show', $wo) }}" class="px-2.5 py-1 bg-steel/50 hover:bg-steel border border-gunmetal text-silver-bright rounded text-[10px] font-heading uppercase tracking-wider transition-premium">
                                     Detail
                                 </a>
+                                @endif
                             </td>
                         </tr>
                     @empty

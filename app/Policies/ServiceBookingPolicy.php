@@ -12,12 +12,12 @@ class ServiceBookingPolicy
 {
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['super-admin', 'manager', 'cashier']);
+        return in_array($user->role, ['super-admin', 'cashier', 'sales', 'mechanic']);
     }
 
     public function view(User $user, ServiceBooking $booking): bool
     {
-        if (in_array($user->role, ['super-admin', 'manager', 'cashier'])) {
+        if (in_array($user->role, ['super-admin', 'cashier', 'sales', 'mechanic'])) {
             return true;
         }
 
@@ -63,6 +63,6 @@ class ServiceBookingPolicy
 
     public function assignMechanic(User $user, ServiceBooking $booking): bool
     {
-        return in_array($user->role, ['super-admin', 'manager']);
+        return in_array($user->role, ['super-admin', 'mechanic']);
     }
 }

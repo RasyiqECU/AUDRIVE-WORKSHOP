@@ -497,7 +497,7 @@
             </td>
             <td class="sig-space"></td>
             <td class="sig-cell">
-                <div class="sig-title">Kepala Bengkel / Service Manager,</div>
+                <div class="sig-title">Service Manager,</div>
                 <div class="sig-name">{{ $mechanic?->name ?? ($salesOrder->creator?->name ?? 'Chief Workshop Officer') }}</div>
                 <div class="sig-sub">Quality Control & Service Approval</div>
             </td>

@@ -189,7 +189,7 @@
                         <tr class="hover:bg-steel/10 transition-premium">
                             <td class="py-3.5 px-4 font-mono font-bold text-silver-bright">
                                 {{ $order->code }}
-                                @if($order->invoice)
+                                @if($order->invoice && auth()->user()->role !== 'manager')
                                     <p class="text-[10px] text-giallo font-normal">{{ $order->invoice->number }}</p>
                                 @endif
                             </td>
@@ -229,7 +229,7 @@
                                 @endif
                             </td>
                             <td class="py-3.5 px-4 text-center print:hidden">
-                                @if($order->invoice)
+                                @if($order->invoice && auth()->user()->role !== 'manager')
                                     <a href="{{ route('admin.invoices.show', $order->invoice) }}" class="px-2.5 py-1 bg-steel/50 hover:bg-steel border border-gunmetal text-silver-bright rounded text-[10px] font-heading uppercase tracking-wider transition-premium">
                                         Invoice
                                     </a>

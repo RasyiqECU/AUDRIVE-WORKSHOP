@@ -46,7 +46,7 @@
                     🏎️ Jelajahi Unit Showroom
                 </a>
                 <a href="{{ route('marketplace.sell.create') }}" class="inline-flex items-center justify-center px-6 py-3 backdrop-blur-md bg-carbon/80 border border-white/20 hover:border-giallo/50 text-silver-bright font-heading font-semibold text-xs uppercase tracking-wider rounded transition-all">
-                    💎 Jual / Tukar Tambah
+                    💎 Titip Jual Mobil
                 </a>
             </div>
         </div>
@@ -103,6 +103,18 @@
                 </select>
             </div>
 
+            {{-- Filter Kondisi --}}
+            <div>
+                <label for="condition" class="block font-heading text-[10px] uppercase tracking-wider text-silver-dim mb-1.5 font-semibold">
+                    Kondisi
+                </label>
+                <select name="condition" id="condition" class="w-full bg-nero border border-gunmetal rounded px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none [&>option]:bg-nero [&>option]:text-silver-bright">
+                    <option value="">Baru &amp; Bekas</option>
+                    <option value="new" {{ request('condition') === 'new' ? 'selected' : '' }}>Baru</option>
+                    <option value="used" {{ request('condition') === 'used' ? 'selected' : '' }}>Bekas</option>
+                </select>
+            </div>
+
             {{-- Filter Transmisi --}}
             <div>
                 <label for="transmission" class="block font-heading text-[10px] uppercase tracking-wider text-silver-dim mb-1.5 font-semibold">
@@ -135,7 +147,7 @@
                     <button type="submit" class="px-5 py-2 bg-giallo hover:bg-giallo/90 text-nero font-heading font-semibold text-xs uppercase tracking-wider rounded transition-all shadow-md shadow-giallo/10">
                         Terapkan Filter
                     </button>
-                    @if(request()->hasAny(['search', 'brand', 'transmission', 'sort', 'min_price', 'max_price']))
+                    @if(request()->hasAny(['search', 'brand', 'condition', 'transmission', 'sort', 'min_price', 'max_price']))
                         <a href="{{ route('marketplace.index') }}" class="px-4 py-2 border border-gunmetal hover:border-silver-dim text-silver-dim hover:text-silver-bright font-heading text-xs uppercase tracking-wider rounded transition">
                             Reset Filter
                         </a>
@@ -180,10 +192,10 @@
     <div class="mt-16 bg-carbon-fiber border border-gunmetal p-8 rounded-lg relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
         <div class="absolute right-0 top-0 w-64 h-64 bg-giallo/5 rounded-full blur-2xl"></div>
         <div class="relative z-10 max-w-xl">
-            <span class="text-giallo text-xs uppercase tracking-widest font-heading font-semibold">Tukar Tambah / Jual Mobil</span>
+            <span class="text-giallo text-xs uppercase tracking-widest font-heading font-semibold">Titip Jual Mobil</span>
             <h3 class="font-display text-2xl font-bold text-silver-bright mt-1">Ingin Menjual Kendaraan Anda?</h3>
             <p class="text-silver-dim text-xs md:text-sm mt-2 leading-relaxed">
-                Dapatkan penawaran harga terbaik dengan proses inspeksi transparan, pembayaran kilat, dan layanan pengurusan dokumen resmi oleh tim AUDrive.
+                Titipkan mobil bekas Anda. Tim Sales menginspeksi dan menyepakati harga minimum serta komisi, lalu menayangkannya di marketplace. Pembayaran dilakukan setelah mobil laku, dipotong komisi.
             </p>
         </div>
         <div class="relative z-10 flex flex-wrap gap-3">

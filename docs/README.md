@@ -2,7 +2,7 @@
 
 Aplikasi manajemen dealership & workshop otomotif berbasis **Laravel 13**,
 dilengkapi **AI Diagnostik Suara Mesin** sebagai microservice Python/FastAPI
-di folder `ai-service/` (backend model: XGBoost).
+di folder `ai-service/` (backend model: ONNX, transfer learning YAMNet).
 
 Root aplikasi = root repository ini (tidak ada subfolder aplikasi lagi).
 

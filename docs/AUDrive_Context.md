@@ -24,16 +24,16 @@ Aplikasi manajemen **dealership & workshop otomotif** yang menggabungkan:
 ┌───────────────────────────────┐        HTTP (multipart)       ┌──────────────────────────┐
 │  Laravel 13  (PHP ≥ 8.4.1)   │ ────────────────────────────▶ │  ai-service (FastAPI)    │
 │  MySQL / Sanctum / Pest /    │  POST /predict                 │  Python 3.12             │
-│  Vite + Tailwind 4 / dompdf  │  GET  /spectrogram/{filename} │  XGBoost + sklearn       │
+│  Vite + Tailwind 4 / dompdf  │  GET  /spectrogram/{filename} │  ONNX Runtime (YAMNet)   │
 │  Queue: database              │  GET  /health                  │  librosa + matplotlib    │
 └───────────────────────────────┘        port 8001              └──────────────────────────┘
 ```
 
 - **Aplikasi utama** (root repo): Laravel 13, PHP ≥ 8.4.1, MySQL, Sanctum (API),
   Pest (test), Vite + Tailwind CSS 4, dompdf (PDF invoice/receipt).
-- **Microservice AI** (`ai-service/`): FastAPI v2.0.0; model XGBoost `.joblib`
-  + StandardScaler + LabelMap; ekstraksi fitur MFCC/Mel via librosa;
-  spectrogram PNG via matplotlib.
+- **Microservice AI** (`ai-service/`): FastAPI v2.0.0; `yamnet.onnx` (embedding
+  1024) → `model.onnx` (head 9 kelas), gate "mesin / bukan mesin"
+  `engine_gate.onnx`; ekstraksi audio via librosa; spectrogram PNG via matplotlib.
 - **Komunikasi**: HTTP eksklusif (bukan akses file) — file audio dikirim sebagai
   multipart form ke `POST /predict`, hasil JSON diolah Laravel, spectrogram
   di-download lewat `GET /spectrogram/{filename}`.
@@ -43,18 +43,18 @@ Aplikasi manajemen **dealership & workshop otomotif** yang menggabungkan:
 1. **Upload & validasi audio** — customer mengunggah rekaman (wav/mp3/m4a,
    maks 20 MB). Python menilai kualitas (durasi, RMS, clipping, SNR).
    Kualitas buruk → `quality_error` → customer diminta rekam ulang.
-2. **Ekstraksi fitur** — 40 MFCC (mean+std = 80) + `spectral_rolloff_hz` +
-   `zero_crossing_rate` = **82 fitur**, dinormalisasi `StandardScaler`.
-3. **Inference** — `XGBClassifier.predict_proba` → kelas teratas, confidence,
-   top-3, urgensi (safe/monitor/urgent/emergency), rekomendasi customer &
-   catatan mekanik. Mel-spectrogram di-render sebagai bukti visual.
-   `confidence < 0.60` → ditandai perlu review manual.
+2. **Ekstraksi fitur** — waveform 16 kHz 5 detik (embedding YAMNet) dan
+   log-mel untuk gate.
+3. **Inference** — head ONNX → kelas teratas, confidence, top-3, urgensi
+   (safe/monitor/urgent/emergency), rekomendasi customer & catatan mekanik.
+   Mel-spectrogram di-render sebagai bukti visual. `confidence < 0.60` →
+   status `manual_review`.
 4. **Review manual** — mekanik/admin dapat mengkonfirmasi atau mengoreksi
    diagnosa AI lewat `admin/ai-scans`.
 
-Kelas model (9): `bad_ignition`, `dead_battery`, `low_oil`, `normal_brakes`,
-`normal_engine_idle`, `not an engine`, `power_steering`, `serpentine_belt`,
-`worn_out_brakes`.
+Kelas model (9): `bad ignition`, `dead battery`, `knocking`, `low oil`,
+`misfire`, `normal`, `not an engine`, `power steering`, `serpentine belt`
+(pemetaan ke konten: `CLASS_ALIASES` di `ai-service/config.py`).
 
 ## 4. Alur Job & Queue
 
@@ -72,7 +72,7 @@ rekomendasi, spectrogram) disimpan ke tabel `ai_scans`.
 | `AI_SERVICE_URL` | Laravel `.env` | Base URL Python (`http://localhost:8001`) |
 | `AI_SERVICE_SECRET` | Laravel `.env` | Header `X-Api-Secret` — **harus sama** dengan `API_SECRET` |
 | `API_SECRET` | `ai-service/.env` | Validasi request dari Laravel |
-| `MODEL_BACKEND` | `ai-service/.env` | `xgboost` \| `onnx` \| `pytorch` \| `keras` \| `dummy` |
+| `MODEL_BACKEND` | `ai-service/.env` | `onnx` (aktif) \| `xgboost` \| `pytorch` \| `keras` \| `dummy` |
 | `DB_CONNECTION` | `.env` | `mysql` (produksi/lokal) atau `sqlite` (test in-memory) |
 
 ## 6. Konvensi Kode

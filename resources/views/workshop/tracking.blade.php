@@ -339,15 +339,20 @@
                         @foreach($workOrder->items as $item)
                             <div class="py-3 flex justify-between items-center text-xs">
                                 <div>
-                                    <span class="text-silver-bright font-medium block text-sm">{{ $item->item_name }}</span>
+                                    <span class="text-silver-bright font-medium block text-sm">{{ $item->description }}</span>
+                                    @if($item->approval_status !== 'approved')
+                                        <span class="text-[10px] {{ $item->approval_status === 'pending' ? 'text-giallo' : 'text-danger' }}">
+                                            {{ $item->approval_status === 'pending' ? 'Menunggu konfirmasi Anda (belum ditagih)' : 'Tidak diganti' }}
+                                        </span>
+                                    @endif
                                     <span class="text-silver-dim text-[11px] font-mono mt-0.5 block">
-                                        Tipe: <span class="uppercase text-giallo">{{ $item->item_type ?? 'Jasa' }}</span> 
-                                        &bull; Jumlah: {{ $item->quantity }}x
+                                        Tipe: <span class="uppercase text-giallo">{{ $item->type === 'part' ? 'Spare Part' : 'Jasa' }}</span> 
+                                        &bull; Jumlah: {{ $item->qty }}x
                                     </span>
                                 </div>
                                 <div class="text-right">
                                     <span class="text-silver-bright font-mono font-semibold text-xs">
-                                        Rp {{ number_format($item->subtotal_idr ?? ($item->price_idr * $item->quantity), 0, ',', '.') }}
+                                        Rp {{ number_format($item->subtotal_idr, 0, ',', '.') }}
                                     </span>
                                 </div>
                             </div>

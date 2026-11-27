@@ -1,15 +1,11 @@
 <?php
 
-
 declare(strict_types=1);
-
 
 namespace App\Http\Requests\Admin;
 
-
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-
 
 class UpdateCarUnitRequest extends FormRequest
 {
@@ -18,13 +14,12 @@ class UpdateCarUnitRequest extends FormRequest
         return $this->user()->can('update', $this->route('car'));
     }
 
-
     public function rules(): array
     {
         return [
             'brand' => ['sometimes', 'required', 'string', 'max:50'],
             'model' => ['sometimes', 'required', 'string', 'max:50'],
-            'year' => ['sometimes', 'required', 'integer', 'min:1950', 'max:' . (date('Y') + 1)],
+            'year' => ['sometimes', 'required', 'integer', 'min:1950', 'max:'.(date('Y') + 1)],
             'transmission' => ['sometimes', 'required', Rule::in(['manual', 'automatic', 'cvt'])],
             'color' => ['nullable', 'string', 'max:30'],
             'mileage_km' => ['sometimes', 'required', 'integer', 'min:0'],
@@ -33,6 +28,9 @@ class UpdateCarUnitRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:2000'],
             'stock_status' => ['sometimes', 'required', Rule::in(['available', 'reserved', 'sold'])],
             'warranty_status' => ['nullable', Rule::in(['active', 'expired'])],
+            'condition' => ['sometimes', 'required', Rule::in(['new', 'used'])],
+            'condition_defects' => ['nullable', 'string', 'max:2000'],
+            'condition_additions' => ['nullable', 'string', 'max:2000'],
             'stnk_status' => ['nullable', Rule::in(['valid', 'expired'])],
             'bpkb_status' => ['nullable', Rule::in(['available', 'missing'])],
             'location' => ['nullable', 'string', 'max:100'],
@@ -45,7 +43,6 @@ class UpdateCarUnitRequest extends FormRequest
         ];
     }
 
-
     public function messages(): array
     {
         return [
@@ -53,7 +50,7 @@ class UpdateCarUnitRequest extends FormRequest
             'model.required' => 'Model wajib diisi.',
             'year.required' => 'Tahun wajib diisi.',
             'year.min' => 'Tahun minimal 1950.',
-            'year.max' => 'Tahun maksimal ' . (date('Y') + 1) . '.',
+            'year.max' => 'Tahun maksimal '.(date('Y') + 1).'.',
             'mileage_km.required' => 'Kilometer wajib diisi.',
             'mileage_km.min' => 'Kilometer tidak boleh negatif.',
             'price_buy_idr.required' => 'Harga beli wajib diisi.',
@@ -63,6 +60,3 @@ class UpdateCarUnitRequest extends FormRequest
         ];
     }
 }
-
-
-

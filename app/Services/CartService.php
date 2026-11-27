@@ -1,18 +1,14 @@
 <?php
 
-
 declare(strict_types=1);
-
 
 namespace App\Services;
 
-
 use App\Models\Cart;
 use App\Models\CartItem;
-use App\Models\SparePart;
 use App\Models\Customer;
+use App\Models\SparePart;
 use Illuminate\Support\Facades\DB;
-
 
 class CartService
 {
@@ -25,15 +21,26 @@ class CartService
             );
         }
 
-
         // Guest cart
         $sessionId = session()->getId();
+
         return Cart::firstOrCreate(
             ['session_id' => $sessionId],
             ['customer_id' => null]
         );
     }
 
+    /** Item hanya boleh diubah oleh pemilik keranjangnya (customer atau sesi tamu). */
+    public function ownsItem(CartItem $item, ?Customer $customer): bool
+    {
+        $cart = $item->cart;
+
+        if ($customer) {
+            return $cart->customer_id === $customer->id;
+        }
+
+        return $cart->customer_id === null && $cart->session_id === session()->getId();
+    }
 
     public function addItem(Cart $cart, SparePart $part, int $qty = 1): CartItem
     {
@@ -43,10 +50,8 @@ class CartService
                 throw new \Exception("Stok tidak cukup untuk {$part->name}. Tersedia: {$part->stock}");
             }
 
-
             // Check if item already in cart
             $existingItem = $cart->items()->where('spare_part_id', $part->id)->first();
-
 
             if ($existingItem) {
                 // Update quantity
@@ -55,9 +60,9 @@ class CartService
                     throw new \Exception("Stok tidak cukup untuk {$part->name}. Tersedia: {$part->stock}");
                 }
                 $existingItem->update(['qty' => $newQty]);
+
                 return $existingItem;
             }
-
 
             // Create new item
             return $cart->items()->create([
@@ -68,35 +73,30 @@ class CartService
         });
     }
 
-
     public function updateItemQty(CartItem $item, int $qty): CartItem
     {
         return DB::transaction(function () use ($item, $qty) {
             $part = SparePart::findOrFail($item->spare_part_id);
 
-
             if ($part->stock < $qty) {
                 throw new \Exception("Stok tidak cukup untuk {$part->name}. Tersedia: {$part->stock}");
             }
 
-
             $item->update(['qty' => $qty]);
+
             return $item;
         });
     }
-
 
     public function removeItem(CartItem $item): void
     {
         $item->delete();
     }
 
-
     public function clearCart(Cart $cart): void
     {
         $cart->items()->delete();
     }
-
 
     public function calculateTotal(Cart $cart): int
     {
@@ -105,11 +105,9 @@ class CartService
         });
     }
 
-
     public function mergeGuestCartToCustomer(Cart $guestCart, Customer $customer): void
     {
         $customerCart = $this->getOrCreateCart($customer);
-
 
         foreach ($guestCart->items as $guestItem) {
             try {
@@ -120,12 +118,8 @@ class CartService
             }
         }
 
-
         // Clear guest cart
         $this->clearCart($guestCart);
         $guestCart->delete();
     }
 }
-
-
-

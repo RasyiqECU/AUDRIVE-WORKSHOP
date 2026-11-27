@@ -1,10 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Marketplace\CarListingController;
-use App\Http\Controllers\Marketplace\TestDriveController;
-use App\Http\Controllers\Marketplace\OfferController;
 use App\Http\Controllers\Marketplace\InspectionController;
+use App\Http\Controllers\Marketplace\OfferController;
+use App\Http\Controllers\Marketplace\TestDriveController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,4 +43,5 @@ Route::middleware('auth')->group(function () {
     // Sell car to dealer
     Route::get('/sell', [CarListingController::class, 'sellCreate'])->name('marketplace.sell.create');
     Route::post('/sell', [CarListingController::class, 'sellStore'])->name('marketplace.sell.store');
+    Route::post('/sell/{car:slug}/withdraw', [CarListingController::class, 'sellWithdraw'])->name('marketplace.sell.withdraw');
 });
