@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\SalesOrder;
 use App\Models\User;
+use App\Services\ApprovalService;
 use App\Services\PaymentVerificationService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -99,6 +100,22 @@ test('pelunasan yang terlewat membuka kembali unit', function () {
 
     expect($order->fresh()->status)->toBe(SalesOrderStatus::Expired)
         ->and($car->fresh()->status)->toBe(CarUnitStatus::Available);
+});
+
+test('refund booking fee tidak menghidupkan lagi pesanan yang kedaluwarsa', function () {
+    $order = bookCar(carBuyer(), listedCar());
+    $cashier = User::factory()->cashier()->create();
+    $proof = transferFor($order);
+    $this->actingAs($cashier)->post(route('admin.payment-verifications.approve', $proof));
+    $this->travel(8)->days();
+    app(PaymentVerificationService::class)->expireOverdue();
+
+    $approvals = app(ApprovalService::class);
+    $request = $approvals->createRequest('refund', ['payment_id' => $proof->id, 'amount_idr' => 5_000_000], $cashier);
+    $approvals->approve($request, User::factory()->manager()->create());
+
+    expect($order->fresh()->status)->toBe(SalesOrderStatus::Expired)
+        ->and($order->fresh()->paid_idr)->toBe(0);
 });
 
 test('booking fee di kasir mengunci unit dan pelunasan menagih sisanya', function () {
