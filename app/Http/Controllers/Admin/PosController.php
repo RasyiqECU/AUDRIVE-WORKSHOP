@@ -63,6 +63,7 @@ class PosController extends Controller
 
         $pendingPartOrders = SalesOrder::where('type', SalesOrderType::SparePart)
             ->where('status', SalesOrderStatus::Pending)
+            ->where(fn ($q) => $q->whereNull('payment_channel')->orWhere('payment_channel', 'cashier'))
             ->with(['customer.user', 'items'])
             ->latest()
             ->get();

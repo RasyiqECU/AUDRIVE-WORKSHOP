@@ -217,9 +217,9 @@ class WorkOrderService
             if ($decision === 'buy') {
                 $part = SparePart::whereKey($item->spare_part_id)->lockForUpdate()->firstOrFail();
 
-                if ($part->stock < $item->qty) {
+                if ($part->available_stock < $item->qty) {
                     throw new \InvalidArgumentException(
-                        "Stok tidak cukup untuk {$part->name}. Tersedia: {$part->stock}, Diminta: {$item->qty}. Tunggu restock, atau pilih bawa sendiri / tidak diganti."
+                        "Stok tidak cukup untuk {$part->name}. Tersedia: {$part->available_stock}, Diminta: {$item->qty}. Tunggu restock, atau pilih bawa sendiri / tidak diganti."
                     );
                 }
 

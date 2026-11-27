@@ -35,6 +35,8 @@ class NotificationService implements NotificationServiceContract
         'service_booking_created' => ['mechanic', 'cashier', 'sales', 'super-admin'],
         'part_request' => ['mechanic', 'inventory', 'sales', 'super-admin'],
         'warranty_claim' => ['mechanic', 'inventory', 'sales', 'manager', 'super-admin'],
+        'payment_verification' => ['cashier', 'super-admin'],
+        'order_fulfilment' => ['inventory', 'super-admin'],
         'consignment' => ['sales', 'super-admin'],
         'service_booking_confirmed' => ['mechanic', 'cashier', 'sales', 'super-admin'],
         'booking_created' => ['mechanic', 'cashier', 'super-admin'],

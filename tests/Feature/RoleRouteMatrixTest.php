@@ -181,6 +181,23 @@ $groups = [
         ],
     ],
     [
+        'label' => 'Verifikasi Pembayaran Online (Super Admin & Kasir)',
+        'roles' => ['super-admin', 'cashier'],
+        'gets' => [
+            ['admin.payment-verifications.index'],
+        ],
+    ],
+    [
+        'label' => 'Siapkan Pesanan (Super Admin & Inventory)',
+        'roles' => ['super-admin', 'inventory'],
+        'gets' => [
+            ['admin.fulfilments.index'],
+        ],
+        'mutations' => [
+            ['post', 'admin.fulfilments.prepare', fn () => SalesOrder::factory()->create()],
+        ],
+    ],
+    [
         'label' => 'Klaim Garansi — buat (Super Admin & Sales)',
         'roles' => ['super-admin', 'sales'],
         'gets' => [

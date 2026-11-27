@@ -256,8 +256,8 @@ class WarrantyClaimService
         DB::transaction(function () use ($claim, $workOrder, $part, $qty) {
             $locked = SparePart::whereKey($part->id)->lockForUpdate()->firstOrFail();
 
-            if ($locked->stock < $qty) {
-                throw new \InvalidArgumentException("Stok tidak cukup untuk {$locked->name}. Tersedia: {$locked->stock}");
+            if ($locked->available_stock < $qty) {
+                throw new \InvalidArgumentException("Stok tidak cukup untuk {$locked->name}. Tersedia: {$locked->available_stock}");
             }
 
             $locked->decrement('stock', $qty);

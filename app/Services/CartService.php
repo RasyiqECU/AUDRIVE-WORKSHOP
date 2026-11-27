@@ -46,8 +46,8 @@ class CartService
     {
         return DB::transaction(function () use ($cart, $part, $qty) {
             // Check stock availability
-            if ($part->stock < $qty) {
-                throw new \Exception("Stok tidak cukup untuk {$part->name}. Tersedia: {$part->stock}");
+            if ($part->available_stock < $qty) {
+                throw new \Exception("Stok tidak cukup untuk {$part->name}. Tersedia: {$part->available_stock}");
             }
 
             // Check if item already in cart
@@ -56,8 +56,8 @@ class CartService
             if ($existingItem) {
                 // Update quantity
                 $newQty = $existingItem->qty + $qty;
-                if ($part->stock < $newQty) {
-                    throw new \Exception("Stok tidak cukup untuk {$part->name}. Tersedia: {$part->stock}");
+                if ($part->available_stock < $newQty) {
+                    throw new \Exception("Stok tidak cukup untuk {$part->name}. Tersedia: {$part->available_stock}");
                 }
                 $existingItem->update(['qty' => $newQty]);
 
@@ -78,8 +78,8 @@ class CartService
         return DB::transaction(function () use ($item, $qty) {
             $part = SparePart::findOrFail($item->spare_part_id);
 
-            if ($part->stock < $qty) {
-                throw new \Exception("Stok tidak cukup untuk {$part->name}. Tersedia: {$part->stock}");
+            if ($part->available_stock < $qty) {
+                throw new \Exception("Stok tidak cukup untuk {$part->name}. Tersedia: {$part->available_stock}");
             }
 
             $item->update(['qty' => $qty]);

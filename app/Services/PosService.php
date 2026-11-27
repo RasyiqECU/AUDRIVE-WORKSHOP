@@ -45,8 +45,8 @@ class PosService
                     throw new \Exception('Spare part tidak ditemukan.');
                 }
 
-                if ($part->stock < $item['qty']) {
-                    throw new \Exception("Stok tidak cukup untuk {$part->name}. Tersedia: {$part->stock}");
+                if ($part->available_stock < $item['qty']) {
+                    throw new \Exception("Stok tidak cukup untuk {$part->name}. Tersedia: {$part->available_stock}");
                 }
             }
 

@@ -67,7 +67,7 @@ $menuMatrix = [
     ],
     'cashier' => [
         'show' => [
-            'Dashboard Cashier', 'Booking Servis', 'Work Order &amp; Antrean', 'POS Kasir', 'Invoice & Bukti Bayar',
+            'Dashboard Cashier', 'Verifikasi Pembayaran', 'Booking Servis', 'Work Order &amp; Antrean', 'POS Kasir', 'Invoice & Bukti Bayar',
             'Ajukan Approval', 'Laporan Shift',
         ],
         'not' => [
@@ -78,7 +78,7 @@ $menuMatrix = [
         ],
     ],
     'inventory' => [
-        'show' => ['Dashboard Inventory', 'Usulan Part Bengkel', 'Katalog Spare Part', 'Stok & Movement', 'Purchase Order', 'Ajukan Approval', 'Laporan Inventori'],
+        'show' => ['Dashboard Inventory', 'Usulan Part Bengkel', 'Siapkan Pesanan', 'Katalog Spare Part', 'Stok & Movement', 'Purchase Order', 'Ajukan Approval', 'Laporan Inventori'],
         'not' => [
             'Unit Supercar', 'Pesanan Masuk', 'Jadwal Test Drive', 'Voucher & Promo', 'Booking Servis',
             'Work Order & Antrean', 'AI Sound Scan', 'POS Kasir', 'Invoice & Bukti Bayar',

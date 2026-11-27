@@ -23,7 +23,7 @@
                 <div class="text-right">
                     <span class="font-mono text-xs text-silver-dim block">Tanggal: {{ $order->created_at->format('d M Y, H:i') }}</span>
                     <span class="inline-block mt-1 px-3 py-0.5 text-xs font-mono font-bold rounded uppercase {{ $order->status->value === 'completed' ? 'bg-verde/20 text-verde' : 'bg-warning/20 text-warning' }}">
-                        {{ strtoupper($order->status->value ?? 'PENDING') }}
+                        {{ $order->progressLabel() }}
                     </span>
                 </div>
             </div>
@@ -70,6 +70,12 @@
                         <span>PPN (11%)</span>
                         <span class="font-mono text-silver-bright">Rp {{ number_format($order->tax_idr, 0, ',', '.') }}</span>
                     </div>
+                    @if($order->shipping_fee_idr)
+                        <div class="flex justify-between text-silver-dim">
+                            <span>Ongkos Kirim</span>
+                            <span class="font-mono text-silver-bright">Rp {{ number_format($order->shipping_fee_idr, 0, ',', '.') }}</span>
+                        </div>
+                    @endif
                     <div class="pt-2 border-t border-gunmetal/40 flex justify-between font-bold">
                         <span class="font-heading uppercase text-silver-bright">Total Tagihan</span>
                         <span class="font-mono text-base text-giallo">Rp {{ number_format($order->total_idr, 0, ',', '.') }}</span>

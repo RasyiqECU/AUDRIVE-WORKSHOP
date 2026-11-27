@@ -40,7 +40,8 @@ class CheckoutController extends Controller
 
         $request->validate([
             'shipping_method' => 'required|in:pickup,delivery',
-            'shipping_address' => 'nullable|string|max:500',
+            'shipping_address' => 'required_if:shipping_method,delivery|nullable|string|max:500',
+            'payment_channel' => 'nullable|in:cashier,online_transfer',
         ]);
 
         $cart = $this->cartService->getOrCreateCart($request->user()?->customer);
@@ -54,7 +55,8 @@ class CheckoutController extends Controller
                 $cart,
                 $request->user()?->customer,
                 $request->shipping_method,
-                $request->shipping_address
+                $request->shipping_address,
+                $request->input('payment_channel') ?: 'cashier'
             );
 
             return redirect()

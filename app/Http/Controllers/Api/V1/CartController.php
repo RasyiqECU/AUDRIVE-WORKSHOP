@@ -124,7 +124,8 @@ class CartController extends ApiController
                 $cart,
                 $request->user()?->customer,
                 $request->shipping_method,
-                $request->shipping_address
+                $request->shipping_address,
+                $request->input('payment_channel') ?: 'cashier'
             );
 
             return $this->successResponse(

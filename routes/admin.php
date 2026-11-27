@@ -10,11 +10,13 @@ use App\Http\Controllers\Admin\ConsignmentController;
 use App\Http\Controllers\Admin\ContactMessageController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\FulfilmentController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\LoyaltyController;
 use App\Http\Controllers\Admin\OfferController;
 use App\Http\Controllers\Admin\PartRequestController;
+use App\Http\Controllers\Admin\PaymentVerificationController;
 use App\Http\Controllers\Admin\PosController;
 use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
@@ -150,6 +152,20 @@ Route::middleware('role:super-admin|cashier|mechanic')->group(function () {
     Route::post('work-orders/{workOrder}/service-items', [AdminWorkOrderController::class, 'addServiceItem'])->name('work-orders.service-items.store');
     Route::post('work-orders/{workOrder}/part-items', [AdminWorkOrderController::class, 'addPartItem'])->name('work-orders.part-items.store');
     Route::delete('work-order-items/{item}', [AdminWorkOrderController::class, 'removeItem'])->name('work-orders.items.destroy');
+});
+
+// ── Verifikasi Pembayaran Online (Super Admin & Kasir) ──
+Route::middleware('role:super-admin|cashier')->group(function () {
+    Route::get('payment-verifications', [PaymentVerificationController::class, 'index'])->name('payment-verifications.index');
+    Route::post('payment-verifications/{payment}/approve', [PaymentVerificationController::class, 'approve'])->name('payment-verifications.approve');
+    Route::post('payment-verifications/{payment}/reject', [PaymentVerificationController::class, 'reject'])->name('payment-verifications.reject');
+});
+
+// ── Siapkan & serahkan pesanan lunas (Super Admin & Inventory) ──
+Route::middleware('role:super-admin|inventory')->group(function () {
+    Route::get('fulfilments', [FulfilmentController::class, 'index'])->name('fulfilments.index');
+    Route::post('fulfilments/{order}/prepare', [FulfilmentController::class, 'prepare'])->name('fulfilments.prepare');
+    Route::post('fulfilments/{order}/hand-over', [FulfilmentController::class, 'handOver'])->name('fulfilments.hand-over');
 });
 
 // ── Klaim Garansi (Sales buat → Mekanik diagnosa → Manager putuskan → Inventory keluarkan part) ──
@@ -327,5 +343,6 @@ Route::middleware('role:super-admin')->group(function () {
 Route::middleware('role:super-admin')->group(function () {
     Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
     Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
+    Route::put('settings/payment', [SettingController::class, 'updatePayment'])->name('settings.payment');
     Route::post('settings/reset', [SettingController::class, 'reset'])->name('settings.reset');
 });

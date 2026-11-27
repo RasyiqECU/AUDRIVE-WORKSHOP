@@ -67,7 +67,7 @@
                                                 <form method="POST" action="{{ route('parts.cart.update', $item) }}" class="inline-flex items-center gap-1">
                                                     @csrf
                                                     @method('PATCH')
-                                                    <input type="number" name="qty" value="{{ $item->qty }}" min="1" max="{{ $item->sparePart->stock ?? 99 }}"
+                                                    <input type="number" name="qty" value="{{ $item->qty }}" min="1" max="{{ $item->sparePart->available_stock ?? 99 }}"
                                                            onchange="this.form.submit()"
                                                            class="w-14 bg-nero border border-gunmetal rounded text-center text-xs text-silver-bright py-1 focus:border-giallo focus:outline-none font-mono" />
                                                 </form>

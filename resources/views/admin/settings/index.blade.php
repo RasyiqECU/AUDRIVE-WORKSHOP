@@ -509,6 +509,20 @@
     </form>
 
     {{-- Form Tersembunyi untuk Reset Item --}}
+    <form action="{{ route('admin.settings.payment') }}" method="POST" class="panel border border-gunmetal bg-carbon p-6 space-y-4 mt-8 text-xs text-silver-dim">
+        @csrf
+        @method('PUT')
+        <h2 class="font-heading uppercase text-silver-bright">Pembayaran &amp; Pengiriman</h2>
+        <label class="block">Rekening tujuan transfer (satu per baris: Bank | Nomor | Atas Nama)
+            <textarea name="bank_accounts" rows="3" required class="w-full bg-nero border border-gunmetal px-3 py-2 font-mono text-silver-bright">{{ old('bank_accounts', \App\Services\PaymentSettings::accountsText()) }}</textarea>
+        </label>
+        <div class="grid md:grid-cols-2 gap-4">
+            <label>Ongkos kirim (Rp)<input type="number" name="shipping_fee_idr" min="0" required value="{{ old('shipping_fee_idr', \App\Services\PaymentSettings::shippingFee()) }}" class="w-full bg-nero border border-gunmetal px-3 py-2 text-silver-bright"></label>
+            <label>Batas waktu bayar (jam)<input type="number" name="payment_deadline_hours" min="1" max="168" required value="{{ old('payment_deadline_hours', \App\Services\PaymentSettings::deadlineHours()) }}" class="w-full bg-nero border border-gunmetal px-3 py-2 text-silver-bright"></label>
+        </div>
+        <button type="submit" class="px-5 py-2 bg-giallo text-nero font-heading font-bold uppercase rounded">Simpan Pengaturan Pembayaran</button>
+    </form>
+
     <form id="reset-form" action="{{ route('admin.settings.reset') }}" method="POST" class="hidden">
         @csrf
         <input type="hidden" name="item" id="reset-item-input" value="">

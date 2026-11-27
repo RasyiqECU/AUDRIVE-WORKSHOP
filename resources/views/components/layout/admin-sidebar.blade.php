@@ -128,6 +128,11 @@
                 <span class="font-heading text-xs font-medium tracking-wide">POS Kasir</span>
             </a>
 
+            <a href="{{ route('admin.payment-verifications.index') }}" class="sidebar-item {{ request()->routeIs('admin.payment-verifications.*') ? 'active' : '' }}">
+                <span class="text-sm">🔎</span>
+                <span class="font-heading text-xs font-medium tracking-wide">Verifikasi Pembayaran</span>
+            </a>
+
             <a href="{{ route('admin.invoices.index') }}" class="sidebar-item {{ request()->routeIs('admin.invoices.*') ? 'active' : '' }}">
                 <span class="text-sm">🧾</span>
                 <span class="font-heading text-xs font-medium tracking-wide">Invoice & Bukti Bayar</span>
@@ -142,6 +147,13 @@
                 <span class="text-sm">⚙️</span>
                 <span class="font-heading text-xs font-medium tracking-wide">Katalog Spare Part</span>
             </a>
+
+            @if(in_array($role, ['super-admin', 'inventory'], true))
+                <a href="{{ route('admin.fulfilments.index') }}" class="sidebar-item {{ request()->routeIs('admin.fulfilments.*') ? 'active' : '' }}">
+                    <span class="text-sm">📮</span>
+                    <span class="font-heading text-xs font-medium tracking-wide">Siapkan Pesanan</span>
+                </a>
+            @endif
 
             @if($role === 'inventory')
                 <a href="{{ route('admin.warranty-claims.index') }}" class="sidebar-item {{ request()->routeIs('admin.warranty-claims.*') ? 'active' : '' }}">

@@ -1,11 +1,12 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\SparePart\CatalogController;
+use App\Http\Controllers\PaymentProofController;
 use App\Http\Controllers\SparePart\CartController;
+use App\Http\Controllers\SparePart\CatalogController;
 use App\Http\Controllers\SparePart\CheckoutController;
 use App\Http\Controllers\SparePart\OrderController;
 use App\Http\Controllers\SparePart\QuoteRequestController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,6 +39,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/orders', [OrderController::class, 'index'])->name('parts.orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('parts.orders.show');
     Route::get('/orders/{order}/invoice', [OrderController::class, 'invoice'])->name('parts.orders.invoice');
+
+    // Bukti transfer (unggah oleh pemilik; dilihat pemilik & Cashier)
+    Route::post('/orders/{order}/payment-proof', [PaymentProofController::class, 'store'])
+        ->name('parts.orders.proof')
+        ->middleware('throttle:10,1');
+    Route::get('/payments/{payment}/proof', [PaymentProofController::class, 'show'])->name('payments.proof');
 
     // Quote Request (for rare parts)
     Route::get('/quote-request', [QuoteRequestController::class, 'create'])->name('parts.quote.create');

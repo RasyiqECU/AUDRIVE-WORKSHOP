@@ -22,6 +22,14 @@ class Payment extends Model
         'reference',
         'paid_at',
         'metadata',
+        'purpose',
+        'proof_path',
+        'sender_name',
+        'destination_bank',
+        'uploaded_at',
+        'verified_by',
+        'verified_at',
+        'rejection_reason',
     ];
 
     protected function casts(): array
@@ -30,6 +38,8 @@ class Payment extends Model
             'status' => PaymentStatus::class,
             'amount_idr' => 'integer',
             'paid_at' => 'datetime',
+            'uploaded_at' => 'datetime',
+            'verified_at' => 'datetime',
             'metadata' => 'array',
         ];
     }
