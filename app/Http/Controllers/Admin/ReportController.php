@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Models\WorkOrder;
 use App\Services\DashboardService;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -78,12 +79,21 @@ class ReportController extends Controller
     /**
      * Executive Summary & Performance Analytics
      */
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
+        // Cakupan ringkasan mengikuti laporan detail: gudang tanpa omzet, Sales dan Kasir hanya miliknya
+        $user = $request->user();
+        if ($user->role === 'inventory') {
+            return redirect()->route('admin.reports.inventory');
+        }
+        $fullScope = in_array($user->role, ['super-admin', 'owner', 'manager'], true);
+
         [$startDate, $endDate, $preset] = $this->resolveDateRange($request);
 
-        $salesQuery = SalesOrder::query();
-        $woQuery = WorkOrder::query();
+        $salesQuery = SalesOrder::query()
+            ->when(! $fullScope, fn ($q) => $q->where('created_by', $user->id))
+            ->when($user->role === 'sales', fn ($q) => $q->where('type', SalesOrderType::CarSales));
+        $woQuery = WorkOrder::query()->when(! $fullScope, fn ($q) => $q->whereRaw('1 = 0'));
 
         if ($startDate && $endDate) {
             $salesQuery->whereBetween('created_at', [$startDate, $endDate]);
@@ -106,7 +116,7 @@ class ReportController extends Controller
 
         $sparePartRevenue = (int) (clone $salesQuery)->whereIn('type', [SalesOrderType::SparePart, SalesOrderType::Pos])->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])->sum('total_idr');
 
-        $totalCustomers = Customer::count();
+        $totalCustomers = $fullScope ? Customer::count() : 0;
 
         // Recent Verified Sales Transactions
         $recentSales = (clone $salesQuery)->with(['customer.user', 'creator'])
@@ -136,7 +146,8 @@ class ReportController extends Controller
             'recentWorkOrders',
             'startDate',
             'endDate',
-            'preset'
+            'preset',
+            'fullScope'
         ));
     }
 
