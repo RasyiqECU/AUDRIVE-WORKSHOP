@@ -26,10 +26,15 @@ class PartRequestController extends Controller
         return view('admin.part-requests.index', compact('workOrders'));
     }
 
-    public function check(WorkOrderItem $item): RedirectResponse
+    public function check(Request $request, WorkOrderItem $item): RedirectResponse
     {
+        $data = $request->validate(['install_fee_idr' => 'nullable|integer|min:0']);
+
         try {
-            $this->workOrderService->markPartChecked($item);
+            $this->workOrderService->markPartChecked(
+                $item,
+                isset($data['install_fee_idr']) ? (int) $data['install_fee_idr'] : null
+            );
         } catch (\InvalidArgumentException $e) {
             return back()->with('error', $e->getMessage());
         }

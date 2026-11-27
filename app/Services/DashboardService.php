@@ -90,6 +90,7 @@ class DashboardService
             WorkOrderStatus::Booking,
             WorkOrderStatus::Queued,
             WorkOrderStatus::InProgress,
+            WorkOrderStatus::WaitingPartConfirmation,
         ])->count();
 
         $bookingsToday = ServiceBooking::whereDate('preferred_date', today())
@@ -256,6 +257,7 @@ class DashboardService
             WorkOrderStatus::Booking,
             WorkOrderStatus::Queued,
             WorkOrderStatus::InProgress,
+            WorkOrderStatus::WaitingPartConfirmation,
             WorkOrderStatus::QualityControl,
         ])->count();
         $newBookings = ServiceBooking::whereBetween('created_at', [$startDate, $endDate])->count();

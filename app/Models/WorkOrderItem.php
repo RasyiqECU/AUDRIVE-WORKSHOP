@@ -26,6 +26,7 @@ class WorkOrderItem extends Model
         'decided_by',
         'decided_at',
         'decision_note',
+        'install_fee_idr',
     ];
 
     protected $attributes = [
@@ -40,6 +41,7 @@ class WorkOrderItem extends Model
             'subtotal_idr' => 'integer',
             'inventory_checked_at' => 'datetime',
             'decided_at' => 'datetime',
+            'install_fee_idr' => 'integer',
         ];
     }
 

@@ -152,7 +152,12 @@ class CheckoutService
         ]);
 
         // Invoice draft bisa sudah ada (customer membukanya sebelum bayar)
-        app(InvoiceService::class)->ensureInvoiceForSalesOrder($order)->update(['status' => 'paid']);
+        app(InvoiceService::class)->ensureInvoiceForSalesOrder($order)
+            ->update(['status' => 'paid', 'total_idr' => $order->total_idr]);
+
+        if ($order->type === SalesOrderType::Service) {
+            app(ServiceBillingService::class)->settled($order, $actorId);
+        }
 
         $customer = $order->customer;
         if ($firstSettlement && $customer) {
@@ -174,7 +179,7 @@ class CheckoutService
             $this->notificationService->send($customer->user, 'payment_success', [
                 'title' => "Pembayaran Berhasil: #{$order->code}",
                 'message' => "Pembayaran {$amount} untuk pesanan #{$order->code} telah diverifikasi.",
-                'action_url' => route('parts.orders.show', $order->id),
+                'action_url' => $order->customerUrl(),
             ]);
         }
 

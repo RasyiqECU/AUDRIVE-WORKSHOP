@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class WorkOrder extends Model
 {
@@ -61,6 +62,11 @@ class WorkOrder extends Model
     public function vehicle(): BelongsTo
     {
         return $this->belongsTo(CustomerVehicle::class, 'customer_vehicle_id');
+    }
+
+    public function salesOrder(): HasOne
+    {
+        return $this->hasOne(SalesOrder::class)->latestOfMany();
     }
 
     public function mechanic(): BelongsTo

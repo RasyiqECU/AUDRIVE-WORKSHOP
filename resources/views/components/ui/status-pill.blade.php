@@ -13,6 +13,7 @@
         'draft' => ['label' => 'Draft', 'class' => 'border-silver/20 text-silver-dim bg-steel/30'],
         'pending' => ['label' => 'Menunggu', 'class' => 'border-giallo/40 text-giallo bg-giallo/5'],
         'in_progress' => ['label' => 'Diproses', 'class' => 'border-arancio/40 text-arancio bg-arancio/5'],
+        'waiting_part_confirmation' => ['label' => 'Menunggu Part', 'class' => 'border-giallo/40 text-giallo bg-giallo/5'],
         'quality_control' => ['label' => 'Quality Control', 'class' => 'border-arancio/40 text-arancio bg-arancio/5'],
         'completed' => ['label' => 'Selesai', 'class' => 'border-verde/40 text-verde bg-verde/5'],
         'delivered' => ['label' => 'Diserahkan', 'class' => 'border-verde/40 text-verde bg-verde/5'],

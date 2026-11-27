@@ -247,7 +247,7 @@ class WarrantyClaimService
     public function issuePart(WarrantyClaim $claim, SparePart $part, int $qty): void
     {
         $workOrder = $claim->repairWorkOrder;
-        $open = [WorkOrderStatus::Queued, WorkOrderStatus::InProgress];
+        $open = [WorkOrderStatus::Queued, WorkOrderStatus::InProgress, WorkOrderStatus::WaitingPartConfirmation];
 
         if (! $workOrder || ! in_array($workOrder->status, $open, true)) {
             throw new \InvalidArgumentException('Suku cadang hanya bisa dikeluarkan saat perbaikan garansi belum masuk QC.');

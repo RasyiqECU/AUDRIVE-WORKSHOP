@@ -9,6 +9,7 @@
         'queued'          => 1,
         'inspection'      => 1,
         'in_progress'     => 2,
+        'waiting_part_confirmation' => 2,
         'waiting_parts'   => 2,
         'quality_control' => 3,
         'completed'       => 4,
@@ -27,6 +28,7 @@
         'queued'          => 'bg-silver/20 text-silver-bright border-silver/40',
         'inspection'      => 'bg-silver/20 text-silver-bright border-silver/40',
         'in_progress'     => 'bg-arancio/20 text-arancio border-arancio/40',
+        'waiting_part_confirmation' => 'bg-giallo/20 text-giallo border-giallo/40',
         'waiting_parts'   => 'bg-arancio/20 text-arancio border-arancio/40',
         'quality_control' => 'bg-giallo/20 text-giallo border-giallo/40',
         'completed'       => 'bg-giallo/20 text-giallo border-giallo/40',
@@ -39,6 +41,7 @@
         'queued'          => 'Antrean & Inspeksi Masuk',
         'inspection'      => 'Inspeksi Awal',
         'in_progress'     => 'Sedang Dikerjakan',
+        'waiting_part_confirmation' => 'Menunggu Konfirmasi Part',
         'waiting_parts'   => 'Menunggu Suku Cadang',
         'quality_control' => 'Quality Control & Test Drive',
         'completed'       => 'Selesai — Siap Diambil',
@@ -322,6 +325,49 @@
                     @endforeach
                 </div>
             </div>
+
+            {{-- Konfirmasi suku cadang & tagihan --}}
+            @php
+                $isOwner = auth()->user()->customer
+                    && ($workOrder->vehicle?->customer_id ?? $workOrder->serviceBooking?->customer_id) === auth()->user()->customer->id;
+                $awaitingChoice = $workOrder->items->where('approval_status', 'pending')->whereNotNull('inventory_checked_at');
+                $bill = $workOrder->salesOrder;
+            @endphp
+
+            @if($isOwner && $awaitingChoice->isNotEmpty())
+                <div class="bg-carbon border border-giallo/50 rounded-lg p-6 space-y-4 text-xs">
+                    <h3 class="font-heading text-sm font-bold text-giallo uppercase">Konfirmasi Suku Cadang Tambahan</h3>
+                    @foreach($awaitingChoice as $item)
+                        <form method="POST" action="{{ route('workshop.tracking.parts.decide', $item) }}" class="space-y-2 border-t border-gunmetal/40 pt-3">
+                            @csrf
+                            <p class="text-silver-bright">{{ $item->description }} x{{ $item->qty }} — Rp {{ number_format($item->subtotal_idr, 0, ',', '.') }}</p>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="submit" name="decision" value="buy" class="px-3 py-2 bg-giallo text-nero font-heading font-bold uppercase rounded">Beli di Bengkel</button>
+                                @if($item->install_fee_idr !== null)
+                                    <button type="submit" name="decision" value="bring_own" class="px-3 py-2 border border-gunmetal text-silver-bright uppercase rounded">
+                                        Bawa Sendiri (jasa pasang Rp {{ number_format($item->install_fee_idr, 0, ',', '.') }}, tanpa garansi part)
+                                    </button>
+                                @endif
+                                <button type="submit" name="decision" value="skip" class="px-3 py-2 border border-danger/50 text-danger uppercase rounded">Tidak Usah Ganti</button>
+                            </div>
+                        </form>
+                    @endforeach
+                </div>
+            @endif
+
+            @if($isOwner && $bill && $bill->status->value === 'pending' && $bill->total_idr > 0)
+                <div class="bg-carbon border border-giallo/50 rounded-lg p-6 flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div>
+                        <p class="font-heading text-sm font-bold text-silver-bright uppercase">Tagihan Servis #{{ $bill->code }}</p>
+                        <p class="font-mono text-xl text-giallo">Rp {{ number_format($bill->total_idr, 0, ',', '.') }}</p>
+                        <p class="text-silver-dim">{{ $bill->progressLabel() }}</p>
+                    </div>
+                    <form method="POST" action="{{ route('workshop.tracking.pay-online', $workOrder) }}">
+                        @csrf
+                        <button type="submit" class="px-4 py-2 bg-giallo text-nero font-heading font-bold uppercase rounded">Bayar Transfer Online</button>
+                    </form>
+                </div>
+            @endif
 
             {{-- Detail Pengerjaan / Items --}}
             @if($workOrder->items && $workOrder->items->isNotEmpty())

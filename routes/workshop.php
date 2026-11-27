@@ -1,8 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Workshop\AiScanController;
 use App\Http\Controllers\Workshop\ServiceBookingController;
 use App\Http\Controllers\Workshop\WorkOrderTrackingController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,6 +35,10 @@ Route::middleware('auth')->group(function () {
     // Work Order Tracking (customer view)
     Route::get('/workshop/tracking/{workOrder}', [WorkOrderTrackingController::class, 'show'])
         ->name('workshop.tracking.show');
+    Route::post('/workshop/tracking/parts/{item}', [WorkOrderTrackingController::class, 'decidePart'])
+        ->name('workshop.tracking.parts.decide');
+    Route::post('/workshop/tracking/{workOrder}/pay-online', [WorkOrderTrackingController::class, 'payOnline'])
+        ->name('workshop.tracking.pay-online');
     Route::get('/workshop/tracking/{workOrder}/timeline', [WorkOrderTrackingController::class, 'timeline'])
         ->name('workshop.tracking.timeline');
 
@@ -42,10 +47,10 @@ Route::middleware('auth')->group(function () {
         ->name('workshop.history');
 
     // AI Sound Scan (customer initiated)
-    Route::get('/workshop/ai-scan', [\App\Http\Controllers\Workshop\AiScanController::class, 'create'])
+    Route::get('/workshop/ai-scan', [AiScanController::class, 'create'])
         ->name('workshop.ai-scan.create');
-    Route::post('/workshop/ai-scan', [\App\Http\Controllers\Workshop\AiScanController::class, 'store'])
+    Route::post('/workshop/ai-scan', [AiScanController::class, 'store'])
         ->name('workshop.ai-scan.store');
-    Route::get('/workshop/ai-scan/{scan}', [\App\Http\Controllers\Workshop\AiScanController::class, 'show'])
+    Route::get('/workshop/ai-scan/{scan}', [AiScanController::class, 'show'])
         ->name('workshop.ai-scan.show');
 });

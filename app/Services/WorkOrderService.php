@@ -172,6 +172,8 @@ class WorkOrderService
             'approval_status' => 'pending',
         ]);
 
+        $this->syncPartWaitingStatus($workOrder);
+
         $this->notificationService->notifyRoles(['inventory'], 'part_request', [
             'title' => "Usulan Suku Cadang: WO #{$workOrder->code}",
             'message' => "{$sparePart->name} x{$qty} menunggu pengecekan stok dan harga.",
@@ -181,11 +183,20 @@ class WorkOrderService
         return $item;
     }
 
-    public function markPartChecked(WorkOrderItem $item): void
+    public function markPartChecked(WorkOrderItem $item, ?int $installFee = null): void
     {
         $this->assertPending($item);
 
-        $item->update(['inventory_checked_at' => now()]);
+        $item->update(['inventory_checked_at' => now(), 'install_fee_idr' => $installFee]);
+
+        $workOrder = $item->workOrder;
+        if ($customerUser = $workOrder->vehicle?->customer?->user) {
+            $this->notificationService->send($customerUser, 'part_request', [
+                'title' => "Konfirmasi Suku Cadang: WO #{$workOrder->code}",
+                'message' => "{$item->description}: Rp ".number_format($item->subtotal_idr, 0, ',', '.').'. Pilih beli di bengkel, bawa sendiri, atau tidak diganti.',
+                'action_url' => route('workshop.tracking.show', $workOrder->id),
+            ]);
+        }
 
         $this->notificationService->notifyRoles(['sales'], 'part_request', [
             'title' => "Konfirmasi Customer: WO #{$item->workOrder->code}",
@@ -254,6 +265,7 @@ class WorkOrderService
 
             $item->update($changes);
             $this->recalculateTotals($workOrder);
+            $this->syncPartWaitingStatus($workOrder);
 
             if ($workOrder->mechanic) {
                 $this->notificationService->send($workOrder->mechanic, 'part_request', [
@@ -265,6 +277,18 @@ class WorkOrderService
                 ]);
             }
         });
+    }
+
+    /** Dikerjakan ⇄ Menunggu Konfirmasi Part, mengikuti ada tidaknya usulan. */
+    protected function syncPartWaitingStatus(WorkOrder $workOrder): void
+    {
+        $pending = $workOrder->hasPendingParts();
+
+        if ($pending && $workOrder->status === WorkOrderStatus::InProgress) {
+            $workOrder->update(['status' => WorkOrderStatus::WaitingPartConfirmation]);
+        } elseif (! $pending && $workOrder->status === WorkOrderStatus::WaitingPartConfirmation) {
+            $workOrder->update(['status' => WorkOrderStatus::InProgress]);
+        }
     }
 
     protected function assertPending(WorkOrderItem $item): void
@@ -303,6 +327,7 @@ class WorkOrderService
             }
 
             $item->delete();
+            $this->syncPartWaitingStatus($workOrder);
 
             $this->recalculateTotals($workOrder);
         });
@@ -324,6 +349,9 @@ class WorkOrderService
         return DB::transaction(function () use ($workOrder) {
             // Update status work order
             $this->updateStatus($workOrder, WorkOrderStatus::Completed);
+
+            // Tagihan final terbit; customer bisa bayar di kasir atau transfer
+            app(ServiceBillingService::class)->issue($workOrder, auth()->id());
 
             // Update booking terkait jika ada
             if ($workOrder->serviceBooking) {
@@ -355,7 +383,8 @@ class WorkOrderService
         $transitions = [
             WorkOrderStatus::Booking->value => ['queued', 'in_progress', 'cancelled'],
             WorkOrderStatus::Queued->value => ['in_progress', 'cancelled'],
-            WorkOrderStatus::InProgress->value => ['quality_control', 'cancelled'],
+            WorkOrderStatus::InProgress->value => ['quality_control', 'waiting_part_confirmation', 'cancelled'],
+            WorkOrderStatus::WaitingPartConfirmation->value => ['in_progress', 'cancelled'],
             WorkOrderStatus::QualityControl->value => ['completed', 'in_progress'],
             WorkOrderStatus::Completed->value => ['delivered'],
             WorkOrderStatus::Delivered->value => [],

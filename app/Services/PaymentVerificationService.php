@@ -110,7 +110,8 @@ class PaymentVerificationService
             // Beri kesempatan unggah ulang dengan batas waktu baru
             $order->update([
                 'payment_status' => PaymentStatus::Rejected,
-                'reserved_until' => now()->addHours(PaymentSettings::deadlineHours()),
+                // Hanya pesanan yang mengunci stok yang punya batas waktu
+                'reserved_until' => $order->stock_reserved ? now()->addHours(PaymentSettings::deadlineHours()) : null,
             ]);
 
             $this->notifyCustomer($order, "Bukti Transfer Ditolak: #{$order->code}", "Alasan: {$reason}. Silakan unggah ulang bukti yang benar.");
@@ -164,7 +165,7 @@ class PaymentVerificationService
             $this->notificationService->send($user, 'payment_verification', [
                 'title' => $title,
                 'message' => $message,
-                'action_url' => route('parts.orders.show', $order->id),
+                'action_url' => $order->customerUrl(),
             ]);
         }
     }

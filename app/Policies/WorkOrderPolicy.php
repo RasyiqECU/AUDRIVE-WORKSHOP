@@ -66,7 +66,7 @@ class WorkOrderPolicy
             $statusVal = $workOrder->status instanceof WorkOrderStatus ? $workOrder->status->value : (string) $workOrder->status;
 
             return $workOrder->assigned_mechanic_id === $user->id
-                && in_array($statusVal, ['queued', 'booking', 'in_progress', 'quality_control'], true);
+                && in_array($statusVal, ['queued', 'booking', 'in_progress', 'waiting_part_confirmation', 'quality_control'], true);
         }
 
         return false;
@@ -94,7 +94,7 @@ class WorkOrderPolicy
             $statusVal = $workOrder->status instanceof WorkOrderStatus ? $workOrder->status->value : (string) $workOrder->status;
 
             return $workOrder->assigned_mechanic_id === $user->id
-                && in_array($statusVal, ['queued', 'booking', 'in_progress', 'quality_control'], true);
+                && in_array($statusVal, ['queued', 'booking', 'in_progress', 'waiting_part_confirmation', 'quality_control'], true);
         }
 
         return false;
