@@ -33,6 +33,8 @@ class ResetDemoData extends Command
             return self::FAILURE;
         }
 
+        $this->removeGeneratedCars();
+
         // TRUNCATE sekaligus mengembalikan AUTO_INCREMENT ke 1
         Schema::withoutForeignKeyConstraints(function () {
             foreach (Schema::getTableListing(schema: DB::getDatabaseName(), schemaQualified: false) as $table) {
@@ -52,5 +54,29 @@ class ResetDemoData extends Command
         $this->info("Selesai. Database \"{$database}\" berisi data demo; semua password: password");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Unit arsip buatan seeder dan unit titip jual (milik customer yang ikut terhapus)
+     * bukan bagian katalog; bila ditinggal, reset berikutnya bentrok.
+     */
+    private function removeGeneratedCars(): void
+    {
+        $ids = DB::table('car_units')
+            ->where('ownership', 'consignment')
+            ->orWhere('description', DemoDataSeeder::ARCHIVE_NOTE)
+            ->pluck('id');
+
+        Schema::withoutForeignKeyConstraints(function () use ($ids) {
+            DB::table('car_photos')->whereIn('car_unit_id', $ids)->delete();
+            DB::table('car_units')->whereIn('id', $ids)->delete();
+        });
+        foreach ($ids as $id) {
+            Storage::disk('public')->deleteDirectory("cars/{$id}");
+        }
+
+        // MariaDB menaikkan lagi nilainya ke id tertinggi + 1
+        DB::statement('ALTER TABLE car_units AUTO_INCREMENT = 1');
+        DB::statement('ALTER TABLE car_photos AUTO_INCREMENT = 1');
     }
 }

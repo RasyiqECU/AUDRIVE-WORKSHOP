@@ -27,6 +27,8 @@ class CarHandoverController extends Controller
             return back()->with('error', 'Pesanan ini tidak menunggu serah terima.');
         }
 
+        $order->refresh()->assignSales(auth()->user());
+
         return back()->with('success', "Serah terima #{$order->code} dicatat.");
     }
 

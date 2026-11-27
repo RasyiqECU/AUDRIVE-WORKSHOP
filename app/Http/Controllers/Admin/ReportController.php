@@ -20,6 +20,7 @@ use App\Services\DashboardService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -90,37 +91,37 @@ class ReportController extends Controller
 
         [$startDate, $endDate, $preset] = $this->resolveDateRange($request);
 
-        $salesQuery = SalesOrder::query()
-            ->when(! $fullScope, fn ($q) => $q->where('created_by', $user->id))
-            ->when($user->role === 'sales', fn ($q) => $q->where('type', SalesOrderType::CarSales));
+        // Omzet menurut tanggal lunas; Sales = yang ditanganinya, Kasir = yang diprosesnya
+        $salesQuery = SalesOrder::earnedBetween($startDate, $endDate)
+            ->when($user->role === 'sales', fn ($q) => $q->where('sales_id', $user->id))
+            ->when($user->role === 'cashier', fn ($q) => $q->where('created_by', $user->id));
         $woQuery = WorkOrder::query()->when(! $fullScope, fn ($q) => $q->whereRaw('1 = 0'));
 
         if ($startDate && $endDate) {
-            $salesQuery->whereBetween('created_at', [$startDate, $endDate]);
             $woQuery->whereBetween('created_at', [$startDate, $endDate]);
         }
 
         // Total Omzet Terverifikasi (Paid / Completed)
-        $totalRevenue = (int) (clone $salesQuery)->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])->sum('total_idr');
-        $totalDiscounts = (int) (clone $salesQuery)->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])->sum('discount_idr');
-        $totalTaxes = (int) (clone $salesQuery)->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])->sum('tax_idr');
+        $totalRevenue = (int) (clone $salesQuery)->sum('revenue_idr');
+        $totalDiscounts = (int) (clone $salesQuery)->sum('discount_idr');
+        $totalTaxes = (int) (clone $salesQuery)->sum('tax_idr');
         $totalOrdersCount = (clone $salesQuery)->count();
 
         // Breakdown per Divisi
-        $carRevenue = (int) (clone $salesQuery)->where('type', SalesOrderType::CarSales)->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])->sum('total_idr');
-        $carSalesCount = (clone $salesQuery)->where('type', SalesOrderType::CarSales)->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])->count();
+        $carRevenue = (int) (clone $salesQuery)->where('type', SalesOrderType::CarSales)->sum('revenue_idr');
+        $carSalesCount = (clone $salesQuery)->where('type', SalesOrderType::CarSales)->count();
 
-        $workshopRevenue = (int) (clone $salesQuery)->where('type', SalesOrderType::Service)->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])->sum('total_idr');
-        $completedWorkOrders = (clone $woQuery)->where('status', WorkOrderStatus::Completed)->count();
+        $workshopRevenue = (int) (clone $salesQuery)->where('type', SalesOrderType::Service)->sum('revenue_idr');
+        $completedWorkOrders = (clone $woQuery)->whereIn('status', [WorkOrderStatus::Completed, WorkOrderStatus::Delivered])->count();
         $activeWorkOrders = (clone $woQuery)->whereIn('status', [WorkOrderStatus::Queued, WorkOrderStatus::InProgress, WorkOrderStatus::WaitingPartConfirmation])->count();
 
-        $sparePartRevenue = (int) (clone $salesQuery)->whereIn('type', [SalesOrderType::SparePart, SalesOrderType::Pos])->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])->sum('total_idr');
+        $sparePartRevenue = (int) (clone $salesQuery)->whereIn('type', [SalesOrderType::SparePart, SalesOrderType::Pos])->sum('revenue_idr');
 
         $totalCustomers = $fullScope ? Customer::count() : 0;
 
         // Recent Verified Sales Transactions
         $recentSales = (clone $salesQuery)->with(['customer.user', 'creator'])
-            ->latest()
+            ->latest('paid_at')
             ->take(8)
             ->get();
 
@@ -161,16 +162,13 @@ class ReportController extends Controller
         $search = $request->input('search');
 
         $query = SalesOrder::where('type', SalesOrderType::CarSales)
-            ->with(['customer.user', 'items.carUnit', 'creator', 'payments']);
+            ->with(['customer.user', 'items.carUnit', 'sales', 'payments'])
+            ->inPeriod($startDate, $endDate);
 
-        // Sales hanya melihat laporan penjualan miliknya
+        // Sales hanya melihat penjualan yang ditanganinya
         $user = $request->user();
         if ($user && $user->role === 'sales') {
-            $query->where('created_by', $user->id);
-        }
-
-        if ($startDate && $endDate) {
-            $query->whereBetween('created_at', [$startDate, $endDate]);
+            $query->where('sales_id', $user->id);
         }
 
         if ($status && $status !== 'all') {
@@ -188,18 +186,21 @@ class ReportController extends Controller
         }
 
         // Metrics for the filtered query
-        $totalCarRevenue = (int) (clone $query)->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])->sum('total_idr');
+        $totalCarRevenue = (int) (clone $query)->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])->sum('revenue_idr');
         $totalDiscountGiven = (int) (clone $query)->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])->sum('discount_idr');
         $unitsSold = (clone $query)->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])->count();
-        $averageSellingPrice = $unitsSold > 0 ? (int) ($totalCarRevenue / $unitsSold) : 0;
+        $averageSellingPrice = (int) (clone $query)->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])->avg('total_idr');
+        $salesRecap = $this->salesRecap($startDate, $endDate, $user);
         $availableUnits = CarUnit::where('status', CarUnitStatus::Available)->count();
 
         // Paginate for web, or fetch all if in print mode
         $isPrint = $request->boolean('print');
-        $salesOrders = $isPrint ? (clone $query)->latest()->get() : (clone $query)->latest()->paginate(15);
+        $query->orderByRaw('COALESCE(paid_at, created_at) desc');
+        $salesOrders = $isPrint ? (clone $query)->get() : (clone $query)->paginate(15);
 
         return view('admin.reports.sales', compact(
             'salesOrders',
+            'salesRecap',
             'totalCarRevenue',
             'totalDiscountGiven',
             'unitsSold',
@@ -212,6 +213,33 @@ class ReportController extends Controller
             'search',
             'isPrint'
         ));
+    }
+
+    /**
+     * Omzet semua jenis transaksi per Sales. Tanpa Sales: suku cadang = mandiri/online,
+     * mobil dan servis = belum ada yang menangani.
+     */
+    protected function salesRecap(?Carbon $start, ?Carbon $end, User $viewer): Collection
+    {
+        return SalesOrder::earnedBetween($start, $end)
+            ->when($viewer->role === 'sales', fn ($q) => $q->where('sales_id', $viewer->id))
+            ->with('sales')
+            ->get()
+            ->groupBy(fn (SalesOrder $order) => $order->sales?->name ?? (
+                in_array($order->type, [SalesOrderType::CarSales, SalesOrderType::Service], true)
+                    ? 'Belum Ditangani Sales'
+                    : 'Penjualan Mandiri / Online'
+            ))
+            ->map(fn (Collection $orders, string $name) => [
+                'name' => $name,
+                'count' => $orders->count(),
+                'car' => (int) $orders->where('type', SalesOrderType::CarSales)->sum('revenue_idr'),
+                'service' => (int) $orders->where('type', SalesOrderType::Service)->sum('revenue_idr'),
+                'part' => (int) $orders->whereIn('type', [SalesOrderType::SparePart, SalesOrderType::Pos])->sum('revenue_idr'),
+                'total' => (int) $orders->sum('revenue_idr'),
+            ])
+            ->sortByDesc('total')
+            ->values();
     }
 
     /**
@@ -252,13 +280,20 @@ class ReportController extends Controller
             });
         }
 
-        // Workshop Analytics for filtered dataset
-        $completedRepairs = (clone $query)->where('status', WorkOrderStatus::Completed)->count();
+        // Omzet bengkel = tagihan servis yang lunas pada periode ini
+        $paidServices = SalesOrder::earnedBetween($startDate, $endDate)->where('type', SalesOrderType::Service);
+        if (($mechanicId && $mechanicId !== 'all') || $search) {
+            $paidServices->whereIn('work_order_id', (clone $query)->withoutEagerLoads()->pluck('id'));
+        }
+        $billed = WorkOrder::whereIn('id', (clone $paidServices)->pluck('work_order_id'));
+
+        $finished = [WorkOrderStatus::Completed, WorkOrderStatus::Delivered];
+        $completedRepairs = (clone $query)->whereIn('status', $finished)->count();
         $activeRepairs = (clone $query)->whereIn('status', [WorkOrderStatus::Queued, WorkOrderStatus::InProgress, WorkOrderStatus::WaitingPartConfirmation])->count();
-        $totalWorkshopRevenue = (int) (clone $query)->where('status', WorkOrderStatus::Completed)->sum('total_idr');
-        $totalJasaRevenue = (int) (clone $query)->where('status', WorkOrderStatus::Completed)->sum('total_jasa_idr');
-        $totalPartRevenue = (int) (clone $query)->where('status', WorkOrderStatus::Completed)->sum('total_part_idr');
-        $avgRepairCost = $completedRepairs > 0 ? (int) ($totalWorkshopRevenue / $completedRepairs) : 0;
+        $totalWorkshopRevenue = (int) (clone $paidServices)->sum('revenue_idr');
+        $totalJasaRevenue = (int) (clone $billed)->sum('total_jasa_idr');
+        $totalPartRevenue = (int) (clone $billed)->sum('total_part_idr');
+        $avgRepairCost = (int) (clone $paidServices)->avg('revenue_idr');
 
         $mechanics = User::where('role', 'mechanic')->get();
 
@@ -362,9 +397,7 @@ class ReportController extends Controller
             $query->where('created_by', $user->id);
         }
 
-        if ($startDate && $endDate) {
-            $query->whereBetween('created_at', [$startDate, $endDate]);
-        }
+        $query->inPeriod($startDate, $endDate);
 
         if ($type && $type !== 'all') {
             $query->where('type', $type);
@@ -386,19 +419,20 @@ class ReportController extends Controller
         // Rekapitulasi Finansial
         $paidOrdersQuery = (clone $query)->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed]);
 
-        $totalIncome = (int) (clone $paidOrdersQuery)->sum('total_idr');
+        $totalIncome = (int) (clone $paidOrdersQuery)->sum('revenue_idr');
         $totalSubtotal = (int) (clone $paidOrdersQuery)->sum('subtotal_idr');
         $totalDiscount = (int) (clone $paidOrdersQuery)->sum('discount_idr');
         $totalTax = (int) (clone $paidOrdersQuery)->sum('tax_idr');
 
-        $carIncome = (int) (clone $paidOrdersQuery)->where('type', SalesOrderType::CarSales)->sum('total_idr');
-        $serviceIncome = (int) (clone $paidOrdersQuery)->where('type', SalesOrderType::Service)->sum('total_idr');
-        $sparepartIncome = (int) (clone $paidOrdersQuery)->whereIn('type', [SalesOrderType::SparePart, SalesOrderType::Pos])->sum('total_idr');
+        $carIncome = (int) (clone $paidOrdersQuery)->where('type', SalesOrderType::CarSales)->sum('revenue_idr');
+        $serviceIncome = (int) (clone $paidOrdersQuery)->where('type', SalesOrderType::Service)->sum('revenue_idr');
+        $sparepartIncome = (int) (clone $paidOrdersQuery)->whereIn('type', [SalesOrderType::SparePart, SalesOrderType::Pos])->sum('revenue_idr');
 
         $avgTransaction = (clone $paidOrdersQuery)->count() > 0 ? (int) ($totalIncome / (clone $paidOrdersQuery)->count()) : 0;
 
         $isPrint = $request->boolean('print');
-        $allTransactions = $isPrint ? (clone $query)->latest()->get() : (clone $query)->latest()->paginate(15);
+        $query->orderByRaw('COALESCE(paid_at, created_at) desc');
+        $allTransactions = $isPrint ? (clone $query)->get() : (clone $query)->paginate(15);
 
         return view('admin.reports.finance', compact(
             'allTransactions',

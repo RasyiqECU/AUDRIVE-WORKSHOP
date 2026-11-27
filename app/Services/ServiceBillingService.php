@@ -10,6 +10,7 @@ use App\Enums\SalesOrderType;
 use App\Models\AuditLog;
 use App\Models\SalesOrder;
 use App\Models\SalesOrderItem;
+use App\Models\User;
 use App\Models\WorkOrder;
 use Illuminate\Support\Str;
 
@@ -49,6 +50,7 @@ class ServiceBillingService
                 'payment_status' => PaymentStatus::Pending->value,
                 'payment_channel' => 'cashier',
                 'work_order_id' => $workOrder->id,
+                'sales_id' => User::where('role', 'sales')->whereKey($workOrder->serviceBooking?->checked_in_by)->value('id'),
                 'notes' => "Pembayaran Work Order #{$workOrder->code}",
                 'created_by' => $userId ?? auth()->id() ?? $customer?->user_id ?? 1,
             ]);

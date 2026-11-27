@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Support\Facades\DB;
 
 class SalesOrder extends Model
 {
@@ -45,6 +46,9 @@ class SalesOrder extends Model
         'prepared_at',
         'handed_over_at',
         'deposit_idr',
+        'paid_at',
+        'revenue_idr',
+        'sales_id',
     ];
 
     protected function casts(): array
@@ -63,7 +67,74 @@ class SalesOrder extends Model
             'reserved_until' => 'datetime',
             'prepared_at' => 'datetime',
             'handed_over_at' => 'datetime',
+            'paid_at' => 'datetime',
+            'revenue_idr' => 'integer',
         ];
+    }
+
+    /** Tanggal lunas dan omzet diisi otomatis, apa pun jalur pembayarannya. */
+    protected static function booted(): void
+    {
+        static::saving(function (SalesOrder $order) {
+            if (! in_array($order->status, [SalesOrderStatus::Paid, SalesOrderStatus::Completed], true)) {
+                $order->paid_at = null;
+                $order->revenue_idr = 0;
+
+                return;
+            }
+
+            $order->paid_at ??= now();
+
+            if (! $order->exists || $order->isDirty(['status', 'paid_at', 'subtotal_idr', 'discount_idr', 'total_idr', 'shipping_fee_idr'])) {
+                $order->revenue_idr = $order->calculateRevenue();
+            }
+        });
+    }
+
+    /**
+     * Omzet milik AUDrive. Mobil titip jual hanya komisi dan biaya servis
+     * (ditambah towing bila ada); sisanya hak pemilik mobil.
+     */
+    public function calculateRevenue(): int
+    {
+        if ($this->type !== SalesOrderType::CarSales || ! $this->exists) {
+            return (int) $this->total_idr;
+        }
+
+        $car = $this->items()->whereNotNull('car_unit_id')->first()?->carUnit;
+        if (! $car?->isConsignment()) {
+            return (int) $this->total_idr;
+        }
+
+        $price = max(0, (int) $this->subtotal_idr - (int) $this->discount_idr);
+
+        return min($price, (int) $car->commission_idr + (int) $car->repair_cost_idr) + (int) $this->shipping_fee_idr;
+    }
+
+    /** Catat Sales yang menangani; selain role sales diabaikan. */
+    public function assignSales(?User $user): void
+    {
+        if ($user?->role === 'sales') {
+            $this->update(['sales_id' => $user->id]);
+        }
+    }
+
+    public function sales(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'sales_id');
+    }
+
+    /** Pesanan lunas, menurut tanggal lunas. */
+    public function scopeEarnedBetween($query, $start = null, $end = null)
+    {
+        return $query->whereIn('status', [SalesOrderStatus::Paid, SalesOrderStatus::Completed])
+            ->when($start && $end, fn ($q) => $q->whereBetween('paid_at', [$start, $end]));
+    }
+
+    /** Daftar transaksi: yang lunas menurut tanggal lunas, sisanya menurut tanggal pesanan. */
+    public function scopeInPeriod($query, $start = null, $end = null)
+    {
+        return $query->when($start && $end, fn ($q) => $q->whereBetween(DB::raw('COALESCE(paid_at, created_at)'), [$start, $end]));
     }
 
     public function customer(): BelongsTo

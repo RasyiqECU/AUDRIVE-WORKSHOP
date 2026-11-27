@@ -200,7 +200,7 @@ class DemoSupportDataSeeder extends Seeder
             $revenue = (int) DB::table('sales_orders')
                 ->where('status', 'paid')
                 ->where('type', '!=', 'car_sales')
-                ->whereBetween('created_at', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
+                ->whereBetween('paid_at', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
                 ->sum('subtotal_idr');
             $orderedAt = $month->copy()->day(2)->setTime(9, 0);
 
