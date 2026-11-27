@@ -105,7 +105,7 @@
                 $stat1Color = 'text-giallo';
                 $stat1Link = route('admin.dashboard');
 
-                $stat2Label = 'Mobil Terjual';
+                $stat2Label = 'Mobil Terjual Bulan Ini';
                 $stat2Value = \App\Models\SalesOrder::where('type', \App\Enums\SalesOrderType::CarSales)
                     ->whereIn('status', [\App\Enums\SalesOrderStatus::Paid, \App\Enums\SalesOrderStatus::Completed])
                     ->where('created_at', '>=', now()->startOfMonth())
