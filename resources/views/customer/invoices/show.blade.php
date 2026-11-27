@@ -57,6 +57,8 @@
                         <span class="inline-flex items-center px-3 py-1 rounded text-xs font-mono font-bold uppercase tracking-wider bg-emerald-950/60 text-emerald-400 border border-emerald-700/60">
                             ✓ LUNAS / VERIFIED PAID
                         </span>
+                    @elseif(($invoice->status->value ?? '') === 'cancelled')
+                        <span class="inline-flex items-center px-3 py-1 rounded text-xs font-mono font-bold uppercase tracking-wider border border-danger/50 text-danger">DIBATALKAN</span>
                     @else
                         <span class="inline-flex items-center px-3 py-1 rounded text-xs font-mono font-bold uppercase tracking-wider bg-amber-950/60 text-amber-400 border border-amber-700/60">
                             MENUNGGU PEMBAYARAN
@@ -185,18 +187,19 @@
                             </div>
                         </div>
                     </div>
-                @else
+                @elseif(($salesOrder->status->value ?? '') === 'pending')
                     <div class="panel border border-amber-700/60 bg-amber-950/20 p-4 rounded text-xs space-y-2">
-                        <div class="text-amber-400 font-heading font-bold uppercase tracking-wider text-xs">
-                            Instruksi Pembayaran Rekening Resmi AUDrive:
-                        </div>
-                        <p class="text-silver-dim text-[11px]">Silakan transfer ke rekening resmi prioritas:</p>
-                        <div class="bg-carbon border border-gunmetal p-2.5 rounded font-mono text-xs">
-                            <p class="text-silver-bright font-bold">BCA: 588-099-8800</p>
-                            <p class="text-silver-dim text-[10px]">a.n PT AUDRIVE INDONESIA</p>
-                        </div>
-                        <p class="text-[10px] text-silver-dim">Sertakan berita transfer: <strong class="text-giallo">{{ $salesOrder->code }}</strong></p>
+                        <div class="text-amber-400 font-heading font-bold uppercase tracking-wider text-xs">Rekening Resmi AUDrive:</div>
+                        @foreach(\App\Services\PaymentSettings::accounts() as $account)
+                            <div class="bg-carbon border border-gunmetal p-2.5 rounded font-mono text-xs">
+                                <p class="text-silver-bright font-bold">{{ $account['bank'] }}: {{ $account['number'] }}</p>
+                                <p class="text-silver-dim text-[10px]">a.n {{ $account['holder'] }}</p>
+                            </div>
+                        @endforeach
+                        <a href="{{ $salesOrder->customerUrl() }}" class="inline-block text-giallo underline">Bayar &amp; unggah bukti dari halaman pesanan</a>
                     </div>
+                @else
+                    <p class="text-xs text-silver-dim">Pesanan ini tidak menunggu pembayaran.</p>
                 @endif
 
                 <div class="bg-steel/10 border border-gunmetal/60 p-3 rounded text-[11px] text-silver-dim italic">
@@ -221,6 +224,12 @@
                     <div class="flex justify-between text-silver-dim">
                         <span>Pajak (PPN 11%):</span>
                         <span class="font-mono text-silver-bright">Rp {{ number_format($salesOrder->tax_idr, 0, ',', '.') }}</span>
+                    </div>
+                @endif
+                @if($salesOrder->shipping_fee_idr > 0)
+                    <div class="flex justify-between text-silver-dim">
+                        <span>{{ $salesOrder->shippingLabel() }}:</span>
+                        <span class="font-mono text-silver-bright">Rp {{ number_format($salesOrder->shipping_fee_idr, 0, ',', '.') }}</span>
                     </div>
                 @endif
                 <div class="flex justify-between text-silver-bright text-base font-bold border-t border-gunmetal pt-3">

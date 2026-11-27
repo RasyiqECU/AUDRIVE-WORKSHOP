@@ -198,6 +198,7 @@ class CheckoutService
             $this->notificationService->send($customer->user, 'payment_success', [
                 'title' => "Pembayaran Berhasil: #{$order->code}",
                 'message' => "Pembayaran {$amount} untuk pesanan #{$order->code} telah diverifikasi.",
+                'amount' => $order->total_idr,
                 'action_url' => $order->customerUrl(),
             ]);
         }
@@ -205,6 +206,7 @@ class CheckoutService
         $this->notificationService->notifyRoles(['cashier', 'sales', 'super-admin'], 'payment_success', [
             'title' => "Pembayaran Diterima: #{$order->code}",
             'message' => "Pembayaran {$amount} untuk pesanan #{$order->code} telah diterima.",
+            'amount' => $order->total_idr,
             'action_url' => route('admin.pos.index'),
         ]);
 

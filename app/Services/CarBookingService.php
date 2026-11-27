@@ -112,6 +112,7 @@ class CarBookingService
         if ($user = $order->customer?->user) {
             $this->notificationService->send($user, 'payment_success', [
                 'title' => "Booking Fee Diterima: #{$order->code}",
+                'amount' => $order->deposit_idr,
                 'message' => "Unit terkunci untuk Anda. Lunasi sebelum {$order->reserved_until->format('d M Y')}.",
                 'action_url' => $order->customerUrl(),
             ]);

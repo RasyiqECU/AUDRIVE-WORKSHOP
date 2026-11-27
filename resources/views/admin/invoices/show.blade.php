@@ -221,6 +221,12 @@
                         <span class="font-mono text-silver-bright">Rp {{ number_format($salesOrder->tax_idr, 0, ',', '.') }}</span>
                     </div>
                 @endif
+                @if($salesOrder->shipping_fee_idr > 0)
+                    <div class="flex justify-between text-silver-dim">
+                        <span>{{ $salesOrder->shippingLabel() }}:</span>
+                        <span class="font-mono text-silver-bright">Rp {{ number_format($salesOrder->shipping_fee_idr, 0, ',', '.') }}</span>
+                    </div>
+                @endif
                 <div class="flex justify-between text-silver-bright text-base font-bold border-t border-gunmetal pt-3">
                     <span class="font-heading uppercase tracking-wide">Total Akhir:</span>
                     <span class="text-giallo font-mono text-lg">Rp {{ number_format($salesOrder->total_idr, 0, ',', '.') }}</span>
