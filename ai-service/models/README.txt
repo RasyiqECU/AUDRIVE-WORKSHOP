@@ -1,22 +1,28 @@
-# TARUH FILE ANDA DI SINI
-# ========================
+# FILE MODEL
+# ==========
 #
-# preprocessing/
-#   └── scaler.pkl          ← Scaler dari sklearn (StandardScaler/MinMaxScaler)
-#   └── label_encoder.pkl   ← LabelEncoder dari sklearn
+# Dipakai saat MODEL_BACKEND=onnx (konfigurasi yang digunakan):
 #
-# core/
-#   └── model.pth           ← PyTorch full model (torch.save(model, "model.pth"))
-#   └── model.keras         ← TensorFlow/Keras model (model.save("model.keras"))
+#   universal/
+#     yamnet.onnx          <- embedding suara (YAMNet)
+#     engine_gate.onnx     <- pemeriksa "mesin / bukan mesin"
+#     model.onnx           <- klasifikasi 9 kelas kerusakan
+#   preprocessing/
+#     label_encoder.pkl    <- urutan label
+#   labels.json            <- daftar kelas dan keterangan model
 #
-# universal/
-#   └── model.onnx          ← Hasil convert_model.py (REKOMENDASI untuk produksi)
+# Pendukung:
+#   yamnet_tfhub/          <- cadangan YAMNet (TensorFlow SavedModel)
+#   training_report.json   <- hasil pelatihan
 #
-# edge/
-#   └── model.tflite        ← Hasil convert_model.py (untuk IoT/Edge device)
+# Pelatihan ulang: train_yamnet.py (klasifikasi) dan train_gate_v3.py (gate)
+# di folder ai-service/.
 #
-# Setelah menaruh file, ubah MODEL_BACKEND di .env:
-#   MODEL_BACKEND=onnx      ← jika pakai .onnx (direkomendasikan)
-#   MODEL_BACKEND=pytorch   ← jika pakai .pth
-#   MODEL_BACKEND=keras     ← jika pakai .keras
-#   MODEL_BACKEND=dummy     ← mode development tanpa model
+# Backend lain yang didukung loader (filenya tidak disertakan):
+#   pytorch  -> core/model.pth
+#   keras    -> core/model.keras
+#   xgboost  -> core/xgb_model.joblib
+#
+# Atur backend di ai-service/.env:
+#   MODEL_BACKEND=onnx     <- direkomendasikan
+#   MODEL_BACKEND=dummy    <- mode pengembangan tanpa model (bawaan .env.example)
