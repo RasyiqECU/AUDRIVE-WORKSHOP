@@ -254,7 +254,8 @@ class ApprovalService
             $order->decrement('paid_idr', $amount);
             $order->refresh();
 
-            if (! $order->isFullyPaid()) {
+            // Pesanan kedaluwarsa/batal tidak boleh "hidup lagi" hanya karena dananya dikembalikan
+            if (! $order->isFullyPaid() && $order->status === SalesOrderStatus::Paid) {
                 $order->update(['status' => SalesOrderStatus::Pending]);
             }
         }
