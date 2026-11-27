@@ -472,7 +472,7 @@
                                 {{ $order->order_number ?? ('TRX-' . str_pad((string)$order->id, 5, '0', STR_PAD_LEFT)) }}
                             </td>
                             <td class="py-3 px-3 text-silver-dim">
-                                {{ $order->created_at->translatedFormat('d M Y H:i') }}
+                                {{ ($order->paid_at ?? $order->created_at)->translatedFormat('d M Y H:i') }}
                             </td>
                             <td class="py-3 px-3 font-sans text-silver-bright">
                                 {{ $order->customer?->user?->name ?? 'Guest Customer' }}

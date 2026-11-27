@@ -260,7 +260,7 @@
         @if(in_array($role, ['super-admin', 'manager', 'sales', 'cashier', 'inventory'], true))
             <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Laporan</p>
 
-            <a href="{{ route($role === 'inventory' ? 'admin.reports.inventory' : 'admin.reports.index') }}" class="sidebar-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
+            <a href="{{ route(match ($role) { 'inventory' => 'admin.reports.inventory', 'cashier' => 'admin.reports.finance', default => 'admin.reports.index' }) }}" class="sidebar-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
                 <span class="text-sm">📊</span>
                 <span class="font-heading text-xs font-medium tracking-wide">
                     {{ match(true) {

@@ -283,8 +283,8 @@ class DashboardService
 
         // Recent High-Value Transactions in period
         $recentTransactions = SalesOrder::with(['customer.user'])
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->latest()
+            ->inPeriod($startDate, $endDate)
+            ->orderByRaw('COALESCE(paid_at, created_at) desc')
             ->limit(8)
             ->get();
 

@@ -44,6 +44,25 @@ class Payment extends Model
         ];
     }
 
+    /** Catat siapa yang menerima uang, dasar Laporan Shift Cashier. */
+    protected static function booted(): void
+    {
+        static::creating(function (Payment $payment) {
+            if ($payment->status === PaymentStatus::Success && in_array(auth()->user()?->role, ['cashier', 'super-admin'], true)) {
+                $payment->verified_by ??= auth()->id();
+            }
+        });
+    }
+
+    /** Uang yang benar-benar diterima seorang kasir (termasuk yang kemudian direfund). */
+    public function scopeReceivedBy($query, int $userId, $start = null, $end = null)
+    {
+        return $query->where('verified_by', $userId)
+            ->where('method', '!=', 'refund')
+            ->whereIn('status', [PaymentStatus::Success, PaymentStatus::Refunded])
+            ->when($start && $end, fn ($q) => $q->whereBetween('paid_at', [$start, $end]));
+    }
+
     public function paymentable(): MorphTo
     {
         return $this->morphTo();

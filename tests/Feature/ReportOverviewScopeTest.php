@@ -32,7 +32,7 @@ test('ringkasan laporan hanya menghitung data sesuai role', function () {
 
     $overview(User::factory()->manager()->create())->assertViewHas('totalRevenue', 5_740)->assertSee('Bengkel & Servis WO', false);
     $overview($this->sales)->assertViewHas('totalRevenue', 5_000)->assertDontSee('Bengkel & Servis WO', false)->assertDontSee('Suku Cadang & Kasir POS', false);
-    $overview($this->cashier)->assertViewHas('totalRevenue', 700)->assertDontSee('Bengkel & Servis WO', false);
+    $this->actingAs($this->cashier)->get(route('admin.reports.index'))->assertRedirect(route('admin.reports.finance'));
 });
 
 test('gudang diarahkan ke laporan inventori tanpa melihat omzet', function () {
