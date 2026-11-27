@@ -51,7 +51,7 @@ class PosController extends Controller
             ->whereNull('paid_at')
             ->whereNotIn('code', $paidWoCodes)
             ->where(fn ($q) => $q->where('total_idr', '>', 0)->orWhere('is_warranty', true))
-            ->with(['vehicle.customer.user', 'items.sparePart', 'mechanic'])
+            ->with(['vehicle.customer.user', 'items.sparePart', 'mechanic', 'salesOrder'])
             ->latest()
             ->get();
 
@@ -115,7 +115,7 @@ class PosController extends Controller
             'items.*.spare_part_id' => 'required|exists:spare_parts,id',
             'items.*.qty' => 'required|integer|min:1',
             'customer_id' => 'nullable|exists:customers,id',
-            'discount_idr' => 'nullable|integer|min:0',
+            'discount_idr' => $this->discountRule($request),
             'payment_method' => 'required|in:cash,card,transfer,ewallet',
         ]);
 
@@ -141,7 +141,7 @@ class PosController extends Controller
     public function payWorkOrder(Request $request, WorkOrder $workOrder): RedirectResponse
     {
         $validated = $request->validate([
-            'discount_idr' => 'nullable|integer|min:0',
+            'discount_idr' => $this->discountRule($request),
             'payment_method' => 'required|in:cash,card,transfer,ewallet',
         ]);
 
@@ -164,7 +164,7 @@ class PosController extends Controller
     public function payCarSales(Request $request, SalesOrder $salesOrder): RedirectResponse
     {
         $validated = $request->validate([
-            'discount_idr' => 'nullable|integer|min:0',
+            'discount_idr' => $this->discountRule($request),
             'payment_method' => 'required|in:cash,card,transfer,ewallet',
         ]);
 
@@ -202,6 +202,14 @@ class PosController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    /** Diskon khusus wajib disetujui Manager; hanya Super Admin yang bisa mengisi langsung. */
+    private function discountRule(Request $request): array
+    {
+        $max = $request->user()->role === 'super-admin' ? [] : ['max:0'];
+
+        return ['nullable', 'integer', 'min:0', ...$max];
     }
 
     public function receipt(SalesOrder $salesOrder): View

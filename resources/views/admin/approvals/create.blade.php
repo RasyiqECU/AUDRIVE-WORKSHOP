@@ -61,7 +61,7 @@
                     <option value="">— Pilih Sales Order —</option>
                     @foreach($salesOrders as $order)
                         <option value="{{ $order->id }}">
-                            #{{ $order->code }} — {{ $order->customer?->name ?? '-' }} (Rp {{ number_format($order->total_idr, 0, ',', '.') }})
+                            #{{ $order->code }} — {{ $order->customer?->user?->name ?? '-' }} (Rp {{ number_format($order->total_idr, 0, ',', '.') }})
                         </option>
                     @endforeach
                 </select>
