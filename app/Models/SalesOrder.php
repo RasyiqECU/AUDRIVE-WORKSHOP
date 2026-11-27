@@ -44,6 +44,7 @@ class SalesOrder extends Model
         'reserved_until',
         'prepared_at',
         'handed_over_at',
+        'deposit_idr',
     ];
 
     protected function casts(): array
@@ -57,6 +58,7 @@ class SalesOrder extends Model
             'total_idr' => 'integer',
             'paid_idr' => 'integer',
             'shipping_fee_idr' => 'integer',
+            'deposit_idr' => 'integer',
             'stock_reserved' => 'boolean',
             'reserved_until' => 'datetime',
             'prepared_at' => 'datetime',
@@ -124,6 +126,14 @@ class SalesOrder extends Model
         return $this->total_idr - $this->paid_idr;
     }
 
+    /** Nominal yang harus dibayar sekarang: booking fee dulu, lalu sisanya. */
+    public function amountDue(): int
+    {
+        return $this->paid_idr <= 0 && $this->deposit_idr > 0
+            ? $this->deposit_idr
+            : max(0, $this->total_idr - $this->paid_idr);
+    }
+
     /** Halaman tempat customer memantau pesanan ini. */
     public function customerUrl(): string
     {
@@ -142,7 +152,7 @@ class SalesOrder extends Model
     {
         return $this->isOnlineTransfer()
             && $this->status === SalesOrderStatus::Pending
-            && in_array($this->payment_status, [PaymentStatus::WaitingUpload->value, PaymentStatus::Rejected->value], true)
+            && in_array($this->payment_status, [PaymentStatus::WaitingUpload->value, PaymentStatus::Rejected->value, 'dp_paid'], true)
             && (! $this->reserved_until || $this->reserved_until->isFuture());
     }
 
@@ -150,6 +160,10 @@ class SalesOrder extends Model
     public function progressLabel(): string
     {
         if ($this->status === SalesOrderStatus::Pending) {
+            if ($this->payment_status === 'dp_paid') {
+                return 'Booking Fee Diterima - Menunggu Pelunasan';
+            }
+
             return match (true) {
                 $this->isOnlineTransfer() => PaymentStatus::tryFrom((string) $this->payment_status)?->label() ?? 'Menunggu Pembayaran',
                 default => 'Menunggu Pembayaran di Kasir',

@@ -79,6 +79,20 @@
             </a>
         @endif
 
+        {{-- Titip jual & serah terima mobil --}}
+        @if(in_array($role, ['super-admin', 'manager', 'sales', 'mechanic'], true))
+            <a href="{{ route('admin.consignments.index') }}" class="sidebar-item {{ request()->routeIs('admin.consignments.*') ? 'active' : '' }}">
+                <span class="text-sm">🤝</span>
+                <span class="font-heading text-xs font-medium tracking-wide">Titip Jual</span>
+            </a>
+        @endif
+        @if(in_array($role, ['super-admin', 'sales'], true))
+            <a href="{{ route('admin.car-handovers.index') }}" class="sidebar-item {{ request()->routeIs('admin.car-handovers.*') ? 'active' : '' }}">
+                <span class="text-sm">🔑</span>
+                <span class="font-heading text-xs font-medium tracking-wide">Serah Terima Mobil</span>
+            </a>
+        @endif
+
         {{-- Section Workshop & Servis (Super Admin, Manager, Cashier, Sales, Mechanic) --}}
         @if(in_array($role, ['super-admin', 'cashier', 'sales', 'mechanic'], true))
             <p class="font-heading text-[9px] uppercase tracking-[0.2em] text-silver-dim px-3 mb-2 mt-3">Workshop & Servis</p>

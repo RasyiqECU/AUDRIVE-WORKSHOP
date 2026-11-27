@@ -83,6 +83,26 @@
                     @endif
                 </div>
 
+                @if($car->status === \App\Enums\CarUnitStatus::Available && auth()->user()?->customer && ! $car->isSoldBy(auth()->user()->customer))
+                    <form method="POST" action="{{ route('marketplace.booking.store', $car) }}" class="mt-6 p-4 border border-giallo/50 rounded space-y-3 text-xs" x-data="{ delivery: false }">
+                        @csrf
+                        <p class="text-giallo font-heading uppercase">Booking Unit — Booking Fee Rp {{ number_format(\App\Services\PaymentSettings::bookingFee(), 0, ',', '.') }}</p>
+                        <div class="grid sm:grid-cols-2 gap-3">
+                            <select name="payment_channel" class="bg-nero border border-gunmetal px-3 py-2 text-silver-bright">
+                                <option value="online_transfer">Bayar transfer online</option>
+                                <option value="cashier">Bayar di kasir</option>
+                            </select>
+                            <select name="fulfillment_method" @change="delivery = $event.target.value === 'delivery'" class="bg-nero border border-gunmetal px-3 py-2 text-silver-bright">
+                                <option value="self_pickup">Ambil sendiri</option>
+                                <option value="delivery">Antar towing (+Rp {{ number_format(\App\Services\PaymentSettings::towingFee(), 0, ',', '.') }})</option>
+                            </select>
+                        </div>
+                        <textarea x-show="delivery" :required="delivery" name="shipping_address" rows="2" placeholder="Alamat pengantaran" class="w-full bg-nero border border-gunmetal px-3 py-2 text-silver-bright"></textarea>
+                        <button type="submit" class="px-4 py-2 bg-giallo text-nero font-heading font-bold uppercase rounded">Booking Sekarang</button>
+                        <p class="text-silver-dim">Unit terkunci setelah booking fee diterima. Pelunasan maksimal {{ \App\Services\PaymentSettings::settlementDays() }} hari.</p>
+                    </form>
+                @endif
+
                 {{-- Legalitas & Kelengkapan --}}
                 <div class="mt-6 pt-4 border-t border-gunmetal/40 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-xs">
                     <div class="bg-steel/20 p-2.5 rounded border border-gunmetal/30">

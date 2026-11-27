@@ -14,6 +14,27 @@ class PaymentSettings
 
     public const DEFAULT_DEADLINE_HOURS = 24;
 
+    public const DEFAULT_BOOKING_FEE = 5_000_000;
+
+    public const DEFAULT_SETTLEMENT_DAYS = 7;
+
+    public const DEFAULT_TOWING_FEE = 750_000;
+
+    public static function bookingFee(): int
+    {
+        return (int) SettingService::get('booking_fee_idr', self::DEFAULT_BOOKING_FEE);
+    }
+
+    public static function settlementDays(): int
+    {
+        return max(1, (int) SettingService::get('settlement_days', self::DEFAULT_SETTLEMENT_DAYS));
+    }
+
+    public static function towingFee(): int
+    {
+        return (int) SettingService::get('towing_fee_idr', self::DEFAULT_TOWING_FEE);
+    }
+
     /** @return list<array{bank: string, number: string, holder: string}> */
     public static function accounts(): array
     {

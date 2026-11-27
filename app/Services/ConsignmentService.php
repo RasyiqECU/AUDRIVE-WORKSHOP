@@ -38,22 +38,55 @@ class ConsignmentService
             return $car;
         });
 
-        $this->notificationService->notifyRoles(['sales'], 'consignment', [
+        $this->notificationService->notifyRoles(['sales', 'mechanic'], 'consignment', [
             'title' => "Pengajuan Titip Jual: {$car->full_name}",
             'message' => "{$seller->user?->name} mengajukan titip jual. Jadwalkan inspeksi.",
-            'action_url' => route('admin.cars.show', $car),
+            'action_url' => route('admin.consignments.show', $car),
         ]);
 
         return $car;
     }
 
-    public function approve(CarUnit $car, array $data): void
+    /** Inspeksi kelayakan dan estimasi biaya perbaikan oleh Kepala Mekanik. */
+    public function inspect(CarUnit $car, User $mechanic, array $data): void
     {
         $this->assertStatus($car, [CarUnitStatus::InInspection]);
 
-        $car->update($data + ['status' => CarUnitStatus::Available]);
+        $car->inspections()->create($data + [
+            'inspector_id' => $mechanic->id,
+            'checklist' => [],
+            'inspected_at' => now(),
+        ]);
+
+        $this->notificationService->notifyRoles(['manager'], 'consignment', [
+            'title' => "Persetujuan Titip Jual: {$car->full_name}",
+            'message' => 'Inspeksi selesai. Tentukan harga dan komisi.',
+            'action_url' => route('admin.consignments.show', $car),
+        ]);
+    }
+
+    /** Manager menyetujui taksiran harga, komisi, dan potongan biaya servis. */
+    public function approve(CarUnit $car, User $manager, array $data): void
+    {
+        $this->assertStatus($car, [CarUnitStatus::InInspection]);
+
+        $inspection = $car->latestInspection()->first();
+        if (! $inspection || $inspection->result === 'fail') {
+            throw new \InvalidArgumentException('Unit belum diinspeksi atau dinyatakan tidak layak.');
+        }
+
+        $car->update($data + [
+            'status' => CarUnitStatus::Available,
+            'price_approved_by' => $manager->id,
+            'price_approved_at' => now(),
+        ]);
 
         $this->notifySeller($car, "{$car->full_name} sudah tayang di marketplace.");
+        $this->notificationService->notifyRoles(['sales'], 'consignment', [
+            'title' => "Siap Dipasarkan: {$car->full_name}",
+            'message' => 'Harga dan komisi sudah disetujui Manager.',
+            'action_url' => route('admin.consignments.show', $car),
+        ]);
     }
 
     public function reject(CarUnit $car, string $reason): void
@@ -89,7 +122,8 @@ class ConsignmentService
                 throw new \InvalidArgumentException('Unit ini tidak menunggu pembayaran ke penjual.');
             }
 
-            $payout = max(0, $sale->salesOrder->total_idr - (int) $car->commission_idr);
+            // Biaya towing milik AUDrive; komisi dan biaya servis dipotong dari harga jual
+            $payout = max(0, $sale->subtotal_idr - (int) $sale->salesOrder->discount_idr - (int) $car->commission_idr - (int) $car->repair_cost_idr);
             $car->update(['seller_payout_idr' => $payout, 'seller_paid_at' => now(), 'seller_paid_by' => $cashier->id]);
 
             $this->notifySeller($car, "Hasil penjualan {$car->full_name} sebesar Rp ".number_format($payout, 0, ',', '.').' sudah dibayarkan.');

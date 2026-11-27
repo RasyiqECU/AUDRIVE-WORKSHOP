@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Enums\PaymentStatus;
 use App\Enums\SalesOrderStatus;
+use App\Enums\SalesOrderType;
 use App\Models\Payment;
 use App\Models\SalesOrder;
 use App\Models\User;
@@ -77,7 +78,10 @@ class PaymentVerificationService
         return DB::transaction(function () use ($payment, $cashier) {
             [$payment, $order] = $this->lockWaiting($payment);
 
-            if ($payment->amount_idr < $order->total_idr - $order->paid_idr) {
+            $due = $order->amountDue();
+            $isDeposit = $order->paid_idr <= 0 && $order->deposit_idr > 0 && $order->deposit_idr < $order->total_idr;
+
+            if ($payment->amount_idr < $due) {
                 throw new \InvalidArgumentException('Nominal transfer kurang dari tagihan. Gunakan Reject dengan alasan "Nominal kurang".');
             }
 
@@ -86,10 +90,15 @@ class PaymentVerificationService
                 'paid_at' => now(),
                 'verified_by' => $cashier->id,
                 'verified_at' => now(),
+                'purpose' => $isDeposit ? 'booking_fee' : ($order->deposit_idr > 0 ? 'settlement' : 'full'),
             ]);
-            $order->increment('paid_idr', $order->total_idr - $order->paid_idr);
+            $order->increment('paid_idr', $due);
 
-            $this->checkoutService->markPaid($order, $cashier->id);
+            if ($order->paid_idr >= $order->total_idr) {
+                $this->checkoutService->markPaid($order, $cashier->id);
+            } else {
+                app(CarBookingService::class)->recordDeposit($order);
+            }
 
             return $order;
         });
@@ -137,6 +146,9 @@ class PaymentVerificationService
                 }
 
                 $this->reservations->release($order);
+                if ($order->type === SalesOrderType::CarSales) {
+                    app(CarBookingService::class)->releaseExpired($order);
+                }
                 $order->update(['status' => SalesOrderStatus::Expired, 'payment_status' => PaymentStatus::Expired]);
                 $this->notifyCustomer($order, "Pesanan Kedaluwarsa: #{$order->code}", 'Batas waktu pembayaran terlewati sehingga pesanan dibatalkan.');
                 $expired++;

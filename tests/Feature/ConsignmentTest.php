@@ -35,12 +35,23 @@ function submitConsignment(Customer $seller): CarUnit
     return CarUnit::where('seller_customer_id', $seller->id)->firstOrFail();
 }
 
-function approvePayload(): array
+/** Kepala Mekanik inspeksi, lalu Manager menyetujui harga dan komisi. */
+function publishConsignment(CarUnit $car, int $repairCost = 0): void
 {
-    return ['min_price_idr' => 380_000_000, 'price_sell_idr' => 400_000_000, 'commission_idr' => 10_000_000];
+    test()->actingAs(User::factory()->mechanic()->create())->post(route('admin.consignments.inspect', $car), [
+        'result' => 'pass',
+        'notes' => 'Mesin sehat',
+        'estimated_repair_idr' => $repairCost,
+    ]);
+    test()->actingAs(User::factory()->manager()->create())->post(route('admin.consignments.approve', $car), [
+        'min_price_idr' => 380_000_000,
+        'price_sell_idr' => 400_000_000,
+        'commission_idr' => 10_000_000,
+        'repair_cost_idr' => $repairCost,
+    ])->assertSessionHasNoErrors();
 }
 
-test('alur titip jual: ajukan → disetujui sales → dipesan → dibayar → penjual dibayar', function () {
+test('alur titip jual: ajukan → inspeksi → disetujui manager → dipesan → dibayar → penjual dibayar', function () {
     $seller = consignmentCustomer();
     $buyer = consignmentCustomer();
     $sales = User::factory()->sales()->create();
@@ -53,7 +64,7 @@ test('alur titip jual: ajukan → disetujui sales → dipesan → dibayar → pe
     $this->actingAs($buyer->user)->get(route('marketplace.show', $car->slug))->assertNotFound();
     $this->getJson("/api/v1/cars/{$car->id}")->assertNotFound();
 
-    $this->actingAs($sales)->post(route('admin.consignments.approve', $car), approvePayload())->assertSessionHasNoErrors();
+    publishConsignment($car, 5_000_000);
     $this->actingAs($buyer->user)
         ->get(route('marketplace.show', $car->slug))
         ->assertOk()
@@ -72,13 +83,13 @@ test('alur titip jual: ajukan → disetujui sales → dipesan → dibayar → pe
     $this->actingAs($cashier)->get(route('admin.pos.index'))->assertSee('Pembayaran ke Penjual Titip Jual');
     $this->actingAs($cashier)->post(route('admin.pos.consignments.payout', $car));
     $this->actingAs($cashier)->post(route('admin.pos.consignments.payout', $car))->assertSessionHas('error');
-    expect($car->fresh()->seller_payout_idr)->toBe(390_000_000);
+    expect($car->fresh()->seller_payout_idr)->toBe(385_000_000);
 });
 
 test('penjual tidak bisa memesan mobilnya sendiri dan hanya bisa menarik sebelum dipesan', function () {
     $seller = consignmentCustomer();
     $car = submitConsignment($seller);
-    $this->actingAs(User::factory()->sales()->create())->post(route('admin.consignments.approve', $car), approvePayload());
+    publishConsignment($car);
 
     $this->actingAs($seller->user)
         ->post(route('marketplace.offer.store', $car->slug), ['amount_idr' => 400_000_000])
@@ -93,7 +104,7 @@ test('penjual tidak bisa memesan mobilnya sendiri dan hanya bisa menarik sebelum
 test('tawaran di bawah harga minimum butuh persetujuan penjual', function () {
     $sales = User::factory()->sales()->create();
     $car = submitConsignment(consignmentCustomer());
-    $this->actingAs($sales)->post(route('admin.consignments.approve', $car), approvePayload());
+    publishConsignment($car);
     $this->actingAs(consignmentCustomer()->user)->post(route('marketplace.offer.store', $car->slug), ['amount_idr' => 300_000_000]);
     $offer = Offer::where('car_unit_id', $car->id)->firstOrFail();
 
@@ -102,6 +113,20 @@ test('tawaran di bawah harga minimum butuh persetujuan penjual', function () {
 
     $this->actingAs($sales)->post(route('admin.offers.accept', $offer), ['seller_approved' => 1]);
     expect($offer->fresh()->status)->toBe(OfferStatus::Accepted);
+});
+
+test('manager tidak bisa menyetujui sebelum inspeksi dan sales tidak bisa menyetujui', function () {
+    $car = submitConsignment(consignmentCustomer());
+    $payload = ['min_price_idr' => 380_000_000, 'price_sell_idr' => 400_000_000, 'commission_idr' => 10_000_000, 'repair_cost_idr' => 0];
+
+    $this->actingAs(User::factory()->manager()->create())
+        ->post(route('admin.consignments.approve', $car), $payload)
+        ->assertSessionHas('error');
+    $this->actingAs(User::factory()->sales()->create())
+        ->post(route('admin.consignments.approve', $car), $payload)
+        ->assertForbidden();
+
+    expect($car->fresh()->status)->toBe(CarUnitStatus::InInspection);
 });
 
 test('filter marketplace memisahkan mobil baru dan bekas', function () {

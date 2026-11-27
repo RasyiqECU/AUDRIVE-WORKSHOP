@@ -231,32 +231,9 @@
     </div>
 </div>
 @if($car->isConsignment())
-    @php $field = 'w-full bg-nero border border-gunmetal px-3 py-2 text-xs text-silver-bright focus:border-giallo focus:outline-none'; @endphp
-    <div class="panel border border-giallo/40 bg-carbon p-5 mt-6 space-y-3 text-xs text-silver">
-        <h3 class="font-heading text-xs uppercase tracking-wider text-giallo">Titip Jual</h3>
-        <p>Penjual: {{ $car->seller?->user?->name }} ({{ $car->seller?->user?->phone }}) &bull; Harga diminta: Rp {{ number_format($car->asking_price_idr, 0, ',', '.') }}</p>
-        <p>Kekurangan: {{ $car->condition_defects }}</p>
-        <p>Penambahan: {{ $car->condition_additions ?: '-' }}</p>
-        <p>Garansi menurut penjual: {{ $car->seller_warranty_info }} {{ $car->seller_warranty_verified ? '(terverifikasi)' : '(belum diverifikasi)' }}</p>
-        @if($car->min_price_idr)
-            <p>Harga minimum: Rp {{ number_format($car->min_price_idr, 0, ',', '.') }} &bull; Komisi: Rp {{ number_format($car->commission_idr, 0, ',', '.') }}</p>
-        @endif
-
-        @if($car->status === \App\Enums\CarUnitStatus::InInspection && in_array(auth()->user()->role, ['super-admin', 'sales'], true))
-            <form method="POST" action="{{ route('admin.consignments.approve', $car) }}" class="grid md:grid-cols-3 gap-3 pt-3 border-t border-gunmetal/40">
-                @csrf
-                <label>Harga minimum<input type="number" name="min_price_idr" required class="{{ $field }}"></label>
-                <label>Harga tayang<input type="number" name="price_sell_idr" required value="{{ $car->price_sell_idr }}" class="{{ $field }}"></label>
-                <label>Komisi AUDrive<input type="number" name="commission_idr" required min="0" class="{{ $field }}"></label>
-                <label class="md:col-span-3 flex items-center gap-2"><input type="checkbox" name="seller_warranty_verified" value="1"> Garansi penjual sudah diverifikasi</label>
-                <button type="submit" class="px-4 py-2 bg-giallo text-nero font-heading font-bold uppercase rounded">Setujui &amp; Tayangkan</button>
-            </form>
-            <form method="POST" action="{{ route('admin.consignments.reject', $car) }}" class="flex flex-wrap gap-2">
-                @csrf
-                <input type="text" name="reason" required placeholder="Alasan penolakan" class="flex-1 bg-nero border border-gunmetal px-3 py-2 text-silver-bright">
-                <button type="submit" class="px-4 py-2 border border-danger/50 text-danger font-heading font-bold uppercase rounded">Tolak</button>
-            </form>
-        @endif
+    <div class="panel border border-giallo/40 bg-carbon p-5 mt-6 flex flex-wrap justify-between gap-2 text-xs text-silver">
+        <span>Unit titip jual dari {{ $car->seller?->user?->name }}.</span>
+        <a href="{{ route('admin.consignments.show', $car) }}" class="text-giallo underline">Inspeksi, harga &amp; komisi</a>
     </div>
 @endif
 @endsection

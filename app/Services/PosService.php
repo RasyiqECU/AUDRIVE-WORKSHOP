@@ -280,7 +280,19 @@ class PosService
 
             $subtotal = $salesOrder->subtotal_idr;
             $discount = min(max($discountIdr, (int) $salesOrder->discount_idr), $subtotal);
-            $total = max(0, $subtotal - $discount);
+            $total = max(0, $subtotal - $discount) + $salesOrder->shipping_fee_idr;
+            $due = max(0, $total - $salesOrder->paid_idr);
+
+            // Booking yang belum membayar fee tidak boleh menyerobot unit yang sudah dikunci orang lain
+            $unitTaken = $salesOrder->deposit_idr > 0 && $salesOrder->paid_idr <= 0
+                && CarUnit::whereIn('id', $salesOrder->items->pluck('car_unit_id')->filter())
+                    ->where('status', '!=', CarUnitStatus::Available)->exists();
+            if ($unitTaken || $salesOrder->status !== SalesOrderStatus::Pending) {
+                throw new \InvalidArgumentException('Pesanan ini tidak bisa dibayar: unit sudah diambil atau pesanan tidak aktif.');
+            }
+            if ($salesOrder->payment_status === PaymentStatus::WaitingVerification->value) {
+                throw new \InvalidArgumentException('Selesaikan dulu bukti transfer di Verifikasi Pembayaran.');
+            }
 
             $salesOrder->update([
                 'status' => SalesOrderStatus::Paid,
@@ -288,6 +300,7 @@ class PosService
                 'total_idr' => $total,
                 'paid_idr' => $total,
                 'payment_status' => PaymentStatus::Success,
+                'reserved_until' => null,
                 'notes' => trim(($salesOrder->notes ?? '').' | Lunas via '.strtoupper($paymentMethod)),
             ]);
 
@@ -304,7 +317,7 @@ class PosService
                 'paymentable_id' => $salesOrder->id,
                 'method' => $paymentMethod,
                 'status' => PaymentStatus::Success,
-                'amount_idr' => $total,
+                'amount_idr' => $due,
                 'reference' => 'CAR-'.strtoupper(Str::random(10)),
                 'paid_at' => now(),
             ]);
