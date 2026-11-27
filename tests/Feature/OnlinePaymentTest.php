@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\PaymentVerificationService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\Sanctum;
 
 beforeEach(fn () => Storage::fake('local'));
 
@@ -189,4 +190,32 @@ test('penjualan kasir tidak bisa memakai stok yang sedang dikunci', function () 
         ->assertSessionHas('error');
 
     expect($part->fresh()->stock)->toBe(3);
+});
+
+test('API: customer checkout transfer, melihat tagihan, dan mengunggah bukti', function () {
+    $customer = buyer();
+    $part = stockPart(5);
+    Cart::create(['customer_id' => $customer->id])->items()->create(['spare_part_id' => $part->id, 'qty' => 1, 'price_idr' => 100_000]);
+    Sanctum::actingAs($customer->user);
+
+    $this->postJson('/api/v1/checkout', ['shipping_method' => 'pickup', 'payment_channel' => 'online_transfer'])->assertCreated();
+    $order = SalesOrder::where('customer_id', $customer->id)->firstOrFail();
+
+    $this->getJson("/api/v1/orders/{$order->id}")
+        ->assertOk()
+        ->assertJsonPath('data.amount_due_idr', 111_000)
+        ->assertJsonPath('data.can_upload_proof', true);
+
+    $this->post("/api/v1/orders/{$order->id}/payment-proof", [
+        'proof' => UploadedFile::fake()->image('bukti.webp'),
+        'sender_name' => 'API',
+        'destination_bank' => 'Mandiri',
+        'amount_idr' => 111_000,
+    ], ['Accept' => 'application/json'])->assertCreated();
+
+    expect($part->fresh()->booked_stock)->toBe(1)
+        ->and($order->fresh()->payment_status)->toBe(PaymentStatus::WaitingVerification->value);
+
+    Sanctum::actingAs(buyer()->user);
+    $this->getJson("/api/v1/orders/{$order->id}")->assertForbidden();
 });

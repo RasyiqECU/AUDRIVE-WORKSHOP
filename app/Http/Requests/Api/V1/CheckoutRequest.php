@@ -15,7 +15,7 @@ class CheckoutRequest extends FormRequest
     {
         return [
             'shipping_method' => ['required', 'in:pickup,delivery'],
-            'shipping_address' => ['nullable', 'string', 'max:500'],
+            'shipping_address' => ['required_if:shipping_method,delivery', 'nullable', 'string', 'max:500'],
             'payment_channel' => ['nullable', 'in:cashier,online_transfer'],
         ];
     }

@@ -4,41 +4,21 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePaymentProofRequest;
 use App\Models\Payment;
 use App\Models\SalesOrder;
-use App\Services\PaymentSettings;
 use App\Services\PaymentVerificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PaymentProofController extends Controller
 {
-    public function store(Request $request, SalesOrder $order, PaymentVerificationService $payments): RedirectResponse
+    public function store(StorePaymentProofRequest $request, SalesOrder $order, PaymentVerificationService $payments): RedirectResponse
     {
-        abort_unless($request->user()->customer && $order->customer_id === $request->user()->customer->id, 403);
-
-        $data = $request->validate([
-            'proof' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'sender_name' => ['required', 'string', 'max:100'],
-            'destination_bank' => ['required', Rule::in(array_column(PaymentSettings::accounts(), 'bank'))],
-            'amount_idr' => ['required', 'integer', 'min:1'],
-        ], [
-            'proof.required' => 'Bukti transfer wajib diunggah.',
-            'proof.uploaded' => 'Gambar gagal diunggah. Ukuran maksimal 2 MB.',
-            'proof.image' => 'Bukti harus berupa gambar.',
-            'proof.mimes' => 'Format bukti harus JPG, PNG, atau WEBP.',
-            'proof.max' => 'Ukuran bukti maksimal 2 MB.',
-        ]);
-
         try {
-            $payments->submitProof($order, [
-                'sender_name' => $data['sender_name'],
-                'destination_bank' => $data['destination_bank'],
-                'amount_idr' => (int) $data['amount_idr'],
-            ], $request->file('proof'));
+            $payments->submitProof($order, $request->transferData(), $request->file('proof'));
         } catch (\InvalidArgumentException $e) {
             return back()->with('error', $e->getMessage());
         }

@@ -91,6 +91,7 @@ test('customer menemukan menu jual mobil di dashboard', function () {
     $this->actingAs($user)->get(route('customer.dashboard'))
         ->assertOk()
         ->assertSee('Jual Mobil Saya')
+        ->assertSee(route('parts.orders.index'))
         ->assertSee(route('marketplace.sell.create'));
 
     $this->actingAs($user)->get(route('marketplace.sell.create'))->assertOk();

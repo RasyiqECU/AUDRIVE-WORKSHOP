@@ -37,6 +37,11 @@
             <span class="font-heading text-xs font-medium tracking-wide">Loyalty Point</span>
         </a>
 
+        <a href="{{ route('parts.orders.index') }}" class="sidebar-item {{ request()->routeIs('parts.orders.*') ? 'active' : '' }}">
+            <span class="text-sm">📦</span>
+            <span class="font-heading text-xs font-medium tracking-wide">Pesanan & Pembayaran</span>
+        </a>
+
         <a href="{{ route('customer.invoices.index') }}" class="sidebar-item {{ request()->routeIs('customer.invoices.*') ? 'active' : '' }}">
             <span class="text-sm">🧾</span>
             <span class="font-heading text-xs font-medium tracking-wide">Tagihan & Invoice</span>
