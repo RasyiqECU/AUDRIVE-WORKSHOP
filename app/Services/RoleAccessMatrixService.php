@@ -538,7 +538,7 @@ class RoleAccessMatrixService
             ],
             'allowed_actions' => [
                 'Melihat Database Pelanggan dan Loyalitas lewat /admin/customers dan /admin/loyalty (tanpa menu di sidebar)',
-                'Ringkasan Laporan hanya menampilkan transaksi yang diproses sendiri',
+                'Laporan Shift menampilkan uang yang diterima atau diverifikasi sendiri',
                 'Mengoperasikan modul Point of Sale (POS) untuk semua transaksi pembayaran',
                 'Menerima pembayaran tunai, transfer bank, kartu kredit/debit (EDC), dan QRIS',
                 'Memverifikasi bukti transfer online (approve / reject)',

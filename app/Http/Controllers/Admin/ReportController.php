@@ -11,6 +11,7 @@ use App\Enums\WorkOrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\CarUnit;
 use App\Models\Customer;
+use App\Models\Payment;
 use App\Models\SalesOrder;
 use App\Models\SparePart;
 use App\Models\SparePartCategory;
@@ -82,19 +83,18 @@ class ReportController extends Controller
      */
     public function index(Request $request): View|RedirectResponse
     {
-        // Cakupan ringkasan mengikuti laporan detail: gudang tanpa omzet, Sales dan Kasir hanya miliknya
+        // Gudang tanpa omzet; Kasir memakai Laporan Shift (uang yang diterimanya)
         $user = $request->user();
-        if ($user->role === 'inventory') {
-            return redirect()->route('admin.reports.inventory');
+        if (in_array($user->role, ['inventory', 'cashier'], true)) {
+            return redirect()->route($user->role === 'inventory' ? 'admin.reports.inventory' : 'admin.reports.finance');
         }
         $fullScope = in_array($user->role, ['super-admin', 'owner', 'manager'], true);
 
         [$startDate, $endDate, $preset] = $this->resolveDateRange($request);
 
-        // Omzet menurut tanggal lunas; Sales = yang ditanganinya, Kasir = yang diprosesnya
+        // Omzet menurut tanggal lunas; Sales hanya yang ditanganinya
         $salesQuery = SalesOrder::earnedBetween($startDate, $endDate)
-            ->when($user->role === 'sales', fn ($q) => $q->where('sales_id', $user->id))
-            ->when($user->role === 'cashier', fn ($q) => $q->where('created_by', $user->id));
+            ->when($user->role === 'sales', fn ($q) => $q->where('sales_id', $user->id));
         $woQuery = WorkOrder::query()->when(! $fullScope, fn ($q) => $q->whereRaw('1 = 0'));
 
         if ($startDate && $endDate) {
@@ -391,13 +391,13 @@ class ReportController extends Controller
 
         $query = SalesOrder::with(['customer.user', 'creator', 'payments', 'invoice']);
 
-        // Kasir hanya melihat rekapitulasi shift/transaksi miliknya
-        $user = $request->user();
-        if ($user && $user->role === 'cashier') {
-            $query->where('created_by', $user->id);
+        // Kasir melihat uang yang diterimanya pada periode ini; selain itu menurut transaksi
+        $cashierId = $request->user()->role === 'cashier' ? $request->user()->id : null;
+        if ($cashierId) {
+            $query->whereHas('payments', fn ($p) => $p->receivedBy($cashierId, $startDate, $endDate));
+        } else {
+            $query->inPeriod($startDate, $endDate);
         }
-
-        $query->inPeriod($startDate, $endDate);
 
         if ($type && $type !== 'all') {
             $query->where('type', $type);
@@ -430,12 +430,33 @@ class ReportController extends Controller
 
         $avgTransaction = (clone $paidOrdersQuery)->count() > 0 ? (int) ($totalIncome / (clone $paidOrdersQuery)->count()) : 0;
 
+        // Jembatan nilai transaksi ke omzet: hak pemilik titip jual dan refund
+        $totalGross = (int) (clone $paidOrdersQuery)->sum('total_idr');
+        $totalRefunded = (int) (clone $paidOrdersQuery)->sum('refunded_idr');
+        $consignorShare = max(0, $totalGross - $totalIncome - $totalRefunded);
+
+        $received = collect();
+        if ($cashierId) {
+            $received = Payment::receivedBy($cashierId, $startDate, $endDate)
+                ->where('paymentable_type', SalesOrder::class)
+                ->whereIn('paymentable_id', (clone $query)->pluck('id'))
+                ->when($method && $method !== 'all', fn ($q) => $q->where('method', $method))
+                ->get()->groupBy('paymentable_id')->map(fn ($rows) => (int) $rows->sum('amount_idr'));
+            $totalIncome = (int) $received->sum();
+            $avgTransaction = (int) round((float) $received->avg());
+        }
+
         $isPrint = $request->boolean('print');
         $query->orderByRaw('COALESCE(paid_at, created_at) desc');
         $allTransactions = $isPrint ? (clone $query)->get() : (clone $query)->paginate(15);
 
         return view('admin.reports.finance', compact(
             'allTransactions',
+            'cashierId',
+            'received',
+            'totalGross',
+            'totalRefunded',
+            'consignorShare',
             'totalIncome',
             'totalSubtotal',
             'totalDiscount',

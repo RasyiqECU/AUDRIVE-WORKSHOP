@@ -49,6 +49,7 @@ class SalesOrder extends Model
         'paid_at',
         'revenue_idr',
         'sales_id',
+        'refunded_idr',
     ];
 
     protected function casts(): array
@@ -69,6 +70,7 @@ class SalesOrder extends Model
             'handed_over_at' => 'datetime',
             'paid_at' => 'datetime',
             'revenue_idr' => 'integer',
+            'refunded_idr' => 'integer',
         ];
     }
 
@@ -85,7 +87,7 @@ class SalesOrder extends Model
 
             $order->paid_at ??= now();
 
-            if (! $order->exists || $order->isDirty(['status', 'paid_at', 'subtotal_idr', 'discount_idr', 'total_idr', 'shipping_fee_idr'])) {
+            if (! $order->exists || $order->isDirty(['status', 'paid_at', 'subtotal_idr', 'discount_idr', 'total_idr', 'shipping_fee_idr', 'refunded_idr'])) {
                 $order->revenue_idr = $order->calculateRevenue();
             }
         });
@@ -96,6 +98,11 @@ class SalesOrder extends Model
      * (ditambah towing bila ada); sisanya hak pemilik mobil.
      */
     public function calculateRevenue(): int
+    {
+        return max(0, $this->grossRevenue() - (int) $this->refunded_idr);
+    }
+
+    private function grossRevenue(): int
     {
         if ($this->type !== SalesOrderType::CarSales || ! $this->exists) {
             return (int) $this->total_idr;
@@ -234,6 +241,13 @@ class SalesOrder extends Model
 
     /** Status yang ditampilkan ke customer dan staf. */
     public function progressLabel(): string
+    {
+        $refunded = $this->status === SalesOrderStatus::Paid && $this->refunded_idr > 0;
+
+        return $this->stageLabel().($refunded ? ' (Refund Sebagian)' : '');
+    }
+
+    private function stageLabel(): string
     {
         if ($this->status === SalesOrderStatus::Pending) {
             if ($this->payment_status === 'dp_paid') {

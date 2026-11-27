@@ -310,4 +310,6 @@ Konfigurasi Sistem → Pembayaran & Pengiriman: rekening tujuan, ongkir, batas b
 - Periode laporan mengikuti tanggal lunas (`sales_orders.paid_at`), bukan tanggal pesanan.
 - Omzet (`revenue_idr`) = nilai transaksi. Khusus mobil titip jual: komisi + biaya servis (+ towing bila ada), bukan harga mobil.
 - `sales_id` = Sales yang menangani: penerima penawaran, yang check-in, lalu yang melakukan serah terima. Spare part tanpa Sales masuk "Penjualan Mandiri / Online"; mobil/servis yang belum ditangani masuk "Belum Ditangani Sales".
+- Refund sebagian: pesanan tetap lunas, omzet dikurangi (`refunded_idr`). Refund penuh: status Dikembalikan, omzet nol, invoice dibatalkan.
+- Laporan Shift Cashier dihitung dari pembayaran yang diterima/diverifikasinya (`payments.verified_by`).
 - Kolom diisi otomatis oleh model `SalesOrder`; jangan mengubah status lunas lewat query builder.

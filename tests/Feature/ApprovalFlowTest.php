@@ -114,7 +114,8 @@ test('approved refund request creates refund payment and reverses paid balance',
         ->and($refund->status)->toBe(PaymentStatus::Refunded)
         ->and($payment->status)->toBe(PaymentStatus::Refunded)
         ->and($order->paid_idr)->toBe(0)
-        ->and($order->status->value)->toBe('pending');
+        // Refund penuh menutup pesanan, bukan menagihnya kembali
+        ->and($order->status->value)->toBe('refunded');
 });
 
 test('approved price adjustment updates spare part price', function () {
