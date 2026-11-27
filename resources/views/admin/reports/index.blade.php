@@ -16,7 +16,7 @@
                 LAPORAN & ANALITIK EKSEKUTIF
             </h1>
             <p class="text-sm text-silver-dim mt-1">
-                Ikhtisar komprehensif seluruh divisi: Penjualan Supercar, Workshop Servis, Suku Cadang, dan Kasir Keuangan.
+                {{ $fullScope ? 'Ikhtisar komprehensif seluruh divisi: Penjualan Supercar, Workshop Servis, Suku Cadang, dan Kasir Keuangan.' : 'Ikhtisar transaksi yang Anda proses sendiri.' }}
             </p>
         </div>
         <div class="flex items-center gap-2">
@@ -123,7 +123,7 @@
         {{-- Total Revenue --}}
         <div class="panel border border-gunmetal bg-carbon p-5 relative overflow-hidden group hover:border-giallo/40 transition-premium">
             <div class="flex items-center justify-between text-silver-dim text-xs font-heading uppercase tracking-wider">
-                <span>Total Omzet Terverifikasi</span>
+                <span>{{ $fullScope ? 'Total Omzet Terverifikasi' : 'Omzet Transaksi Saya' }}</span>
                 <span class="text-giallo">💰</span>
             </div>
             <p class="font-mono text-xl lg:text-2xl font-bold text-giallo mt-2">
@@ -144,6 +144,7 @@
             <p class="text-[10px] text-silver-dim font-mono mt-1">Nilai: Rp {{ number_format($carRevenue, 0, ',', '.') }}</p>
         </div>
 
+        @if($fullScope)
         {{-- Completed Service --}}
         <div class="panel border border-gunmetal bg-carbon p-5 relative overflow-hidden group hover:border-verde/40 transition-premium">
             <div class="flex items-center justify-between text-silver-dim text-xs font-heading uppercase tracking-wider">
@@ -156,6 +157,9 @@
             <p class="text-[10px] text-silver-dim font-mono mt-1">Nilai Servis: Rp {{ number_format($workshopRevenue, 0, ',', '.') }}</p>
         </div>
 
+        @endif
+
+        @if(auth()->user()->role !== 'sales')
         {{-- Spare Parts & POS --}}
         <div class="panel border border-gunmetal bg-carbon p-5 relative overflow-hidden group hover:border-blue-400/40 transition-premium">
             <div class="flex items-center justify-between text-silver-dim text-xs font-heading uppercase tracking-wider">
@@ -165,10 +169,14 @@
             <p class="font-mono text-xl lg:text-2xl font-bold text-blue-400 mt-2">
                 Rp {{ number_format($sparePartRevenue, 0, ',', '.') }}
             </p>
-            <p class="text-[10px] text-silver-dim font-mono mt-1">Total pelanggan terdaftar: {{ $totalCustomers }}</p>
+            @if($fullScope)
+                <p class="text-[10px] text-silver-dim font-mono mt-1">Total pelanggan terdaftar: {{ $totalCustomers }}</p>
+            @endif
         </div>
+        @endif
     </div>
 
+    @if($fullScope)
     {{-- Departmental Revenue Breakdown Cards --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="panel border border-gunmetal bg-carbon p-4 space-y-2">
@@ -208,8 +216,10 @@
         </div>
     </div>
 
+    @endif
+
     {{-- Detail Performance Breakdown Grid --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 {{ $fullScope ? 'lg:grid-cols-2' : '' }} gap-6">
         {{-- Recent Sales Transactions --}}
         <div class="panel border border-gunmetal bg-carbon overflow-hidden">
             <div class="p-4 border-b border-gunmetal flex items-center justify-between bg-steel/20">
@@ -219,7 +229,7 @@
                         Transaksi Penjualan Periode Ini
                     </h2>
                 </div>
-                <a href="{{ route('admin.reports.sales', ['start_date' => $startDate?->format('Y-m-d'), 'end_date' => $endDate?->format('Y-m-d')]) }}" class="no-print text-[10px] font-heading uppercase text-giallo hover:underline">
+                <a href="{{ route(auth()->user()->role === 'cashier' ? 'admin.reports.finance' : 'admin.reports.sales', ['start_date' => $startDate?->format('Y-m-d'), 'end_date' => $endDate?->format('Y-m-d')]) }}" class="no-print text-[10px] font-heading uppercase text-giallo hover:underline">
                     Laporan Lengkap &rarr;
                 </a>
             </div>
@@ -262,6 +272,7 @@
             </div>
         </div>
 
+        @if($fullScope)
         {{-- Recent Work Orders --}}
         <div class="panel border border-gunmetal bg-carbon overflow-hidden">
             <div class="p-4 border-b border-gunmetal flex items-center justify-between bg-steel/20">
@@ -316,6 +327,7 @@
                 </table>
             </div>
         </div>
+        @endif
     </div>
 
     {{-- Official Signatures for Print Mode --}}
