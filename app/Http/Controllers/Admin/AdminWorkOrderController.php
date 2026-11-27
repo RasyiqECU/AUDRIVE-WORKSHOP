@@ -13,8 +13,10 @@ use App\Models\WorkOrder;
 use App\Models\WorkOrderItem;
 use App\Services\ServiceBookingService;
 use App\Services\WorkOrderService;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AdminWorkOrderController extends Controller
@@ -29,7 +31,9 @@ class AdminWorkOrderController extends Controller
         $user = $request->user();
         $workOrders = WorkOrder::query()
             ->when($request->status, fn ($q, $status) => $q->where('status', $status))
-            ->when($user->role === 'mechanic', fn ($q) => $q->where('assigned_mechanic_id', $user->id))
+            ->when($user->role === 'mechanic', fn ($q) => $q->where(fn ($own) => $own
+                ->where('assigned_mechanic_id', $user->id)
+                ->orWhereNull('assigned_mechanic_id')))
             ->with(['vehicle.customer.user', 'mechanic'])
             ->latest()
             ->paginate(15);
@@ -40,8 +44,8 @@ class AdminWorkOrderController extends Controller
     public function show(Request $request, WorkOrder $workOrder): View
     {
         $user = $request->user();
-        if ($user->role === 'mechanic' && $workOrder->assigned_mechanic_id !== $user->id) {
-            abort(403, 'Akses ditolak: Mekanik hanya dapat melihat Work Order yang ditugaskan kepada dirinya.');
+        if ($user->role === 'mechanic' && ! in_array($workOrder->assigned_mechanic_id, [null, $user->id], true)) {
+            abort(403, 'Akses ditolak: Kepala Mekanik hanya dapat melihat Work Order yang ditugaskan kepada dirinya.');
         }
 
         $workOrder->load([
@@ -61,11 +65,22 @@ class AdminWorkOrderController extends Controller
     {
         $this->authorize('create', WorkOrder::class);
 
+        $data = $request->validate([
+            'mechanic_id' => ['required', Rule::exists('users', 'id')->where('role', 'mechanic')],
+            'estimated_completion_at' => ['required', 'date', 'after:now'],
+        ]);
+
         try {
             $workOrder = $this->bookingService->convertToWorkOrder(
                 $serviceBooking,
-                $request->filled('mechanic_id') ? (int) $request->mechanic_id : null
+                (int) $data['mechanic_id'],
+                Carbon::parse($data['estimated_completion_at'])
             );
+
+            // Work order milik kepala mekanik lain tidak bisa dibuka pembuatnya
+            if ($request->user()->cannot('view', $workOrder)) {
+                return back()->with('success', "Work order {$workOrder->code} dibuat dan ditugaskan.");
+            }
 
             return redirect()
                 ->route('admin.work-orders.show', $workOrder)
@@ -77,21 +92,29 @@ class AdminWorkOrderController extends Controller
 
     public function updateStatus(Request $request, WorkOrder $workOrder): RedirectResponse
     {
-        $this->authorize('update', $workOrder);
+        $this->authorize('updateStatus', $workOrder);
 
         $request->validate([
             'status' => 'required|in:'.implode(',', array_column(WorkOrderStatus::cases(), 'value')),
         ]);
 
-        if ($request->status === WorkOrderStatus::Delivered->value && auth()->user()->role === 'mechanic') {
-            return back()->with('error', 'Mekanik tidak berwenang mengubah status menjadi diserahkan. Status diserahkan diproses oleh Kasir setelah pembayaran lunas.');
+        $target = WorkOrderStatus::from($request->status);
+        $allowed = match ($request->user()->role) {
+            'mechanic' => [WorkOrderStatus::InProgress, WorkOrderStatus::QualityControl],
+            default => WorkOrderStatus::cases(),
+        };
+
+        if (! in_array($target, $allowed, true)) {
+            return back()->with('error', 'Anda tidak berwenang mengubah status ke '.$target->label().'. Selesai ditetapkan lewat tombol Lolos QC, serah terima setelah lunas.');
         }
 
         try {
-            $this->workOrderService->updateStatus(
-                $workOrder,
-                WorkOrderStatus::from($request->status)
-            );
+            // Selesai & diserahkan punya syarat sendiri (QC / lunas)
+            match ($target) {
+                WorkOrderStatus::Completed => $this->workOrderService->complete($workOrder),
+                WorkOrderStatus::Delivered => $this->workOrderService->deliver($workOrder),
+                default => $this->workOrderService->updateStatus($workOrder, $target),
+            };
 
             return redirect()
                 ->route('admin.work-orders.show', $workOrder)
@@ -147,15 +170,20 @@ class AdminWorkOrderController extends Controller
 
             return redirect()
                 ->route('admin.work-orders.show', $workOrder)
-                ->with('success', 'Spare part berhasil ditambahkan.');
+                ->with('success', 'Usulan spare part dikirim. Menunggu cek gudang dan konfirmasi customer.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
     }
 
-    public function removeItem(WorkOrderItem $item): RedirectResponse
+    public function removeItem(Request $request, WorkOrderItem $item): RedirectResponse
     {
         $this->authorize('update', $item->workOrder);
+
+        // Part yang sudah disetujui customer hanya bisa dihapus Super Admin
+        if ($item->part_source && $request->user()->role !== 'super-admin') {
+            return back()->with('error', 'Item yang sudah diputuskan customer tidak bisa dihapus.');
+        }
 
         try {
             $this->workOrderService->removeItem($item);
@@ -170,7 +198,7 @@ class AdminWorkOrderController extends Controller
 
     public function complete(WorkOrder $workOrder): RedirectResponse
     {
-        $this->authorize('update', $workOrder);
+        $this->authorize('qualityControl', $workOrder);
 
         try {
             $this->workOrderService->complete($workOrder);
@@ -210,14 +238,18 @@ class AdminWorkOrderController extends Controller
         $this->authorize('assignMechanic', $workOrder);
 
         $validated = $request->validate([
-            'mechanic_id' => ['required', 'exists:users,id'],
+            'mechanic_id' => ['required', Rule::exists('users', 'id')->where('role', 'mechanic')],
         ]);
 
         $workOrder->update([
             'assigned_mechanic_id' => $validated['mechanic_id'],
         ]);
 
-        return back()->with('success', 'Mekanik berhasil ditugaskan.');
+        $redirect = $request->user()->can('view', $workOrder->refresh())
+            ? back()
+            : redirect()->route('admin.work-orders.index');
+
+        return $redirect->with('success', 'Kepala Mekanik berhasil ditugaskan.');
     }
 
     public function destroy(WorkOrder $workOrder): RedirectResponse

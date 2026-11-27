@@ -11,7 +11,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
-
 class AiScanReviewController extends Controller
 {
     /**
@@ -38,10 +37,9 @@ class AiScanReviewController extends Controller
         return view('admin.ai-scans.index', compact('scans'));
     }
 
-
     /**
      * Detail scan — tampilkan dual diagnosis (AI + Manual).
-     * Langkah 4: mekanik/admin bisa lihat hasil AI dan audio, lalu beri keputusan final.
+     * Langkah 4: kepala mekanik/admin bisa lihat hasil AI dan audio, lalu beri keputusan final.
      */
     public function show(AiScan $aiScan): View
     {
@@ -50,19 +48,18 @@ class AiScanReviewController extends Controller
         return view('admin.ai-scans.show', compact('aiScan'));
     }
 
-
     /**
-     * Simpan review manual (Langkah 4 — Manual Review oleh Mekanik/Super Admin).
+     * Simpan review manual (Langkah 4 — Manual Review oleh Kepala Mekanik/Super Admin).
      * Mendukung: approve AI result, atau override dengan keputusan manual.
      */
     public function review(Request $request, AiScan $aiScan): RedirectResponse
     {
         $request->validate([
-            'technician_review'  => 'required|string|max:2000',
-            'mechanic_decision'  => 'nullable|string|max:100',
+            'technician_review' => 'required|string|max:2000',
+            'mechanic_decision' => 'nullable|string|max:100',
             'mechanic_final_notes' => 'nullable|string|max:2000',
-            'final_urgency'      => 'nullable|in:safe,monitor,urgent,emergency',
-            'action'             => 'required|in:approve,override',
+            'final_urgency' => 'nullable|in:safe,monitor,urgent,emergency',
+            'action' => 'required|in:approve,override',
         ]);
 
         $isOverride = $request->action === 'override';
@@ -77,26 +74,25 @@ class AiScanReviewController extends Controller
             : $aiScan->urgency_level;
 
         $aiScan->update([
-            'technician_review'  => $request->technician_review,
-            'mechanic_decision'  => $request->mechanic_decision,
+            'technician_review' => $request->technician_review,
+            'mechanic_decision' => $request->mechanic_decision,
             'mechanic_final_notes' => $request->mechanic_final_notes,
-            'final_diagnosis'    => $finalDiagnosis,
-            'final_urgency'      => $finalUrgency,
-            'is_confirmed'       => true,
-            'reviewed_by'        => $request->user()->id,
-            'reviewed_at'        => now(),
-            'status'             => AiScanStatus::Reviewed,
+            'final_diagnosis' => $finalDiagnosis,
+            'final_urgency' => $finalUrgency,
+            'is_confirmed' => true,
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+            'status' => AiScanStatus::Reviewed,
         ]);
 
         $message = $isOverride
-            ? 'Review disimpan. Hasil AI telah dikoreksi oleh mekanik.'
+            ? 'Review disimpan. Hasil AI telah dikoreksi oleh kepala mekanik.'
             : 'Review disimpan. Hasil AI dikonfirmasi dan disetujui.';
 
         return redirect()
             ->route('admin.ai-scans.show', $aiScan)
             ->with('success', $message);
     }
-
 
     /**
      * History scan untuk kendaraan tertentu.

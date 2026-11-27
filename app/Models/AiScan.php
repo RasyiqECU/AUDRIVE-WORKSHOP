@@ -50,13 +50,13 @@ class AiScan extends Model
     protected function casts(): array
     {
         return [
-            'status'          => AiScanStatus::class,
-            'confidence'      => 'decimal:4',
-            'quality_score'   => 'decimal:3',
+            'status' => AiScanStatus::class,
+            'confidence' => 'decimal:4',
+            'quality_score' => 'decimal:3',
             'recommendations' => 'array',
-            'wave_analysis'   => 'array',
-            'reviewed_at'     => 'datetime',
-            'is_confirmed'    => 'boolean',
+            'wave_analysis' => 'array',
+            'reviewed_at' => 'datetime',
+            'is_confirmed' => 'boolean',
         ];
     }
 
@@ -125,75 +125,83 @@ class AiScan extends Model
      */
     public function getEffectiveUrgency(): string
     {
-        // Priority: final_urgency (manual override) > urgency_level (AI) > derive dari kelas mekanik/AI
-        if (!empty($this->final_urgency)) {
+        // Priority: final_urgency (manual override) > urgency_level (AI) > derive dari kelas kepala mekanik/AI
+        if (! empty($this->final_urgency)) {
             return $this->final_urgency;
         }
 
-        if (!empty($this->urgency_level)) {
+        if (! empty($this->urgency_level)) {
             return $this->urgency_level;
         }
 
-        // Derive dari kelas kerusakan (mekanik atau AI)
+        // Derive dari kelas kerusakan (kepala mekanik atau AI)
         $class = $this->mechanic_decision ?? $this->predicted_class;
+
         return $this->urgencyFromClass($class);
     }
 
     private function urgencyFromClass(?string $class): string
     {
         return match ($class) {
-            'normal'             => 'safe',
+            'normal', 'not an engine' => 'safe',
             'exhaust_leak',
+            'dead battery',
+            'power steering',
             'bearing_alternator' => 'monitor',
-            'rod_knock'          => 'emergency',
+            'rod_knock' => 'emergency',
+            'bad ignition',
+            'low oil',
+            'serpentine belt',
+            'knocking',
+            'misfire',
             'timing_chain_belt',
             'valve_lifter',
             'combustion_misfire' => 'urgent',
-            default              => 'monitor',
+            default => 'monitor',
         };
     }
 
     public function getUrgencyLabel(): string
     {
         return match ($this->getEffectiveUrgency()) {
-            'safe'      => 'Aman',
-            'monitor'   => 'Perlu Dipantau',
-            'urgent'    => 'Perlu Segera ke Bengkel',
+            'safe' => 'Aman',
+            'monitor' => 'Perlu Dipantau',
+            'urgent' => 'Perlu Segera ke Bengkel',
             'emergency' => 'DARURAT',
-            default     => 'Tidak Diketahui',
+            default => 'Tidak Diketahui',
         };
     }
 
     public function getUrgencyColor(): string
     {
         return match ($this->getEffectiveUrgency()) {
-            'safe'      => 'text-verde border-verde',
-            'monitor'   => 'text-giallo border-giallo',
-            'urgent'    => 'text-arancio border-arancio',
+            'safe' => 'text-verde border-verde',
+            'monitor' => 'text-giallo border-giallo',
+            'urgent' => 'text-arancio border-arancio',
             'emergency' => 'text-danger border-danger',
-            default     => 'text-silver-dim border-silver-dim',
+            default => 'text-silver-dim border-silver-dim',
         };
     }
 
     public function getUrgencyIcon(): string
     {
         return match ($this->getEffectiveUrgency()) {
-            'safe'      => '✅',
-            'monitor'   => '⚠️',
-            'urgent'    => '🔶',
+            'safe' => '✅',
+            'monitor' => '⚠️',
+            'urgent' => '🔶',
             'emergency' => '🚨',
-            default     => '❓',
+            default => '❓',
         };
     }
 
     public function getUrgencyAction(): string
     {
         return match ($this->getEffectiveUrgency()) {
-            'safe'      => 'Kondisi mesin terdengar normal. Lanjutkan servis rutin sesuai jadwal.',
-            'monitor'   => 'Pantau kondisi mesin dalam 1–2 minggu. Segera ke bengkel jika suara memburuk.',
-            'urgent'    => 'Jadwalkan kunjungan ke bengkel dalam 1–3 hari. Hindari perjalanan jauh.',
+            'safe' => 'Kondisi mesin terdengar normal. Lanjutkan servis rutin sesuai jadwal.',
+            'monitor' => 'Pantau kondisi mesin dalam 1–2 minggu. Segera ke bengkel jika suara memburuk.',
+            'urgent' => 'Jadwalkan kunjungan ke bengkel dalam 1–3 hari. Hindari perjalanan jauh.',
             'emergency' => 'Hentikan kendaraan dan jangan nyalakan mesin. Hubungi bengkel segera.',
-            default     => 'Konsultasikan kondisi kendaraan Anda ke mekanik profesional.',
+            default => 'Konsultasikan kondisi kendaraan Anda ke kepala mekanik profesional.',
         };
     }
 
@@ -202,14 +210,15 @@ class AiScan extends Model
         if ($this->status instanceof AiScanStatus) {
             return $this->status->label();
         }
+
         return match ((string) $this->status) {
-            'pending'       => 'Menunggu',
-            'processing'    => 'Diproses',
-            'completed'     => 'Selesai',
-            'failed'        => 'Gagal',
+            'pending' => 'Menunggu',
+            'processing' => 'Diproses',
+            'completed' => 'Selesai',
+            'failed' => 'Gagal',
             'manual_review' => 'Review Manual',
-            'reviewed'      => 'Sudah Direview',
-            default         => ucfirst((string) $this->status),
+            'reviewed' => 'Sudah Direview',
+            default => ucfirst((string) $this->status),
         };
     }
 
@@ -218,14 +227,15 @@ class AiScan extends Model
         if ($this->status instanceof AiScanStatus) {
             return $this->status->color();
         }
+
         return match ((string) $this->status) {
-            'completed'     => 'text-verde border-verde',
-            'reviewed'      => 'text-teal-400 border-teal-400',
-            'processing'    => 'text-blue-400 border-blue-400',
-            'pending'       => 'text-giallo border-giallo',
+            'completed' => 'text-verde border-verde',
+            'reviewed' => 'text-teal-400 border-teal-400',
+            'processing' => 'text-blue-400 border-blue-400',
+            'pending' => 'text-giallo border-giallo',
             'manual_review' => 'text-arancio border-arancio',
-            'failed'        => 'text-danger border-danger',
-            default         => 'text-silver-dim border-silver-dim',
+            'failed' => 'text-danger border-danger',
+            default => 'text-silver-dim border-silver-dim',
         };
     }
 }

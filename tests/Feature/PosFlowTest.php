@@ -103,7 +103,7 @@ test('pencarian produk POS mengembalikan JSON hasil pencocokan nama/sku', functi
     expect(collect($json)->contains(fn ($p) => (string) str($p['sku'] ?? '')->startsWith('SP-BREMBO')))->toBeTrue();
 });
 
-test('pembayaran work order di kasir: sales order + invoice dibuat, WO delivered, idempotent', function () {
+test('pembayaran work order di kasir: sales order + invoice dibuat, WO lunas (belum diserahkan), idempotent', function () {
     $cashier = User::factory()->cashier()->create();
     $workOrder = WorkOrder::factory()->create([
         'status' => WorkOrderStatus::Completed,
@@ -124,7 +124,8 @@ test('pembayaran work order di kasir: sales order + invoice dibuat, WO delivered
     // subtotal 2.500.000 - 0 + PPN 11% = 2.775.000
     expect((int) $salesOrder->total_idr)->toBe(2_775_000);
     expect(Invoice::where('invoiceable_id', $salesOrder->id)->count())->toBe(1);
-    expect($workOrder->fresh()->status)->toBe(WorkOrderStatus::Delivered, 'WO lunas langsung statusnya delivered');
+    expect($workOrder->fresh()->status)->toBe(WorkOrderStatus::Completed, 'Serah terima dicatat terpisah')
+        ->and($workOrder->fresh()->paid_at)->not->toBeNull();
 
     // Bayar kedua → idempotent, tidak membuat SalesOrder/invoice baru
     $this->actingAs($cashier)

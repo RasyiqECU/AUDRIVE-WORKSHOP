@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\Customer;
 use App\Models\CustomerVehicle;
 use App\Models\Review;
+use App\Models\ServiceBooking;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Models\Voucher;
@@ -59,6 +60,40 @@ test('customer menambah, mengubah, menghapus kendaraannya sendiri', function () 
         ->delete(route('customer.vehicles.destroy', $vehicle))
         ->assertRedirect(route('customer.vehicles.index'));
     expect(CustomerVehicle::find($vehicle->id))->toBeNull();
+});
+
+test('halaman info bengkel memakai tampilan publik, daftar booking tetap di dashboard customer', function () {
+    ['user' => $user, 'customer' => $customer] = portalUser();
+    $vehicle = CustomerVehicle::factory()->create(['customer_id' => $customer->id, 'plate_number' => 'B 1234 TES']);
+    ServiceBooking::factory()->create([
+        'customer_id' => $customer->id,
+        'customer_vehicle_id' => $vehicle->id,
+        'status' => 'checked_in',
+    ]);
+
+    $this->actingAs($user)->get(route('workshop.index'))
+        ->assertOk()
+        ->assertViewIs('workshop.index')
+        ->assertSee(route('marketplace.index'))
+        ->assertSee('Booking Saya')
+        ->assertDontSee(route('customer.vouchers.index'));
+
+    $this->actingAs($user)->get(route('workshop.booking.index'))
+        ->assertOk()
+        ->assertSee(route('customer.vouchers.index'))
+        ->assertSee('B 1234 TES')
+        ->assertSee('Sudah Check-in');
+});
+
+test('customer menemukan menu jual mobil di dashboard', function () {
+    ['user' => $user] = portalUser();
+
+    $this->actingAs($user)->get(route('customer.dashboard'))
+        ->assertOk()
+        ->assertSee('Jual Mobil Saya')
+        ->assertSee(route('marketplace.sell.create'));
+
+    $this->actingAs($user)->get(route('marketplace.sell.create'))->assertOk();
 });
 
 test('customer tidak boleh akses kendaraan & tiket milik customer lain', function () {

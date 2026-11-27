@@ -247,7 +247,11 @@
     <ol class="terms-list">
         <li><strong>Keaslian Dokumen:</strong> PIHAK PERTAMA menjamin unit kendaraan bebas sengketa, tidak terikat fidusia, dan memiliki legalitas resmi.</li>
         <li><strong>Pelunasan & Serah Terima:</strong> Penyerahan unit kendaraan beserta BPKB, STNK asli, kunci cadangan, dan buku servis dilakukan setelah pembayaran dinyatakan Lunas / Efektif di rekening resmi AUDrive.</li>
-        <li><strong>Garansi Mesin & Transmisi:</strong> AUDrive memberikan garansi perlindungan mesin dan transmisi selama 6 (enam) bulan atau 5.000 KM sejak tanggal serah terima.</li>
+        @if($carUnit?->isConsignment())
+            <li><strong>Unit Titip Jual:</strong> Kendaraan merupakan titipan pemilik. AUDrive tidak memberikan garansi. Garansi menurut pemilik: {{ $carUnit->seller_warranty_info }}.</li>
+        @else
+            <li><strong>Garansi Mesin & Transmisi:</strong> AUDrive memberikan garansi perlindungan mesin dan transmisi selama 6 (enam) bulan atau 5.000 KM sejak tanggal serah terima.</li>
+        @endif
         <li><strong>Penyelesaian Perselisihan:</strong> Segala perselisihan yang timbul akan diselesaikan secara musyawarah dan mufakat melalui Pengadilan Negeri Jakarta Selatan.</li>
     </ol>
 

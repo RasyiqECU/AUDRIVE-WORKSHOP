@@ -84,7 +84,7 @@ class DispatchServiceReminders extends Command
     protected function lastServiceDate(CustomerVehicle $vehicle): ?Carbon
     {
         $latest = $vehicle->serviceBookings()
-            ->whereIn('status', ['confirmed', 'in_progress', 'completed'])
+            ->whereIn('status', ['confirmed', 'checked_in', 'in_progress', 'completed'])
             ->orderByDesc('preferred_date')
             ->first();
 

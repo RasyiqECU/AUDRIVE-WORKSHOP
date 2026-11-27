@@ -9,6 +9,7 @@ use App\Http\Controllers\Customer\ReviewController;
 use App\Http\Controllers\Customer\TicketController;
 use App\Http\Controllers\Customer\VehicleController;
 use App\Http\Controllers\Customer\VoucherController;
+use App\Http\Controllers\Customer\WarrantyClaimController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,6 +25,9 @@ Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
 // AI Sound Scan
 Route::resource('ai-scan', AiScanController::class)->only(['index', 'create', 'store', 'show']);
+
+// Klaim Garansi (diajukan lewat Sales; customer memantau status)
+Route::get('warranty', [WarrantyClaimController::class, 'index'])->name('warranty.index');
 
 // Vehicles
 Route::resource('vehicles', VehicleController::class);

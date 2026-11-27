@@ -66,7 +66,25 @@ URGENCY_MAP = {
     "power_steering":     "monitor",
     "serpentine_belt":    "urgent",
     "worn_out_brakes":    "urgent",
+    # Kelas yang hanya ada di model YAMNet
+    "knocking":           "urgent",
 }
+
+# Nama kelas model (label_encoder.pkl) → key konten di URGENCY_MAP / predictor.py.
+# Model YAMNet memakai spasi, sedangkan key konten memakai underscore.
+CLASS_ALIASES = {
+    "bad ignition":    "bad_ignition",
+    "dead battery":    "dead_battery",
+    "low oil":         "low_oil",
+    "power steering":  "power_steering",
+    "serpentine belt": "serpentine_belt",
+    "misfire":         "combustion_misfire",
+}
+
+
+def content_key(class_name: str) -> str:
+    """Key konten (label, urgensi, rekomendasi) untuk sebuah kelas model."""
+    return CLASS_ALIASES.get(class_name, class_name)
 
 # ─── Ambang Batas Confidence untuk Auto Manual Review ────────────────────────
 CONFIDENCE_THRESHOLD   = 0.60   # Di bawah ini → status manual_review

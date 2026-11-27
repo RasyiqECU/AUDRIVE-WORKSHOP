@@ -236,8 +236,44 @@ Alur: customer/staf upload rekaman → Laravel simpan & dispatch `ProcessAiScanJ
 
 ---
 
-## 6. Catatan Teknis Lain
+## 6. Alur Servis, Garansi, dan Titip Jual (berlaku sejak 27 November 2026)
 
-- File `routes/admin-ai-scan.php` dan `routes/customer-ai-scan.php` saat ini **tidak dimuat** oleh `web.php` (versi legacy); fitur AI Scan aktif lewat route di `admin.php` (`/admin/ai-scans`) dan `customer.php` (`/customer/ai-scan`).
+Bagian ini menggantikan keterangan lama pada tabel di atas bila berbeda. Tidak ada role baru. Role `mechanic` ditampilkan sebagai **Kepala Mekanik**.
+
+### 6.1 Perubahan hak akses
+
+| Role | Tambahan | Dicabut |
+|---|---|---|
+| Sales | Booking walk-in, check-in, konfirmasi part, buat klaim garansi, serah terima, setujui titip jual | — |
+| Manager | Putuskan klaim garansi (hanya approval, laporan, audit log) | Semua akses operasional: mobil, offer, test drive, booking, WO, AI scan, gudang, PO, CRM, tiket, voucher/promo, loyalitas, invoice |
+| Mechanic (Kepala Mekanik) | Usul part, diagnosa klaim, lihat Booking Servis, buat WO, tugaskan, QC | Tambah part langsung, menandai selesai |
+| Inventory | Cek usulan part, keluarkan part garansi | — |
+| Cashier | Lunasi pesanan online, bayar penjual titip jual | Konversi booking ke WO, buat WO |
+
+Edit voucher/promo, data pelanggan, dan koreksi poin sekarang hanya Super Admin.
+
+Semua role punya halaman `/profile` untuk mengubah data dan password.
+
+### 6.2 Alur servis
+
+Booking (customer / Sales) → check-in (Sales) → WO + mekanik + estimasi (Kepala Mekanik) → pengerjaan (Mekanik) → usulan part: cek gudang (Inventory) → konfirmasi WhatsApp (Sales) → QC (Kepala Mekanik) → bayar (Cashier) → serah terima (Sales / Cashier).
+
+Pilihan customer per part: beli di bengkel (stok dipotong saat disetujui), bawa sendiri (hanya jasa pasang, tanpa garansi part), atau tidak diganti.
+
+### 6.3 Klaim garansi
+
+Servis 30 hari / 1.000 km; mobil milik AUDrive 6 bulan / 5.000 km sejak serah terima. Sales buat klaim → Mekanik diagnosa → Manager setuju/tolak → Inventory keluarkan part (mutasi `warranty`) → Mekanik pasang → QC → nota Rp 0 (Cashier) → serah terima. Customer memantau di `/customer/warranty`.
+
+### 6.4 Titip jual
+
+Customer ajukan di `/sell` → Sales inspeksi, tetapkan harga minimum, harga tayang, komisi → tayang "Bekas - Titip Jual" → dibeli seperti mobil lain → Cashier mencatat pembayaran ke penjual. AUDrive tidak memberi garansi pada unit titip jual.
+
+Offer kedaluwarsa dikembalikan otomatis tiap jam — butuh `php artisan schedule:work` (atau cron `schedule:run`).
+
+---
+
+## 7. Catatan Teknis Lain
+
+- Fitur AI Scan aktif lewat route di `admin.php` (`/admin/ai-scans`) dan `customer.php` (`/customer/ai-scan`).
 - Notifikasi in-app tersedia di kedua portal (list, tandai satu baca, tandai semua baca).
 - Semua route modular dipisah per file di folder `routes/` dan dimuat dari `routes/web.php`.

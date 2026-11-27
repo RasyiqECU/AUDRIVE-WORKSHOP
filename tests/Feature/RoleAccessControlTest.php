@@ -30,23 +30,16 @@ test('super admin has unrestricted access to all modules', function () {
     $this->actingAs($superAdmin)->get(route('admin.reports.finance'))->assertOk();
 });
 
-test('manager has oversight view access but is blocked from pos and direct crud', function () {
+test('manager hanya bisa mengakses approval, laporan, dan audit log', function () {
     $manager = User::factory()->manager()->create();
 
-    // View routes allowed
-    $this->actingAs($manager)->get(route('admin.cars.index'))->assertOk();
-    $this->actingAs($manager)->get(route('admin.spare-parts.index'))->assertOk();
-    $this->actingAs($manager)->get(route('admin.service-bookings.index'))->assertOk();
-    $this->actingAs($manager)->get(route('admin.work-orders.index'))->assertOk();
-    $this->actingAs($manager)->get(route('admin.reports.index'))->assertOk();
-    $this->actingAs($manager)->get(route('admin.reports.workshop'))->assertOk();
+    foreach (['dashboard', 'approvals.index', 'warranty-claims.index', 'reports.index', 'reports.sales', 'reports.workshop', 'reports.inventory', 'reports.finance', 'audit-logs.index'] as $route) {
+        $this->actingAs($manager)->get(route("admin.{$route}"))->assertOk();
+    }
 
-    // Forbidden routes
-    $this->actingAs($manager)->get(route('admin.pos.index'))->assertForbidden();
-    $this->actingAs($manager)->get(route('admin.cars.create'))->assertForbidden();
-    $this->actingAs($manager)->get(route('admin.spare-parts.create'))->assertForbidden();
-    $this->actingAs($manager)->get(route('admin.users.index'))->assertForbidden();
-    $this->actingAs($manager)->get(route('admin.settings.index'))->assertForbidden();
+    foreach (['cars.index', 'offers.index', 'service-bookings.index', 'work-orders.index', 'spare-parts.index', 'inventory.index', 'customers.index', 'vouchers.index', 'invoices.index', 'ai-scans.index', 'pos.index', 'users.index'] as $route) {
+        $this->actingAs($manager)->get(route("admin.{$route}"))->assertForbidden();
+    }
 });
 
 test('sales can create cars and view offers but cannot access pos or delete cars', function () {
@@ -63,7 +56,7 @@ test('sales can create cars and view offers but cannot access pos or delete cars
     // Forbidden
     $this->actingAs($sales)->get(route('admin.pos.index'))->assertForbidden();
     $this->actingAs($sales)->delete(route('admin.cars.destroy', $car))->assertForbidden();
-    $this->actingAs($sales)->get(route('admin.work-orders.index'))->assertForbidden();
+    $this->actingAs($sales)->get(route('admin.work-orders.index'))->assertOk();
     $this->actingAs($sales)->get(route('admin.spare-parts.create'))->assertForbidden();
     $this->actingAs($sales)->get(route('admin.users.index'))->assertForbidden();
     $this->actingAs($sales)->get(route('admin.settings.index'))->assertForbidden();
@@ -138,7 +131,7 @@ test('mechanic is strictly scoped to own work orders and blocked from commercial
     $this->actingAs($mechanic)->get(route('admin.pos.index'))->assertForbidden();
     $this->actingAs($mechanic)->get(route('admin.cars.index'))->assertForbidden();
     $this->actingAs($mechanic)->get(route('admin.offers.index'))->assertForbidden();
-    $this->actingAs($mechanic)->get(route('admin.service-bookings.index'))->assertForbidden();
+    $this->actingAs($mechanic)->get(route('admin.service-bookings.index'))->assertOk();
     $this->actingAs($mechanic)->get(route('admin.spare-parts.create'))->assertForbidden();
     $this->actingAs($mechanic)->get(route('admin.reports.index'))->assertForbidden();
     $this->actingAs($mechanic)->get(route('admin.users.index'))->assertForbidden();
@@ -208,7 +201,7 @@ test('super admin can view user details with comprehensive role access matrix an
     $responseMechanic = $this->actingAs($superAdmin)->get(route('admin.users.show', $mechanicUser));
     $responseMechanic->assertOk()
         ->assertSee('KETERANGAN HAK AKSES ROLE')
-        ->assertSee('MEKANIK / TEKNISI')
+        ->assertSee('KEPALA MEKANIK')
         ->assertSee('Work Order')
         ->assertSee('AI Sound Scan');
 });

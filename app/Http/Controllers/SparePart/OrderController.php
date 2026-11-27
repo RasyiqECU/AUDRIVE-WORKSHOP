@@ -18,7 +18,8 @@ class OrderController extends Controller
     {
         $customer = $request->user()?->customer;
 
-        $orders = SalesOrder::where('customer_id', $customer?->id)
+        // Tanpa profil customer tidak ada pesanan milik sendiri (jangan tampilkan pesanan walk-in)
+        $orders = SalesOrder::where('customer_id', $customer?->id ?? 0)
             ->with(['items.sparePart'])
             ->latest()
             ->paginate(10);
@@ -28,11 +29,7 @@ class OrderController extends Controller
 
     public function show(Request $request, SalesOrder $order): View
     {
-        $customer = $request->user()?->customer;
-
-        if ($customer && $order->customer_id !== $customer->id) {
-            abort(403);
-        }
+        $this->authorizeOrder($request, $order);
 
         $order->load(['items.sparePart', 'customer']);
 
@@ -41,11 +38,7 @@ class OrderController extends Controller
 
     public function invoice(Request $request, SalesOrder $order): Response|RedirectResponse
     {
-        $customer = $request->user()?->customer;
-
-        if ($customer && $order->customer_id !== $customer->id) {
-            abort(403);
-        }
+        $this->authorizeOrder($request, $order);
 
         $order->load(['items.sparePart', 'customer']);
         $invoice = app(InvoiceService::class)->ensureInvoiceForSalesOrder($order);
@@ -55,5 +48,15 @@ class OrderController extends Controller
         }
 
         return redirect()->route('customer.invoices.show', $invoice);
+    }
+
+    private function authorizeOrder(Request $request, SalesOrder $order): void
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user->role === 'super-admin' || ($user->customer && $order->customer_id === $user->customer->id),
+            403
+        );
     }
 }

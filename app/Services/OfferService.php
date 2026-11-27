@@ -24,6 +24,10 @@ class OfferService
             throw new \InvalidArgumentException('Unit tidak tersedia untuk dipesan.');
         }
 
+        if ($carUnit->isSoldBy($customer)) {
+            throw new \InvalidArgumentException('Anda tidak bisa memesan mobil titipan Anda sendiri.');
+        }
+
         $amount = $amountIdr ?: $carUnit->price_sell_idr;
 
         return DB::transaction(function () use ($customer, $carUnit, $amount, $note) {
@@ -41,10 +45,15 @@ class OfferService
         });
     }
 
-    public function accept(Offer $offer, int $reviewedBy): Offer
+    public function accept(Offer $offer, int $reviewedBy, bool $sellerApproved = false): Offer
     {
         if ($offer->status !== OfferStatus::Pending) {
             throw new \InvalidArgumentException('Pesanan tidak dalam status pending.');
+        }
+
+        $car = $offer->carUnit;
+        if ($car?->isConsignment() && $offer->amount_idr < (int) $car->min_price_idr && ! $sellerApproved) {
+            throw new \InvalidArgumentException('Tawaran di bawah harga minimum penjual. Minta persetujuan penjual lewat WhatsApp, lalu centang persetujuan.');
         }
 
         return DB::transaction(function () use ($offer, $reviewedBy) {

@@ -37,6 +37,9 @@
             {{-- Auth Buttons --}}
             <div class="flex items-center gap-3">
                 @auth
+                    <a href="{{ route('profile.edit') }}" class="font-heading text-xs text-silver-dim hover:text-giallo uppercase tracking-wider transition-premium">
+                        Profil
+                    </a>
                     @if(auth()->user()->role === 'customer')
                         <a href="{{ route('customer.dashboard') }}" class="font-heading text-xs text-giallo hover:text-arancio uppercase tracking-wider transition-premium">
                             Dashboard

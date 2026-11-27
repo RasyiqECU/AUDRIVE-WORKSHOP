@@ -16,7 +16,7 @@
         'total_part' => $selectedWorkOrder->total_part_idr,
         'subtotal' => $selectedWorkOrder->total_idr,
         'items' => $selectedWorkOrder->items->map(fn($item) => [
-            'type' => $item->item_type ?? 'service',
+            'type' => $item->type,
             'desc' => $item->description ?: ($item->sparePart?->name ?? 'Item'),
             'qty' => $item->qty,
             'price' => $item->unit_price_idr,
@@ -210,7 +210,7 @@
                                 <tr class="border-b border-gunmetal bg-steel/20 text-[10px] font-heading uppercase tracking-wider text-silver-dim">
                                     <th class="py-3 px-4">Work Order</th>
                                     <th class="py-3 px-4">Customer & Mobil</th>
-                                    <th class="py-3 px-4">Mekanik</th>
+                                    <th class="py-3 px-4">Kepala Mekanik</th>
                                     <th class="py-3 px-4">Status</th>
                                     <th class="py-3 px-4 text-right">Total Biaya</th>
                                     <th class="py-3 px-4 text-right">Aksi</th>
@@ -229,7 +229,7 @@
                                             'total_part' => $wo->total_part_idr,
                                             'subtotal' => $wo->total_idr,
                                             'items' => $wo->items->map(fn($it) => [
-                                                'type' => $it->item_type ?? 'service',
+                                                'type' => $it->type,
                                                 'desc' => $it->description ?: ($it->sparePart?->name ?? 'Item'),
                                                 'qty' => $it->qty,
                                                 'price' => $it->unit_price_idr,
@@ -279,6 +279,39 @@
 
             {{-- 2. TAB: SPARE PARTS CATALOG --}}
             <div x-show="activeTab === 'parts'" class="space-y-4">
+                @if($pendingPartOrders->isNotEmpty())
+                    <div class="panel border border-gunmetal/80 bg-carbon overflow-hidden">
+                        <div class="bg-steel/30 px-5 py-3.5 border-b border-gunmetal">
+                            <h3 class="font-heading text-xs uppercase tracking-wider text-silver-bright">
+                                Pesanan Online Menunggu Pembayaran ({{ $pendingPartOrders->count() }})
+                            </h3>
+                        </div>
+                        <div class="divide-y divide-gunmetal/30">
+                            @foreach($pendingPartOrders as $partOrder)
+                                <form action="{{ route('admin.pos.part-orders.pay', $partOrder) }}" method="POST"
+                                      onsubmit="return confirm('Konfirmasi pembayaran pesanan {{ $partOrder->code }}?')"
+                                      class="flex flex-wrap items-center gap-3 px-5 py-3 text-xs">
+                                    @csrf
+                                    <div class="flex-1">
+                                        <p class="font-mono font-bold text-giallo">{{ $partOrder->code }}</p>
+                                        <p class="text-silver-dim">{{ $partOrder->customer?->user?->name ?? 'Customer' }} &bull; {{ $partOrder->items->sum('qty') }} item</p>
+                                    </div>
+                                    <span class="font-mono font-bold text-silver-bright">Rp {{ number_format($partOrder->total_idr, 0, ',', '.') }}</span>
+                                    <select name="payment_method" required class="bg-steel/60 border border-gunmetal text-silver-bright text-xs rounded p-2">
+                                        <option value="transfer">Bank Transfer</option>
+                                        <option value="cash">Tunai</option>
+                                        <option value="card">Kartu</option>
+                                        <option value="ewallet">QRIS / E-Wallet</option>
+                                    </select>
+                                    <button type="submit" class="px-3 py-2 bg-giallo text-nero font-heading font-bold text-[10px] uppercase rounded hover:bg-arancio">
+                                        Tandai Lunas
+                                    </button>
+                                </form>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 <div class="panel border border-gunmetal/70 bg-carbon p-4">
                     <input type="text"
                            x-model="partsSearch"
@@ -313,6 +346,26 @@
 
             {{-- 3. TAB: CAR SALES ORDERS --}}
             <div x-show="activeTab === 'cars'" class="space-y-4">
+                @if($consignmentPayouts->isNotEmpty())
+                    <div class="panel border border-gunmetal/80 bg-carbon overflow-hidden">
+                        <div class="bg-steel/30 px-5 py-3.5 border-b border-gunmetal">
+                            <h3 class="font-heading text-xs uppercase tracking-wider text-silver-bright">Pembayaran ke Penjual Titip Jual</h3>
+                        </div>
+                        @foreach($consignmentPayouts as $unit)
+                            <form action="{{ route('admin.pos.consignments.payout', $unit) }}" method="POST"
+                                  onsubmit="return confirm('Catat bahwa penjual sudah dibayar?')"
+                                  class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-xs border-b border-gunmetal/30">
+                                @csrf
+                                <div>
+                                    <p class="text-silver-bright font-bold">{{ $unit->full_name }}</p>
+                                    <p class="text-silver-dim">Penjual: {{ $unit->seller?->user?->name }} ({{ $unit->seller?->user?->phone }}) &bull; Komisi Rp {{ number_format($unit->commission_idr, 0, ',', '.') }}</p>
+                                </div>
+                                <button type="submit" class="px-3 py-2 bg-giallo text-nero font-heading font-bold text-[10px] uppercase rounded">Sudah Dibayar</button>
+                            </form>
+                        @endforeach
+                    </div>
+                @endif
+
                 <div class="panel border border-gunmetal/80 bg-carbon overflow-hidden">
                     <div class="bg-steel/30 px-5 py-3.5 border-b border-gunmetal flex items-center justify-between">
                         <h3 class="font-heading text-xs uppercase tracking-wider text-silver-bright flex items-center gap-2">

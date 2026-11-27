@@ -25,7 +25,7 @@
             'super-admin' => 'Super Admin',
             'owner'       => 'Business Owner',
             'manager'     => 'Manager',
-            'mechanic'    => 'Mekanik',
+            'mechanic'    => 'Kepala Mekanik',
             'sales'       => 'Sales',
             'inventory'   => 'Inventory',
             'cashier'     => 'Kasir',
@@ -92,10 +92,10 @@
                 $stat1Color = $stat1Value > 0 ? 'text-arancio font-bold animate-pulse' : 'text-silver-dim';
                 $stat1Link = route('admin.approvals.index');
 
-                $stat2Label = 'Total WO';
-                $stat2Value = \App\Models\WorkOrder::whereIn('status', ['queued', 'in_progress'])->count();
+                $stat2Label = 'Klaim Garansi';
+                $stat2Value = \App\Models\WarrantyClaim::where('status', 'diagnosed')->count();
                 $stat2Color = 'text-giallo';
-                $stat2Link = route('admin.work-orders.index');
+                $stat2Link = route('admin.warranty-claims.index');
             } elseif ($topbarRole === 'owner') {
                 $stat1Label = 'Omzet Bulan Ini';
                 $ownerMonthRev = (int) \App\Models\SalesOrder::whereIn('status', [\App\Enums\SalesOrderStatus::Paid, \App\Enums\SalesOrderStatus::Completed])
@@ -159,7 +159,7 @@
         @endif
 
         {{-- User Profile & Role Indicator --}}
-        <div class="flex items-center gap-2">
+        <a href="{{ route('profile.edit') }}" title="Profil Saya" class="flex items-center gap-2">
             <div class="w-7 h-7 bg-giallo/10 border border-giallo/30 clip-hexagon flex items-center justify-center">
                 <span class="font-heading text-[10px] text-giallo font-bold">
                     {{ substr($topbarUser->name ?? 'A', 0, 1) }}
@@ -169,6 +169,6 @@
                 <p class="font-heading text-xs text-silver-bright">{{ $topbarUser->name ?? 'Admin' }}</p>
                 <p class="font-mono text-[9px] text-giallo uppercase tracking-wider">{{ $topbarRoleLabel }}</p>
             </div>
-        </div>
+        </a>
     </div>
 </header>

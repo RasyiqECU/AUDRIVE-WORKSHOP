@@ -20,6 +20,16 @@ class WorkOrderItem extends Model
         'qty',
         'unit_price_idr',
         'subtotal_idr',
+        'approval_status',
+        'part_source',
+        'inventory_checked_at',
+        'decided_by',
+        'decided_at',
+        'decision_note',
+    ];
+
+    protected $attributes = [
+        'approval_status' => 'approved',
     ];
 
     protected function casts(): array
@@ -28,6 +38,8 @@ class WorkOrderItem extends Model
             'qty' => 'integer',
             'unit_price_idr' => 'integer',
             'subtotal_idr' => 'integer',
+            'inventory_checked_at' => 'datetime',
+            'decided_at' => 'datetime',
         ];
     }
 

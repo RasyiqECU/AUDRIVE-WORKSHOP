@@ -17,6 +17,8 @@
         'completed' => ['label' => 'Selesai', 'class' => 'border-verde/40 text-verde bg-verde/5'],
         'delivered' => ['label' => 'Diserahkan', 'class' => 'border-verde/40 text-verde bg-verde/5'],
         'queued' => ['label' => 'Antrean', 'class' => 'border-silver/40 text-silver-bright bg-steel/30'],
+        'confirmed' => ['label' => 'Menunggu Kedatangan', 'class' => 'border-giallo/40 text-giallo bg-giallo/5'],
+        'checked_in' => ['label' => 'Checked-in', 'class' => 'border-arancio/40 text-arancio bg-arancio/5'],
         'cancelled' => ['label' => 'Dibatalkan', 'class' => 'border-danger/40 text-danger bg-danger/5'],
         'active' => ['label' => 'Aktif', 'class' => 'border-verde/40 text-verde bg-verde/5'],
         'inactive' => ['label' => 'Nonaktif', 'class' => 'border-silver/20 text-silver-dim bg-steel/30'],

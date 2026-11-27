@@ -73,6 +73,16 @@
                     {{ $car->description ?? 'Unit mobil bekas berkualitas tinggi dengan rekam jejak servis berkala rutin. Interior dan eksterior dalam kondisi sangat terawat.' }}
                 </div>
 
+                <div class="mt-6 pt-4 border-t border-gunmetal/40 text-xs space-y-1">
+                    <p class="text-giallo font-heading uppercase">Kondisi: {{ $car->condition_label }}</p>
+                    @if($car->condition_defects)
+                        <p class="text-silver-dim">Kekurangan: {{ $car->condition_defects }}</p>
+                    @endif
+                    @if($car->condition_additions)
+                        <p class="text-silver-dim">Penambahan: {{ $car->condition_additions }}</p>
+                    @endif
+                </div>
+
                 {{-- Legalitas & Kelengkapan --}}
                 <div class="mt-6 pt-4 border-t border-gunmetal/40 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-xs">
                     <div class="bg-steel/20 p-2.5 rounded border border-gunmetal/30">
@@ -85,7 +95,13 @@
                     </div>
                     <div class="bg-steel/20 p-2.5 rounded border border-gunmetal/30">
                         <span class="text-silver-dim block text-[10px] uppercase font-heading">Garansi</span>
-                        <span class="text-giallo font-semibold mt-0.5 block">{{ $car->warranty_status ?? 'Garansi 30 Hari' }}</span>
+                        <span class="text-giallo font-semibold mt-0.5 block">
+                            @if($car->isConsignment())
+                                {{ $car->seller_warranty_info }}{{ $car->seller_warranty_verified ? ' (terverifikasi)' : '' }} — dari penjual
+                            @else
+                                Mesin &amp; transmisi 6 bulan / 5.000 km
+                            @endif
+                        </span>
                     </div>
                     <div class="bg-steel/20 p-2.5 rounded border border-gunmetal/30">
                         <span class="text-silver-dim block text-[10px] uppercase font-heading">Stok</span>

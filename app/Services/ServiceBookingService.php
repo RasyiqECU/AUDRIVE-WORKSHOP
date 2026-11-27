@@ -1,11 +1,8 @@
 <?php
 
-
 declare(strict_types=1);
 
-
 namespace App\Services;
-
 
 use App\Enums\ServiceBookingStatus;
 use App\Enums\WorkOrderStatus;
@@ -15,7 +12,6 @@ use App\Models\ServiceBooking;
 use App\Models\WorkOrder;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-
 
 class ServiceBookingService
 {
@@ -32,16 +28,13 @@ class ServiceBookingService
             throw new \InvalidArgumentException('Kendaraan tidak terdaftar atas nama Anda.');
         }
 
-
         // Validasi: tanggal tidak boleh di masa lalu
         if ($preferredDate->isPast()) {
             throw new \InvalidArgumentException('Tanggal booking tidak boleh di masa lalu.');
         }
 
-
         // Hitung estimasi biaya berdasarkan tipe servis
         $estimatedCost = $this->calculateEstimatedCost($serviceType);
-
 
         return ServiceBooking::create([
             'customer_id' => $customer->id,
@@ -55,7 +48,6 @@ class ServiceBookingService
         ]);
     }
 
-
     public function confirm(ServiceBooking $booking): ServiceBooking
     {
         $statusVal = $booking->status instanceof ServiceBookingStatus ? $booking->status->value : (string) $booking->status;
@@ -64,6 +56,7 @@ class ServiceBookingService
         }
 
         $booking->update(['status' => ServiceBookingStatus::Confirmed]);
+
         return $booking->fresh();
     }
 
@@ -75,10 +68,27 @@ class ServiceBookingService
         }
 
         $booking->update(['status' => ServiceBookingStatus::Cancelled]);
+
         return $booking->fresh();
     }
 
-    public function convertToWorkOrder(ServiceBooking $booking, ?int $mechanicId = null): WorkOrder
+    /** Sales memverifikasi fisik mobil saat tiba di bengkel. */
+    public function checkIn(ServiceBooking $booking, array $data): ServiceBooking
+    {
+        if (! in_array($booking->status, [ServiceBookingStatus::Pending, ServiceBookingStatus::Confirmed], true)) {
+            throw new \InvalidArgumentException('Hanya booking yang menunggu kedatangan yang bisa check-in.');
+        }
+
+        $booking->update($data + [
+            'status' => ServiceBookingStatus::CheckedIn,
+            'checked_in_at' => now(),
+            'checked_in_by' => auth()->id(),
+        ]);
+
+        return $booking;
+    }
+
+    public function convertToWorkOrder(ServiceBooking $booking, int $mechanicId, Carbon $estimatedCompletion): WorkOrder
     {
         // Pastikan relasi workOrder sudah dimuat
         $booking->loadMissing('workOrder');
@@ -88,33 +98,20 @@ class ServiceBookingService
             return $booking->workOrder;
         }
 
-        // Ambil nilai status sebagai string
-        $statusVal = $booking->status instanceof ServiceBookingStatus
-            ? $booking->status->value
-            : (string) $booking->getRawOriginal('status');
-
-        // Tolak hanya jika booking sudah completed atau cancelled
-        if (in_array($statusVal, ['completed', 'cancelled'], true)) {
-            throw new \InvalidArgumentException(
-                "Booking dengan status {$statusVal} tidak bisa dikonversi ke work order."
-            );
+        if ($booking->status !== ServiceBookingStatus::CheckedIn) {
+            throw new \InvalidArgumentException('Mobil harus check-in terlebih dahulu sebelum dibuatkan work order.');
         }
 
-        return DB::transaction(function () use ($booking, $mechanicId) {
-            // Tentukan mekanik: jika tidak ditentukan dan user saat ini adalah mechanic, assign ke user ini
-            $assignedMechanicId = $mechanicId;
-            if (!$assignedMechanicId && auth()->check() && auth()->user()->role === 'mechanic') {
-                $assignedMechanicId = auth()->id();
-            }
-
+        return DB::transaction(function () use ($booking, $mechanicId, $estimatedCompletion) {
             // Buat work order
             $workOrder = WorkOrder::create([
-                'code'                => $this->generateWorkOrderCode(),
-                'service_booking_id'  => $booking->id,
+                'code' => $this->generateWorkOrderCode(),
+                'service_booking_id' => $booking->id,
                 'customer_vehicle_id' => $booking->customer_vehicle_id,
-                'status'              => WorkOrderStatus::InProgress,
-                'assigned_mechanic_id'=> $assignedMechanicId,
-                'notes'               => $booking->notes,
+                'status' => WorkOrderStatus::Queued,
+                'assigned_mechanic_id' => $mechanicId,
+                'estimated_completion_at' => $estimatedCompletion,
+                'notes' => $booking->notes,
             ]);
 
             // Update booking status menjadi in_progress
@@ -132,9 +129,9 @@ class ServiceBookingService
         }
 
         $booking->update(['status' => ServiceBookingStatus::Completed]);
+
         return $booking->fresh();
     }
-
 
     protected function calculateEstimatedCost(string $serviceType): int
     {
@@ -146,21 +143,15 @@ class ServiceBookingService
             'inspection' => 300000,
         ];
 
-
         return $costs[$serviceType] ?? 500000;
     }
-
 
     protected function generateWorkOrderCode(): string
     {
         do {
-            $code = 'WO-' . now()->format('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
+            $code = 'WO-'.now()->format('Ymd').'-'.strtoupper(substr(uniqid(), -6));
         } while (WorkOrder::where('code', $code)->exists());
-
 
         return $code;
     }
 }
-
-
-

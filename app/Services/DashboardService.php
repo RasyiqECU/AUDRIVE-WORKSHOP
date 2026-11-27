@@ -96,6 +96,7 @@ class DashboardService
             ->whereIn('status', [
                 ServiceBookingStatus::Pending,
                 ServiceBookingStatus::Confirmed,
+                ServiceBookingStatus::CheckedIn,
             ])
             ->count();
 
@@ -134,7 +135,7 @@ class DashboardService
         $currentMonth = Carbon::now()->startOfMonth();
 
         $totalScans = AiScan::where('created_at', '>=', $currentMonth)->count();
-        $completedScans = AiScan::where('status', AiScanStatus::Completed)
+        $completedScans = AiScan::whereIn('status', [AiScanStatus::Completed, AiScanStatus::ManualReview, AiScanStatus::Reviewed])
             ->where('created_at', '>=', $currentMonth)
             ->count();
 

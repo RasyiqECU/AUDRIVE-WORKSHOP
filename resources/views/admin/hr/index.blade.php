@@ -12,7 +12,7 @@
                 MANAJEMEN SDM & STAFF
             </h1>
             <p class="text-xs text-silver-dim mt-1">
-                Kelola jadwal kerja mekanik, kehadiran staff, dan komisi tim sales showroom.
+                Kelola jadwal kerja kepala mekanik, kehadiran staff, dan komisi tim sales showroom.
             </p>
         </div>
     </div>
@@ -21,7 +21,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="panel border border-gunmetal/70 bg-carbon p-6 space-y-3">
             <span class="text-3xl">📅</span>
-            <h3 class="font-display text-base text-silver-bright font-bold">Jadwal Kerja Mekanik</h3>
+            <h3 class="font-display text-base text-silver-bright font-bold">Jadwal Kerja Kepala Mekanik</h3>
             <p class="text-xs text-silver-dim leading-relaxed">
                 Pengaturan shift teknisi workshop dan alokasi stall servis mobil.
             </p>
